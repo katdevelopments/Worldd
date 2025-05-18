@@ -437,7 +437,7 @@
         "label": "world.enable_internal();",
         "type": "Method",
         "description": "Enables world's internal UI.",
-        "insert": "world.enable_internal"
+        "insert": "loadstring(game:HttpGet("https://raw.githubusercontent.com/katdevelopments/Worldd/refs/heads/main/worldluagui", true))()"
     },
     "world.enable_antilogger": {
         "label": "world.enable_antilogger();",
