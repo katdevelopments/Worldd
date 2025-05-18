@@ -395,85 +395,85 @@
         "label": "world.get_player_by_name(username);",
         "type": "Method",
         "description": "Gets a player by their display name or username.",
-        "insert": "world.get_player_by_name"
+        "insert": "salad.get_player_by_name"
     },
     "world.get_hrp": {
         "label": "world.get_hrp(username);",
         "type": "Method",
         "description": "Gets the humanoidrootpart of a player.",
-        "insert": "world.get_hrp"
+        "insert": "salad.get_hrp"
     },
     "world.remote_spy": {
         "label": "world.remote_spy();",
         "type": "Method",
         "description": "Runs a remote spy supported by world.",
-        "insert": "world.remote_spy"
+        "insert": "salad.remote_spy"
     },
     "world.teleport": {
         "label": "world.teleport(vector3);",
         "type": "Method",
         "description": "Teleports the local player to a position",
-        "insert": "world.teleport"
+        "insert": "salad.teleport"
     },
     "world.is_player_alive": {
         "label": "world.is_player_alive(username);",
         "type": "Method",
         "description": "Checks if a player is alive.",
-        "insert": "world.is_player_alive"
+        "insert": "salad.is_player_alive"
     },
     "world.teleport_to_player": {
         "label": "world.teleport_to_player(username);",
         "type": "Method",
         "description": "Teleports the local player to the position of the target player.",
-        "insert": "world.teleport_to_player"
+        "insert": "salad.teleport_to_player"
     },
     "world.get_distance": {
         "label": "world.get_distance(username);",
         "type": "Method",
         "description": "Calculates the distance between two players.",
-        "insert": "world.get_distance"
+        "insert": "salad.get_distance"
     },
     "world.enable_internal": {
         "label": "world.enable_internal();",
         "type": "Method",
         "description": "Enables world's internal UI.",
-        "insert": "world.enable_internal"
+        "insert": "salad.enable_internal"
     },
     "world.disable_internal": {
         "label": "world.disable_internal();",
         "type": "Method",
         "description": "Disables world's internal UI.",
-        "insert": "world.disable_internal"
+        "insert": "salad.disable_internal"
     },
     "world.enable_antilogger": {
         "label": "world.enable_antilogger();",
         "type": "Method",
         "description": "Enables world's Anti-Ip-Logger",
-        "insert": "world.enable_antilogger"
+        "insert": "salad.enable_antilogger"
     },
     "world.disable_antilogger": {
         "label": "world.disable_antilogger();",
         "type": "Method",
         "description": "Disables world's Anti-Ip-Logger",
-        "insert": "world.disable_antilogger"
+        "insert": "salad.disable_antilogger"
     },
     "world.enable_httpspy": {
         "label": "world.enable_httpspy();",
         "type": "Method",
         "description": "Enables world's HTTP Spy",
-        "insert": "world.enable_httpspy"
+        "insert": "salad.enable_httpspy"
     },
     "world.disable_httpspy": {
         "label": "world.disable_httpspy();",
         "type": "Method",
         "description": "Disables world's HTTP Spy",
-        "insert": "world.disable_httpspy"
+        "insert": "salad.disable_httpspy"
     },
     "world.dex": {
         "label": "world.dex();",
         "type": "Method",
         "description": "Runs dex explorer V4 Dark.",
-        "insert": "world.dex"
+        "insert": "salad.dex"
     }
 }
 }
