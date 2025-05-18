@@ -3,402 +3,402 @@
     "firesignal": {
       "label": "firesignal(Signal, Args);",
       "type": "Method",
-      "description": "Triggers all functions connected to the specified `Signal` with the given `Args`.",
-      "insert": "firesignal(Signal, Args)"
+      "description": "Fires all the connections connected to the signal Signal with Args.",
+      "insert": "firesignal"
     },
     "getsenv": {
       "label": "getsenv(localscript);",
       "type": "Method",
-      "description": "Retrieves the environment table of the specified `localscript`. Useful for accessing its global variables and functions.",
-      "insert": "getsenv(localscript)"
+      "description": "Returns the global environment table of LocalScript script.",
+      "insert": "getsenv"
     },
     "checkcaller": {
       "label": "checkcaller();",
       "type": "Method",
-      "description": "Returns `true` if the current execution thread originates from the exploit's environment, `false` otherwise. Note: This checks the immediate caller's context, not the entire call stack.",
-      "insert": "checkcaller()"
+      "description": "Returns true if the current thread is a EBON thread.Note: Checkcaller does NOT check the call stack of the function, if you call a game function then it calls out to checkcaller, the result will be true! Be careful.",
+      "insert": "checkcaller"
     },
     "queue_on_teleport": {
       "label": "queue_on_teleport(code);",
       "type": "Method",
-      "description": "Queues a string of Lua `code` to be executed after the local player successfully teleports to a new server or place.",
-      "insert": "queue_on_teleport([[-- Your Lua code here\nprint(\"Teleported!\")\n]])"
+      "description": "Executes code after player is teleported.",
+      "insert": "queue_on_teleport"
     },
     "gethwid": {
       "label": "gethwid();",
       "type": "Method",
-      "description": "Returns the client's unique Hardware ID (HWID). This ID can vary between different PCs and is often used for script authentication.",
-      "insert": "gethwid()"
+      "description": "Returns the User's HWID, changes between PCs.",
+      "insert": "gethwid"
     },
     "message": {
       "label": "message(text);",
       "type": "Method",
-      "description": "Displays a simple message box to the user with the specified `text`.",
-      "insert": "message(\"Your message here\")"
+      "description": "Creates a message box with parameters text",
+      "insert": "message"
     },
     "setfflag": {
       "label": "setfflag(FFlag, Value);",
       "type": "Method",
-      "description": "Sets the FastFlag (FFlag) specified by `FFlagName` to the given `Value` (as a string). This typically needs to be executed very early, often via auto-execute, before the game fully initializes.",
-      "insert": "setfflag(\"FFlagName\", \"Value\")"
+      "description": "Sets FFlag with Value. Must be run before the game loads, auto execute recommended.",
+      "insert": "setfflag"
     },
     "getinstances": {
       "label": "getinstances();",
       "type": "Method",
-      "description": "Returns a table containing all Roblox Instances currently present in the game's DataModel.",
-      "insert": "getinstances()"
+      "description": "Returns a list of all instances within the game.",
+      "insert": "getinstances"
     },
     "getcallingscript": {
-      "label": "getcallingscript();",
+      "label": "checkcaller();",
       "type": "Method",
-      "description": "Returns the script Instance that directly called the current function. Useful for identifying the source of a function call or for context-aware scripts.",
-      "insert": "getcallingscript()"
+      "description": "Gets the script that is calling this function.",
+      "insert": "getcallingscript"
     },
     "firetouchinterest": {
       "label": "firetouchinterest(Part, ToTouch, Toggle);",
       "type": "Method",
-      "description": "Simulates a touch event. `Part` is the part that 'touches', `ToTouch` is the part that 'is touched'. `Toggle` should be `0` to simulate TouchEnded (end touch) or `1` to simulate Touched (begin touch).",
-      "insert": "firetouchinterest(workspace.LocalPlayer.Character.HumanoidRootPart, targetPart, 1)"
+      "description": "Fakes a .Touched event to ToTouch with Part.The Toggle argument must be either 0 or 1 (for fire/un-fire).",
+      "insert": "firetouchinterest"
     },
     "getrenv": {
       "label": "getrenv();",
       "type": "Method",
-      "description": "Returns the Roblox-specific Lua environment, often referred to as the 'Roblox environment' or 'vanilla environment', which contains standard Roblox globals (like `game`, `workspace`) and functions.",
-      "insert": "getrenv()"
+      "description": "Returns the global environment for the LocalScript state.",
+      "insert": "getrenv"
     },
     "newcclosure": {
       "label": "newcclosure(lclosure);",
       "type": "Method",
-      "description": "Converts a Lua function (`lclosure`) into a C closure. This is often necessary when trying to replace or hook functions that are originally C functions, such as metamethods of Roblox userdata (e.g., `game.__index`).",
-      "insert": "newcclosure(function(...)\n    -- Your hooked logic here\n    return oldFunction(...)\nend)"
+      "description": "Takes an lclosure (Lua function) and returns a new cclosure (C function).This is commonly used when setting the metamethods of a Roblox userdata such as game.",
+      "insert": "newcclosure"
     },
     "randomstring": {
       "label": "randomstring(num);",
       "type": "Method",
-      "description": "Generates and returns a random alphanumeric string of `num` length.",
-      "insert": "randomstring(16)"
+      "description": "Return a random string with num length.",
+      "insert": "randomstring"
     },
     "request": {
       "label": "request(options);",
       "type": "Method",
-      "description": "Sends an HTTP request using the provided `options` table. `options` should include `Url`, `Method` (e.g., 'GET', 'POST'), and optionally `Headers`, `Cookies`, `Body`.",
-      "insert": "request({\n    Url = \"https://api.example.com/data\",\n    Method = \"GET\", -- or \"POST\"\n    -- Headers = { [\"Authorization\"] = \"Bearer YOUR_TOKEN\" },\n    -- Body = \"payload\"\n})"
+      "description": "Sends a http request with parameters in options.",
+      "insert": "request"
     },
     "readfile": {
       "label": "readfile(file);",
       "type": "Method",
-      "description": "Reads the content of a specified `file` (e.g., 'myscript.lua') from the executor's workspace/scripts folder and returns it as a string.",
-      "insert": "readfile(\"filename.txt\")"
+      "description": "Returns the content of the file. ",
+      "insert": "readfile"
     },
     "loadstring": {
       "label": "loadstring(chunk, chunk_name);",
       "type": "Method",
-      "description": "Compiles a string of Lua `chunk` (code) and returns it as a Lua function. An optional `chunk_name` can be provided for error reporting. Returns `nil` and an error message on compilation failure.",
-      "insert": "loadstring([[-- Your Lua code here\nprint(\"Executed via loadstring!\")\n]])()"
+      "description": "Loads chunk as a Lua function with optional chunk_name and returns it if compilation is successful.Otherwise, if an error has occurred during compilation, nil followed by the error message will be returned.",
+      "insert": "loadstring"
     },
     "setthreadcontext": {
       "label": "setthreadcontext(level);",
       "type": "Method",
-      "description": "Sets the security context level (identity) of the current Lua thread to the specified `level`. Higher levels (e.g., 7 or 8) typically grant more permissions, allowing access to restricted APIs.",
-      "insert": "setthreadcontext(7)"
+      "description": "Sets the current thread’s context level to level.",
+      "insert": "setthreadcontext"
     },
     "getthreadcontext": {
       "label": "getthreadcontext();",
       "type": "Method",
-      "description": "Returns the current security context level (identity) of the Lua thread.",
-      "insert": "getthreadcontext()"
+      "description": "Returns the current thread’s security context level.",
+      "insert": "getthreadcontext"
     },
     "setthreadidentity": {
       "label": "setthreadidentity(level);",
       "type": "Method",
-      "description": "Alias or similar to `setthreadcontext`. Sets the security identity/level of the current Lua thread to `level`.",
-      "insert": "setthreadidentity(7)"
+      "description": "Sets the current thread’s level to level.",
+      "insert": "setthreadidentity"
     },
     "getthreadidentity": {
       "label": "getthreadidentity();",
       "type": "Method",
-      "description": "Alias or similar to `getthreadcontext`. Returns the current security identity/level of the Lua thread.",
-      "insert": "getthreadidentity()"
+      "description": "Returns the current thread’s security level.",
+      "insert": "getthreadidentity"
     },
     "mousescroll": {
       "label": "mousescroll(px);",
       "type": "Method",
-      "description": "Simulates a virtual mouse wheel scroll by `px` units. Positive values usually scroll down, negative values scroll up.",
-      "insert": "mousescroll(120)"
+      "description": "Scrolls the mouse wheel virtually by px pixels.",
+      "insert": "mousescroll"
     },
     "hookfunction": {
-      "label": "hookfunction(old_function, new_hook_function);",
+      "label": "hookfunction(old, hook);",
       "type": "Method",
-      "description": "Replaces `old_function` with `new_hook_function`. Returns the original `old_function`, allowing it to be called within the hook (e.g., for passthrough or modification). Essential for intercepting and altering game logic.",
-      "insert": "local old_chatfunc = hookfunction(game.Players.LocalPlayer.Chatted, function(player, message, recipient)\n    print(\"Chatted Hooked:\", player.Name, message)\n    -- old_chatfunc(player, message, recipient) -- Call original if needed\nend)"
+      "description": "Hooks function old, replacing it with the function hook.The old function is returned, you must use this function in order to call the original function.",
+      "insert": "hookfunction"
     },
     "listfiles": {
       "label": "listfiles(folder);",
       "type": "Method",
-      "description": "Returns a table listing the names of all files within the specified `folder` (relative to the executor's workspace/scripts directory).",
-      "insert": "listfiles(\"scripts\")"
+      "description": "Returns a table of files in folder.",
+      "insert": "listfiles"
     },
     "keyrelease": {
-      "label": "keyrelease(keycode);",
+      "label": "keyrelease();",
       "type": "Method",
-      "description": "Simulates releasing a specified `keycode` on the keyboard. Use with `keypress`. Keycodes can be found via `Enum.KeyCode`.",
-      "insert": "keyrelease(Enum.KeyCode.E)"
+      "description": "Releases key on the keyboard. You can access the key values from the link below. https://docs.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes",
+      "insert": "keyrelease"
     },
     "keytap": {
       "label": "keytap(keycode);",
       "type": "Method",
-      "description": "Simulates a single key press and release (a 'tap') for the given `keycode`. Roblox window must be focused. Keycodes from `Enum.KeyCode`.",
-      "insert": "keytap(Enum.KeyCode.Space)"
+      "description": "Simulates a button tap for the specified keycode. Only works when roblox is focused.",
+      "insert": "keytap"
     },
     "rconsoleinfo": {
       "label": "rconsoleinfo(msg);",
       "type": "Method",
-      "description": "Prints an informational `msg` to the exploit's console, often prefixed with '[INFO]' or similar for better log organization.",
-      "insert": "rconsoleinfo(\"This is an informational message.\")"
+      "description": "Prints msg into the console, with a info text before it.",
+      "insert": "rconsoleinfo"
     },
     "rconsolename": {
       "label": "rconsolename(title);",
       "type": "Method",
-      "description": "Sets the title of the exploit's output console window to the specified `title` string.",
-      "insert": "rconsolename(\"My Custom Exploit Console\")"
+      "description": "Sets the currently allocated console title to title.",
+      "insert": "rconsolename"
     },
     "getfpscap": {
       "label": "getfpscap();",
       "type": "Method",
-      "description": "Returns the current FPS (Frames Per Second) cap value that Roblox is attempting to maintain. `0` often means unlocked.",
-      "insert": "getfpscap()"
+      "description": "Returns the fps cap.",
+      "insert": "getfpscap"
     },
     "mouse1release": {
       "label": "mouse1release();",
       "type": "Method",
-      "description": "Simulates releasing the left mouse button (Mouse1). Typically used after `mouse1press()` to complete a click action.",
-      "insert": "mouse1release()"
+      "description": "Simulates the left mouse button being released. Commonly used after calling mouse1press().",
+      "insert": "mouse1release"
     },
     "getnilinstances": {
       "label": "getnilinstances();",
       "type": "Method",
-      "description": "Returns a table of all instances that have been destroyed or set to nil but might still be referenced in memory (dangling pointers). Useful for debugging or finding hidden objects.",
-      "insert": "getnilinstances()"
+      "description": "Returns all the nil instances in the game.",
+      "insert": "getnilinstances"
     },
     "islclosure": {
-      "label": "islclosure(func);",
+      "label": "islclosure(f);",
       "type": "Method",
-      "description": "Checks if the provided function `func` is a Lua closure (LClosure). Returns `true` if it is, `false` otherwise (e.g., if it's a CClosure).",
-      "insert": "islclosure(myFunction)"
+      "description": "Returns true if f is an LClosure. Otherwise returns false.",
+      "insert": "islclosure"
     },
     "rconsolewarn": {
       "label": "rconsolewarn(msg);",
       "type": "Method",
-      "description": "Prints a warning `msg` to the exploit's console, often prefixed with '[WARN]' or similar for highlighting potential issues.",
-      "insert": "rconsolewarn(\"This is a warning message.\")"
+      "description": "Prints msg into the console, with a warning text before it.",
+      "insert": "rconsolewarn"
     },
     "mouse1click": {
       "label": "mouse1click();",
       "type": "Method",
-      "description": "Simulates a single click (press and release) of the left mouse button (Mouse1).",
-      "insert": "mouse1click()"
+      "description": "Simulates the left mouse button being clicked one time.",
+      "insert": "mouse1click"
     },
     "mouse2press": {
       "label": "mouse2press();",
       "type": "Method",
-      "description": "Simulates pressing and holding down the right mouse button (Mouse2). Use `mouse2release()` to release it.",
-      "insert": "mouse2press()"
+      "description": "Clicks down on the right mouse button.",
+      "insert": "mouse2press"
     },
     "sethiddenproperty": {
-      "label": "sethiddenproperty(Object, PropertyName, Value);",
+      "label": "sethiddenproperty(Object, Property, Value);",
       "type": "Method",
-      "description": "Attempts to set a hidden or normally read-only `PropertyName` (string) of an `Object` (Instance) to a new `Value`. May error if the property doesn't exist or cannot be modified. Use with caution.",
-      "insert": "sethiddenproperty(game.Players, \"MaxPlayers\", 100)"
+      "description": "Sets the hidden property Property with Value from Object. Errors if the property does not exist.",
+      "insert": "sethiddenproperty"
     },
     "saveinstance": {
       "label": "saveinstance();",
       "type": "Method",
-      "description": "Saves the current state of the game (DataModel) as a `.rbxl` (Roblox Studio) or `.rbxlx` (XML) file, typically into the executor's workspace folder. Allows for offline inspection of the game structure and scripts.",
-      "insert": "saveinstance()"
+      "description": "Saves the game as a roblox studio file, can be found in the workspace folder.",
+      "insert": "saveinstance"
     },
     "gethiddenproperty": {
-      "label": "gethiddenproperty(Object, PropertyName);",
+      "label": "gethiddenproperty(object, property);",
       "type": "Method",
-      "description": "Attempts to retrieve the value of a hidden or normally inaccessible `PropertyName` (string) from the given `Object` (Instance). May error if the property doesn't exist.",
-      "insert": "gethiddenproperty(game.Lighting, \"Technology\")"
+      "description": "Returns the hidden property Property from Object. Errors if the property does not exist.",
+      "insert": "gethiddenproperty"
     },
     "rconsoleclear": {
       "label": "rconsoleclear();",
       "type": "Method",
-      "description": "Clears all output from the exploit's console window.",
-      "insert": "rconsoleclear()"
+      "description": "Clears the console.",
+      "insert": "rconsoleclear"
     },
     "getgenv": {
       "label": "getgenv();",
       "type": "Method",
-      "description": "Returns the global environment table (`_G`) that is shared across scripts executed by the exploit. This is distinct from a script's local environment or the standard Roblox environment (`getrenv()`).",
-      "insert": "getgenv()"
+      "description": "Returns the environment that will be applied to each script ran by world.",
+      "insert": "getgenv"
     },
     "rconsoleprint": {
-      "label": "rconsoleprint(msg);",
+      "label": "rconsoleprint();",
       "type": "Method",
-      "description": "Prints a `msg` to the exploit's console. Typically does not support rich text formatting like colors.",
-      "insert": "rconsoleprint(\"Hello from rconsoleprint!\")"
+      "description": "Prints message into the console. Does not supports colors.",
+      "insert": "rconsoleprint"
     },
     "rconsoleerr": {
-      "label": "rconsoleerr(msg);",
+      "label": "rconsoleerr();",
       "type": "Method",
-      "description": "Prints an error `msg` to the exploit's console, often prefixed with '[ERROR]' or similar to indicate a problem.",
-      "insert": "rconsoleerr(\"An error occurred.\")"
+      "description": "Errors message into the console.",
+      "insert": "rconsoleerr"
     },
     "getgc": {
-      "label": "getgc(include_tables_userdata);",
+      "label": "getgc();",
       "type": "Method",
-      "description": "Returns a table of all objects currently tracked by Lua's garbage collector. Pass `true` for `include_tables_userdata` to include tables and userdata in the returned list.",
-      "insert": "getgc(true)"
+      "description": "Returns a table containing Lua’s garbage collector.",
+      "insert": "getgc"
     },
     "mousemoverel": {
-      "label": "mousemoverel(deltaX, deltaY);",
+      "label": "mousemoverel(x, y);",
       "type": "Method",
-      "description": "Moves the mouse cursor `deltaX` pixels horizontally and `deltaY` pixels vertically, relative to its current position. Positive `deltaY` moves down.",
-      "insert": "mousemoverel(10, 10)"
+      "description": "Moves the mouse by x and y relative to the mouse’s current position.Keep in mind that a positive y value moves the mouse down.",
+      "insert": "mousemoverel"
     },
     "iscclosure": {
-      "label": "iscclosure(func);",
+      "label": "iscclosure(closure);",
       "type": "Method",
-      "description": "Checks if the provided `func` is a C closure (a function implemented in C/C++). Returns `true` if it is, `false` if it's a Lua closure.",
-      "insert": "iscclosure(print)"
+      "description": "Returns a boolean that tells you if closure is a C closure (true) or a Lua closure (false)",
+      "insert": "iscclosure"
     },
     "keypress": {
       "label": "keypress(keycode);",
       "type": "Method",
-      "description": "Simulates pressing and holding down the key specified by `keycode`. Requires a corresponding `keyrelease(keycode)` to stop. Keycodes from `Enum.KeyCode`.",
-      "insert": "keypress(Enum.KeyCode.W)"
+      "description": "Continuously presses the key indicated by keycode until keyrelease is called with the same keycode.",
+      "insert": "keypress"
     },
     "setfpscap": {
-      "label": "setfpscap(cap_value);",
+      "label": "setfpscap();",
       "type": "Method",
-      "description": "Sets the Roblox client's FPS (Frames Per Second) cap to the specified `cap_value`. `0` often means unlocked FPS. High values may not be achievable.",
-      "insert": "setfpscap(60)"
+      "description": "Sets roblox's fps cap.",
+      "insert": "setfpscap"
     },
     "mouse1press": {
       "label": "mouse1press();",
       "type": "Method",
-      "description": "Simulates pressing and holding down the left mouse button (Mouse1). Use `mouse1release()` to release it.",
-      "insert": "mouse1press()"
+      "description": "Simulates a left mouse button press without releasing it.",
+      "insert": "mouse1press"
     },
     "isrbxactive": {
       "label": "isrbxactive();",
       "type": "Method",
-      "description": "Returns `true` if the Roblox game window is currently the active, focused window on the user's computer, `false` otherwise.",
-      "insert": "isrbxactive()"
+      "description": "Returns true if roblox is focused, otherwise returns false.",
+      "insert": "isrbxactive"
     },
     "setreadonly": {
-      "label": "setreadonly(table_var, is_readonly);",
+      "label": "setreadonly(t, b);",
       "type": "Method",
-      "description": "Sets the read-only status of `table_var` to boolean `is_readonly`. If `true`, attempts to modify the table may be prevented or error, depending on the Lua implementation and exploit capabilities.",
-      "insert": "setreadonly(myTable, true)"
+      "description": "Sets t's readonly value to b.",
+      "insert": "setreadonly"
     },
     "fireclickdetector": {
-      "label": "fireclickdetector(click_detector_instance, distance);",
+      "label": "fireclickdetector(d);",
       "type": "Method",
-      "description": "Triggers a simulated click on the specified `click_detector_instance`. An optional `distance` argument can be provided.",
-      "insert": "fireclickdetector(workspace.PartWithClickDetector.ClickDetector, 10)"
+      "description": "Simulates a click on ClickDetector d.",
+      "insert": "fireclickdetector"
     },
     "mouse2release": {
       "label": "mouse2release();",
       "type": "Method",
-      "description": "Simulates releasing the right mouse button (Mouse2). Typically used after `mouse2press()` to complete a right-click action.",
-      "insert": "mouse2release()"
+      "description": "Simulates the right mouse button being released. This is commonly used after calling mouse2press().",
+      "insert": "mouse2release"
     },
     "isreadonly": {
-      "label": "isreadonly(table_var);",
+      "label": "isreadonly(t);",
       "type": "Method",
-      "description": "Returns `true` if `table_var` is marked as read-only, `false` otherwise.",
-      "insert": "isreadonly(myTable)"
+      "description": "Returns t's read-only condition.",
+      "insert": "isreadonly"
     },
     "mouse2click": {
       "label": "mouse2click();",
       "type": "Method",
-      "description": "Simulates a single click (press and release) of the right mouse button (Mouse2).",
-      "insert": "mouse2click()"
+      "description": "Simulates the right mouse button being clicked one time.",
+      "insert": "mouse2click"
     },
     "writefile": {
       "label": "writefile(filename, data);",
       "type": "Method",
-      "description": "Writes the given string `data` to a file named `filename` in the executor's workspace/scripts folder. Overwrites the file if it already exists.",
-      "insert": "writefile(\"output.txt\", \"This content will be saved to the file.\")"
+      "description": "Writes data to a file called filename in the workspace folder. If the file already exists, the file is overwritten. This function is restricted to the workspace folder.",
+      "insert": "writefile"
     },
     "getreg": {
       "label": "getreg();",
       "type": "Method",
-      "description": "Returns Lua's registry table, a special table used by C code to store Lua values and keep them from being garbage collected. Can be used to access various internal Lua states.",
-      "insert": "getreg()"
+      "description": "Returns the Lua registry table.",
+      "insert": "getreg"
     },
     "setclipboard": {
-      "label": "setclipboard(data_string);",
+      "label": "setclipboard(data);",
       "type": "Method",
-      "description": "Copies the provided `data_string` to the user's system clipboard.",
-      "insert": "setclipboard(\"Text to be copied!\")"
+      "description": "Copies data to the clipboard.",
+      "insert": "setclipboard"
     }
   },
   "debug_library": {
     "debug": {
       "label": "debug",
       "type": "Class",
-      "description": "Provides access to Lua's debug library, offering functions for introspection (like getting info about functions, stack levels) and manipulation of Lua's execution state.",
+      "description": "Debug Library",
       "insert": "debug"
     },
     "debug.setmetatable": {
-      "label": "debug.setmetatable(object, metatable);",
+      "label": "debug.setmetatable(val);",
       "type": "Method",
-      "description": "Sets the metatable of `object` to `metatable`, bypassing the `__metatable` field if present. This allows changing metatables even if they are protected. Use with caution.",
-      "insert": "debug.setmetatable(myObject, newMetatable)"
+      "description": "Retrieve the metatable of value irregardless of value's metatable's __metatable field. Returns nil if it doesn't exist.",
+      "insert": "debug.setmetatable"
     },
     "debug.getmetatable": {
-      "label": "debug.getmetatable(object);",
+      "label": "debug.getmetatable(val);",
       "type": "Method",
-      "description": "Retrieves the metatable of `object`, ignoring any `__metatable` field that might otherwise hide it. Returns `nil` if no metatable is set.",
-      "insert": "debug.getmetatable(myObject)"
+      "description": "Retrieve the metatable of value irregardless of value's metatable's __metatable field. Returns nil if it doesn't exist.",
+      "insert": "debug.getmetatable"
     },
     "debug.profileend": {
       "label": "debug.profileend();",
       "type": "Method",
-      "description": "Stops the currently active profiling session initiated by `debug.profilebegin()` and typically outputs or returns profiling data (e.g., function call counts, execution times).",
-      "insert": "debug.profileend()"
+      "description": "Stops a profile created with debug.profilebegin.",
+      "insert": "debug.profileend"
     },
     "debug.profilebegin": {
-      "label": "debug.profilebegin(label_string);",
+      "label": "debug.profilebegin(label);",
       "type": "Method",
-      "description": "Starts a new profiling session with the given `label_string`. Used to measure performance of code execution between `profilebegin` and `profileend` calls.",
-      "insert": "debug.profilebegin(\"MyScriptProfile\")"
+      "description": "Starts a profiler under the label label.",
+      "insert": "debug.profilebegin"
     },
     "debug.traceback": {
-      "label": "debug.traceback(message_string, stack_level);",
+      "label": "debug.traceback(message, level);",
       "type": "Method",
-      "description": "Returns a string containing a traceback of the current call stack. `message_string` is an optional string to prepend. `stack_level` indicates the stack level to start the traceback from (default is 1, the current function; 2 is the caller, etc.).",
-      "insert": "debug.traceback(\"Error occurred: \", 2)"
+      "description": "Returns a string with a traceback of the call stack at level (stack level 1 if not provided).You can also include a message to append to the start of the traceback with the message argument.",
+      "insert": "debug.traceback"
     },
     "debug.getinfo": {
-      "label": "debug.getinfo(function_or_level, what_string);",
+      "label": "debug.getinfo(f);",
       "type": "Method",
-      "description": "Returns a table with information about a function or stack level. `function_or_level` can be a function or a stack level number. `what_string` specifies what info to retrieve (e.g., 'n':name, 'S':source, 'l':currentline, 'u':nups, 'f':func, 'L':activelines).",
-      "insert": "debug.getinfo(myFunction, \"Slna\")"
+      "description": "Returns a table containing the following information about the function: + source - The name of the script the function was defined in+ what - Where the function originates from (Lua or C/C++)+ func - The passed in function+ short_src - The name of the script in a format that can be used in error messages+ name - The name of the function+ nups - The number of upvalues in the functionAlthough more information is given, that information is pointless since it has the same values for every function.",
+      "insert": "debug.getinfo"
     }
   },
   "drawing_library": {
     "Drawing.new": {
-      "label": "Drawing.new(type_string);",
+      "label": "Drawing.new(type);",
       "type": "Method",
-      "description": "Creates a new drawing object of the specified `type_string` (e.g., 'Line', 'Text', 'Circle', 'Square', 'Image', 'Quad'). Returns the drawing object, which can then be configured (e.g., Color, Position, Visible) and rendered on screen.",
-      "insert": "Drawing.new(\"Line\")"
+      "description": "Creates a new drawing object with type. Returns the object.",
+      "insert": "Drawing.new"
     }
-    "world.dex": {
-      "label": "world.dex();",
-      "type": "Method",
-      "description": "Executes a version of the Dex Explorer (often V4 Dark or similar), a popular in-game instance explorer and property viewer/editor, allowing real-time inspection and modification of the game's DataModel.",
-      "insert": "loadstring(game:HttpGet(\"https://raw.githubusercontent.com/AlterX404/DarkDEX-V5/refs/heads/main/DarkDEX-V5\", true))()"
-    },
-    "world.lua_ui": {
-      "label": "world.lua_ui();",
-      "type": "Method",
-      "description": "Loads and executes the main graphical user interface (GUI) for the 'world' exploit, providing access to its various features, scripts, and settings.",
-      "insert": "loadstring(game:HttpGet(\"https://raw.githubusercontent.com/katdevelopments/Worldd/refs/heads/main/worldluagui\", true))()"
-    }
+  },
+  "world.dex": {
+    "label": "world.dex();",
+    "type": "Method",
+    "description": "Runs dex explorer V4 Dark.",
+    "insert": "loadstring(game:HttpGet(\"https://raw.githubusercontent.com/AlterX404/DarkDEX-V5/refs/heads/main/DarkDEX-V5", true))()"
+  },
+  "world.lua_ui": {
+    "label": "world.lua_ui();",
+    "type": "Method",
+    "description": "Enables world's lua ui with lots of features!",
+    "insert": "loadstring(game:HttpGet(\"https://raw.githubusercontent.com/katdevelopments/Worldd/refs/heads/main/worldluagui\", true))()"
   }
 }
