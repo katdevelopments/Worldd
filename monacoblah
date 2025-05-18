@@ -433,12 +433,6 @@
         "description": "Calculates the distance between two players.",
         "insert": "world.get_distance"
     },
-    "world.enable_internal": {
-        "label": "world.enable_internal();",
-        "type": "Method",
-        "description": "0Enables world's internal UI.",
-        "insert": "loadstring(game:HttpGet("https://raw.githubusercontent.com/katdevelopments/Worldd/refs/heads/main/worldluagui", true))()"
-    },
     "world.enable_antilogger": {
         "label": "world.enable_antilogger();",
         "type": "Method",
@@ -468,6 +462,12 @@
         "type": "Method",
         "description": "Runs dex explorer V4 Dark.",
         "insert": "world.dex"
+    },
+    "world.lua_ui": {
+        "label": "world.lua_ui();",
+        "type": "Method",
+        "description": "Enables world's lua ui with lots of features!",
+        "insert": "world.enable_internal"
     }
 }
 }
