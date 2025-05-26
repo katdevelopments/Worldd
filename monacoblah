@@ -395,7 +395,7 @@
         "label": "world.lua()",
         "type": "Method",
         "description": "Starts up the World Lua Gui made by Kat.",
-        "insert": "world.worldlua()"
+        "insert": "world.lua()"
     },
     "world.unctester": {
         "label": "world.unctester()",
