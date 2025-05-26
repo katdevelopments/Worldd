@@ -397,10 +397,16 @@
         "description": "Starts up the World Lua Gui made by Kat.",
         "insert": "world.worldlua"
     },
+    "world.unctester": {
+        "label": "world.unctester()",
+        "type": "Method",
+        "description": "Starts up the World Unc Tester made by Kat.",
+        "insert": "world.unctester"
+    },
     "world.dex": {
         "label": "world.dex()",
         "type": "Method",
-        "description": "Runs dex explorer V4 Dark.",
+        "description": "Runs dex explorer V4 Dark by Moon and Courtney (World Official Dex Coming Soon).",
         "insert": "world.dex"
     }
 }
