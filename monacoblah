@@ -395,19 +395,31 @@
         "label": "world.lua()",
         "type": "Method",
         "description": "Starts up the World Lua Gui made by Kat.",
-        "insert": "world.worldlua"
+        "insert": "world.worldlua()"
     },
     "world.unctester": {
         "label": "world.unctester()",
         "type": "Method",
         "description": "Starts up the World Unc Tester made by Kat.",
-        "insert": "world.unctester"
+        "insert": "world.unctester()"
+    },
+    "world.infiniteyield": {
+        "label": "world.infiniteyield()",
+        "type": "Method",
+        "description": "Starts up Infinite Yield made by EdgeIY.",
+        "insert": "world.infiniteyield()"
+    },
+    "world.orca": {
+        "label": "world.orca()",
+        "type": "Method",
+        "description": "Starts up Orca made by richie0866.",
+        "insert": "world.orca()"
     },
     "world.dex": {
         "label": "world.dex()",
         "type": "Method",
         "description": "Runs dex explorer V4 Dark by Moon and Courtney (World Official Dex Coming Soon).",
-        "insert": "world.dex"
+        "insert": "world.dex()"
     }
 }
 }
