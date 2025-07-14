@@ -1,7 +1,42 @@
--- WORLD LUA
--- USEWORLD.XYZ
+--[[
 
-print("WORLD LUA *https://useworld.xyz")
+Sirius
+
+© 2024 Sirius 
+All Rights Reserved.
+
+--]]
+
+
+--[[
+
+Sirius Pre-Hyperion Todo List
+
+High Priority
+ - Invisible, Godmode
+ - All Scripts buttons and Universal scripts
+ - Chat Spam Detection
+ - Custom Script Prompts
+ - Player Kill, Spectate and ESP via Playerlist
+ - http.request support for Sirius Intelligent HTTP Interception
+ - Performance Improvements to Roblox itself
+ 
+Moderate Priority
+ - Spectate Animation, like GTA serverhop, tween to high in the sky, then tween to other player's head
+ - Chat Spy Tracking: Follows who they're whispering to based on original message
+ - Starlight 
+ - Chatlogs
+ - GTA Serverhop
+ - Anti-Spam (chat) formula, based on text length, caps, emojis etc.
+ - Reduce any form of detection of Sirius
+ - Automated lowering of graphics on lower FPS, ensure no false positives
+ 
+Potential Future Setting Options
+ - Block entire domain or just the specific page in the Sirius Intelligent Flow Interception. Do this on case by case, e.g blocked = {"link.com", true} - true being whether its the domain or not
+ - Serverhop type (default/gta)
+ - Hook Specific Functions to reduce the need for external scripts
+ 
+--]]
 
 -- Ensure the game is loaded 
 if not game:IsLoaded() then
@@ -9,7 +44,7 @@ if not game:IsLoaded() then
 end
 
 -- Check License Tier
-local Pro = true
+local Pro = true -- We're open sourced now!
 
 -- Create Variables for Roblox Services
 local coreGui = game:GetService("CoreGui")
