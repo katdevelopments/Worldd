@@ -7,7 +7,7 @@ if not game:IsLoaded() then
 end
 
 -- Check License Tier
-local Pro = true -- We're open sourced now!
+local Pro = true
 
 -- Create Variables for Roblox Services
 local coreGui = game:GetService("CoreGui")
