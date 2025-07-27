@@ -208,6 +208,7 @@ runButton.Name = "RunButton"; runButton.Size = UDim2.new(0, 80, 1, -10); runButt
 --================================--
 
 function showTutorial()
+Instance.new("Sound", workspace).SoundId = "rbxassetid://107442475858573"; workspace.Sound:Play()
     tutorialShown = true
     
     local tutorialFrame = Instance.new("Frame", screenGui)
@@ -250,6 +251,7 @@ function showTutorial()
     local currentPage = 1
     
     local function updatePage()
+    Instance.new("Sound", workspace).SoundId = "rbxassetid://88715645147215"; workspace.Sound:Play()
         local pageData = pages[currentPage]
         tutTitle.Text = pageData.Title
         pageIndicator.Text = currentPage .. "/" .. #pages
@@ -265,6 +267,7 @@ function showTutorial()
     end
     
     local function closeTutorial()
+    Instance.new("Sound", workspace).SoundId = "rbxassetid://102054568266724"; workspace.Sound:Play()
         if not tutorialFrame.Parent then return end
         local tween = TweenService:Create(tutorialFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Size = UDim2.new(0,0,0,0)})
         tween:Play()
@@ -280,6 +283,7 @@ function showTutorial()
 end
 
 function toggleConsole()
+Instance.new("Sound", workspace).SoundId = "rbxassetid://88715645147215"; workspace.Sound:Play()
     isVisible = not isVisible
     
     local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
@@ -317,6 +321,7 @@ function toggleConsole()
 end
 
 function toggleMinimize()
+Instance.new("Sound", workspace).SoundId = "rbxassetid://88715645147215"; workspace.Sound:Play()
     isMinimized = not isMinimized
     local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
     
@@ -352,6 +357,7 @@ function toggleMinimize()
 end
 
 function maximizeConsole()
+Instance.new("Sound", workspace).SoundId = "rbxassetid://88715645147215"; workspace.Sound:Play()
     isMaximized = not isMaximized
     local tweenInfo = TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
     
@@ -382,6 +388,7 @@ function updateScrollCanvas()
 end
 
 function clearLogs()
+Instance.new("Sound", workspace).SoundId = "rbxassetid://77985512666301"; workspace.Sound:Play()
     for _, child in ipairs(logContainer:GetChildren()) do
         if child:IsA("Frame") then child:Destroy() end
     end
@@ -389,6 +396,7 @@ function clearLogs()
 end
 
 function refreshLogs()
+Instance.new("Sound", workspace).SoundId = "rbxassetid://88715645147215"; workspace.Sound:Play()
     clearLogs()
     for _, entry in ipairs(LogService:GetLogHistory()) do
         log(entry.message, tostring(entry.messageType):gsub("Message", ""))
@@ -474,6 +482,7 @@ function log(message, messageType)
 end
 
 function executeCommand()
+Instance.new("Sound", workspace).SoundId = "rbxassetid://88715645147215"; workspace.Sound:Play()
     local command = inputBox.Text
     if command:gsub("%s", "") == "" then return end
     
