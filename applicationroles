@@ -1,18 +1,22 @@
 [
   {
     "RoleId": "1324122563164770364",
-    "RoleName": "Owner"
-  },
-  {
-    "RoleId": "1324120724318978048",
-    "RoleName": "Developer"
+    "RoleName": "Owner",
+    "Priority": 1
   },
   {
     "RoleId": "YOUR_STAFF_ROLE_ID",
-    "RoleName": "Staff"
+    "RoleName": "Staff",
+    "Priority": 5
+  },
+  {
+    "RoleId": "YOUR_DEVELOPER_ROLE_ID",
+    "RoleName": "Developer",
+    "Priority": 10
   },
   {
     "RoleId": "YOUR_TESTER_ROLE_ID",
-    "RoleName": "Tester"
+    "RoleName": "Tester",
+    "Priority": 20
   }
 ]
