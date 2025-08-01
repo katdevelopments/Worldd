@@ -1,22 +1,18 @@
 [
+  //OWNERS
   {
-    "RoleId": "1324122563164770364",
+    "UserId": "1128435622076489748",//kat
     "RoleName": "Owner",
     "Priority": 1
   },
   {
-    "RoleId": "YOUR_STAFF_ROLE_ID",
-    "RoleName": "Staff",
-    "Priority": 5
-  },
-  {
-    "RoleId": "YOUR_DEVELOPER_ROLE_ID",
-    "RoleName": "Developer",
+    "UserId": "ANOTHER_USER_ID",//corrupted
+    "RoleName": "S Developer",
     "Priority": 10
   },
   {
-    "RoleId": "YOUR_TESTER_ROLE_ID",
-    "RoleName": "Tester",
-    "Priority": 20
+    "UserId": "YET_ANOTHER_USER_ID",
+    "RoleName": "Staff",
+    "Priority": 5
   }
 ]
