@@ -26,11 +26,45 @@
   {
     "UserId": "1125069435800133692",//tizzu
     "RoleName": "Staff",
-  }
+  },
+//PARTNERS
+  {
+    "UserId": "1233529133594841119",//universe king
+    "RoleName": "Partner",
+  },
+  {
+    "UserId": "895217684613038110",//capybara
+    "RoleName": "Partner",
+  },
+  {
+    "UserId": "813076408414240839",//golddeathninja
+    "RoleName": "Partner",
+  },
+  {
+    "UserId": "1311360259847229472",//irisk
+    "RoleName": "Partner",
+  },
+  {
+    "UserId": "1148592855435182201",//scarlet
+    "RoleName": "Partner",
+  },
+  {
+    "UserId": "1271502925835014151",//skidware
+    "RoleName": "Partner",
+  },
+  {
+    "UserId": "1311518450983763972",//suffered
+    "RoleName": "Partner",
+  },
 //TESTERS
 //none
 //CONTENT CREATORS
 //none
 //BOOSTERS
 //none
+//OTHER
+  {
+    "UserId": "1389454119479279656",//kie
+    "RoleName": "💖",
+  },
 ]
