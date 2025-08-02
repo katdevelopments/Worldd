@@ -1,18 +1,36 @@
 [
-  //OWNERS
+//OWNERS
   {
     "UserId": "1128435622076489748",//kat
-    "RoleName": "Owner",
-    "Priority": 1
+    "RoleName": "Admin",
   },
   {
-    "UserId": "ANOTHER_USER_ID",//corrupted
+    "UserId": "1215148880052625478",//zinko
+    "RoleName": "Admin",
+  },
+//SECURITY
+  {
+    "UserId": "1233013312220827739",//Joe
+    "RoleName": "Security",
+  },
+//DEVELOPERS
+  {
+    "UserId": "1058763878722449450",//corrupted
     "RoleName": "S Developer",
-    "Priority": 10
+  },
+//STAFF TEAM
+  {
+    "UserId": "795719784544600114",//ilyslur
+    "RoleName": "Admin",
   },
   {
-    "UserId": "YET_ANOTHER_USER_ID",
+    "UserId": "1125069435800133692",//tizzu
     "RoleName": "Staff",
-    "Priority": 5
   }
+//TESTERS
+//none
+//CONTENT CREATORS
+//none
+//BOOSTERS
+//none
 ]
