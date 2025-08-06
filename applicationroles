@@ -14,10 +14,7 @@
     "RoleName": "Security"
   },
   // DEVELOPERS
-  {
-    "UserId": "1058763878722449450", // corrupted
-    "RoleName": "S Developer"
-  },
+  //none
   // STAFF TEAM
   {
     "UserId": "795719784544600114", // ilyslur
