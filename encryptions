@@ -1,0 +1,26 @@
+#define PROTO_MEMBER1_ENC LuaVMValue0   /* luaF_freeproto */
+#define PROTO_MEMBER2_ENC LuaVMValue4   /* luaF_freeproto */
+#define PROTO_DEBUGISN_ENC LuaVMValue3  /* luaF_freeproto */
+#define PROTO_TYPEINFO_ENC LuaVMValue1  /* luaF_freeproto */
+#define PROTO_DEBUGNAME_ENC LuaVMValue2 /* luaF_newproto */
+
+#define LSTATE_STACKSIZE_ENC LuaVMValue1 /* can be bruteforced via global state */
+#define LSTATE_GLOBAL_ENC LuaVMValue0    /* can be bruteforced via global state */
+
+/* lua_openbase ( "ipairs", "pairs", "xpcall", "pcall" ) -> lua_pushcclosurek */
+#define CLOSURE_FUNC_ENC LuaVMValue0 /* can be bruteforced via lua_pcall */
+#define CLOSURE_CONT_ENC LuaVMValue3 /* can be bruteforced via yielding */
+#define CLOSURE_DEBUGNAME_ENC LuaVMValue4
+
+/* luaL_getmetafield ( "__metatable" ) */
+#define TABLE_MEMBER_ENC LuaVMValue0
+#define TABLE_META_ENC LuaVMValue0
+
+/* luaL_getmetafield ( "__metatable" ) */
+#define UDATA_META_ENC LuaVMValue3
+
+#define TSTRING_HASH_ENC LuaVMValue2 /* can be bruteforced using lua_pushstring */
+#define TSTRING_LEN_ENC LuaVMValue0  /* can be bruteforced via global state */
+
+#define GSTATE_TTNAME_ENC LuaVMValue0
+#define GSTATE_TMNAME_ENC LuaVMValue0
