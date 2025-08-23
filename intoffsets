@@ -1,4 +1,20 @@
 // Roblox Version: version-89b6c70d8f7f42ac
+// Functions 1
+constexpr uintptr_t callbackvalue_f    = (0x88);
+constexpr uintptr_t require_lock       = (0x7E8);
+constexpr uintptr_t overlap            = (0x280);
+
+constexpr uintptr_t SCResume           = (0x720);
+constexpr uintptr_t get_set            = (0xA0);
+constexpr uintptr_t class_desc         = (0x18);
+constexpr uintptr_t flag_f             = (0x50);
+
+constexpr uintptr_t PropDescriptor     = (0x3C0);
+constexpr uintptr_t ttype              = (0x58);
+constexpr uintptr_t type_number        = (0x40);
+
+// Roblox Version: version-89b6c70d8f7f42ac
+// Functions 2
 #pragma once
 
 #include <Windows.h>
