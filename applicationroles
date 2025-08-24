@@ -26,6 +26,14 @@
   },
   // PARTNERS
   {
+    "UserId": "1107780328837353605", // ippo nitrix owner
+    "RoleName": "Partner"
+  },
+  {
+    "UserId": "912430550130774046", // nytrix partner manager
+    "RoleName": "Partner"
+  },
+  {
     "UserId": "1233529133594841119", // universe king
     "RoleName": "Partner"
   },
@@ -60,8 +68,4 @@
   // BOOSTERS
   // none
   // OTHER
-  {
-    "UserId": "1389454119479279656", // kie
-    "RoleName": "My Slave 💖"
-  }
 ]
