@@ -1044,7 +1044,7 @@ local function undoAnonymousChanges()
 end
 
 local function createEsp(player)
-	if player == localPlayer or not checkSirius() then 
+	if player == localPlayer or not checkSirius() then
 		return
 	end
 
@@ -3710,7 +3710,7 @@ end
 
 local function initialiseAntiKick()
 	if checkSetting("Client-Based Anti Kick").current then
-		if hookmetamethod then 
+		if hookmetamethod then
 			local originalIndex
 			local originalNamecall
 
