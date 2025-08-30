@@ -1,3 +1,4 @@
+/* Dumped By V4Dumper in 1.212 */
 #pragma once
 #include <cstdint>
 
@@ -13,76 +14,77 @@ namespace Shuffles {
     #define LUAU_SHUFFLE6(s, a1, a2, a3, a4, a5, a6) a4 s a1 s a6 s a5 s a2 s a3
     #define LUAU_SHUFFLE7(s, a1, a2, a3, a4, a5, a6, a7) a7 s a2 s a6 s a3 s a5 s a4 s a1
     #define LUAU_SHUFFLE8(s, a1, a2, a3, a4, a5, a6, a7, a8) a1 s a7 s a3 s a8 s a5 s a6 s a4 s a2
+    #define LUAU_SHUFFLE9(s, a1, a2, a3, a4, a5, a6, a7, a8, a9) a4 s a5 s a9 s a8 s a7 s a6 s a1 s a3 s a2
 }
 namespace Offsets {
-    const uintptr_t Print               = REBASE(0x14f0450);
-    const uintptr_t Luau_Execute        = REBASE(0x276A0A0);
-    const uintptr_t FireMouseClick      = REBASE(0xAB9C00);
-    const uintptr_t luaL_errorL              = REBASE(0x2728F10);
-    const uintptr_t luaF_freeproto           = REBASE(0x278EA20);
-    const uintptr_t luaF_newproto            = REBASE(0x278E550);
-    const uintptr_t luaL_argerrorL           = REBASE(0x2728400);
-    const uintptr_t luaL_typeerrorL          = REBASE(0x2728480);
-    const uintptr_t luaL_findtable           = REBASE(0x272CE30);
-    const uintptr_t luaL_where               = REBASE(0x27285A0);
-    // luaL_getmetafield not found
-    const uintptr_t luaL_register            = REBASE(0x272BF60);
-    const uintptr_t luaG_runerrorL           = REBASE(0x273AEC0);
-    const uintptr_t luaO_pushvfstring        = REBASE(0x27276E0);
-    const uintptr_t luaD_throw               = REBASE(0x2736F20);
-    const uintptr_t luaD_rawrunprotected     = REBASE(0x2736EF0);
-    const uintptr_t luau_execute             = REBASE(0x276A0A0);
-    const uintptr_t LuaC_step                = REBASE(0x27367F0);
-    const uintptr_t luaL_checklstring        = REBASE(0x272A1C0);
-    const uintptr_t LuaVMLoad                = REBASE(0xB8D640);
-    const uintptr_t newpage                  = REBASE(0x277F1E0);
-    const uintptr_t newclasspage             = REBASE(0x277F290);
-    const uintptr_t freeclasspage            = REBASE(0x277F300);
-    const uintptr_t newblock                 = REBASE(0x277F3A0);
-    const uintptr_t newgcoblock              = REBASE(0x277F430);
-    const uintptr_t freeblock                = REBASE(0x277F4D0);
-    const uintptr_t luaM_free                = REBASE(0x277F580);
-    const uintptr_t luaM_freegco             = REBASE(0x277F600);
-    const uintptr_t luaM_visitgco            = REBASE(0x277F720);
-    const uintptr_t close_state              = REBASE(0x273C230);
-    const uintptr_t lua_newstate             = REBASE(0x273C8D0);
-    const uintptr_t f_luaopen                = REBASE(0x273B510);
-    const uintptr_t lua_rawcheckstack        = REBASE(0x2726D30);
-    const uintptr_t GetLuaState              = REBASE(0xB89310);
-    const uintptr_t GetGlobalState           = REBASE(0xB89310);
-    const uintptr_t ScriptContextResume      = REBASE(0xE0F060);
-    const uintptr_t Encrypt_State            = REBASE(0xDFE430);
-    const uintptr_t Impersonator             = REBASE(0x354C620);
-    const uintptr_t PushInstance             = REBASE(0xED7460);
-    const uintptr_t PushInstance2            = REBASE(0xED74B0);
-    const uintptr_t GetIdentityStruct        = REBASE(0x3A58230);
-    const uintptr_t SetFFlag                 = REBASE(0x3A78C10);
-    const uintptr_t GetFFlag                 = REBASE(0x3A78130);
-    const uintptr_t get_capabilites          = REBASE(0x354C570);
-    const uintptr_t SetProtoCapabilities     = REBASE(0xCA40F0);
-    const uintptr_t FireTouchInterest        = REBASE(0x1E5BAD0);
-    const uintptr_t FireProximityPrompt      = REBASE(0x1D05DD0);
-    const uintptr_t RaiseEventInvocation     = REBASE(0x14A14C0);
-    const uintptr_t task_spawn               = REBASE(0x1028470);
-    const uintptr_t task_delay               = REBASE(0x1027AA0);
-    const uintptr_t task_defer               = REBASE(0x1028110);
-    // TaskSynchronize not found
-    const uintptr_t currfuncname             = REBASE(0x2728380);
-    const uintptr_t luaA_toobject            = REBASE(0x27265E0);
-    const uintptr_t luaT_objtypenamestr      = REBASE(0x278E3A0);
-    const uintptr_t lua_pushvfstring         = REBASE(0x27276E0);
-    const uintptr_t pseudo2addr              = REBASE(0x2726520);
-    const uintptr_t auxopen                  = REBASE(0x274A8E0);
-    // luaopen_base not found
-    const uintptr_t Register                 = REBASE(0x272BF60);
-    const uintptr_t CastArgs                 = REBASE(0xC10060);
-    const uintptr_t Print                    = REBASE(0x14F0450);
-    const uintptr_t GetAssemblyPrimitive     = REBASE(0x5D0EE0);
-    const uintptr_t GetContextObject         = REBASE(0xE176E0);
-    const uintptr_t GetValues                = REBASE(0xC10060);
-    const uintptr_t GetModuleFromVMStateMap  = REBASE(0xF353F0);
-    const uintptr_t VariantCastInt64         = REBASE(0x14AF630);
-    const uintptr_t VariantCastInt           = REBASE(0x14AF420);
-    const uintptr_t VariantCastFloat         = REBASE(0x14AFA70);
+    const uintptr_t Print               = REBASE(0x14f0590);
+    const uintptr_t Luau_Execute        = REBASE(0x276A1E0);
+    const uintptr_t FireMouseClick      = REBASE(0xAB9D40);
+    const uintptr_t AppDataInfo      = REBASE(0x703A418);
+// Tasksmth failed ig, this was updated after the dump!!!
+    const uintptr_t luaL_errorL              = REBASE(0x2729050);
+    const uintptr_t luaF_freeproto           = REBASE(0x278EB60);
+    const uintptr_t luaF_newproto            = REBASE(0x278E690);
+    const uintptr_t luaL_argerrorL           = REBASE(0x2728540);
+    const uintptr_t luaL_typeerrorL          = REBASE(0x27285C0);
+    const uintptr_t luaL_findtable           = REBASE(0x272CF70);
+    const uintptr_t luaL_where               = REBASE(0x27286E0);
+// luaL_getmetafield not found
+    const uintptr_t luaL_register            = REBASE(0x272C0A0);
+    const uintptr_t luaG_runerrorL           = REBASE(0x273B000);
+    const uintptr_t luaO_pushvfstring        = REBASE(0x2727820);
+    const uintptr_t luaD_throw               = REBASE(0x2737060);
+    const uintptr_t luaD_rawrunprotected     = REBASE(0x2737030);
+    const uintptr_t luau_execute             = REBASE(0x276A1E0);
+    const uintptr_t LuaC_step                = REBASE(0x2736930);
+    const uintptr_t luaL_checklstring        = REBASE(0x272A300);
+    const uintptr_t LuaVMLoad                = REBASE(0xB8D780);
+    const uintptr_t newpage                  = REBASE(0x277F320);
+    const uintptr_t newclasspage             = REBASE(0x277F3D0);
+    const uintptr_t freeclasspage            = REBASE(0x277F440);
+    const uintptr_t newblock                 = REBASE(0x277F4E0);
+    const uintptr_t newgcoblock              = REBASE(0x277F570);
+    const uintptr_t freeblock                = REBASE(0x277F610);
+    const uintptr_t luaM_free                = REBASE(0x277F6C0);
+    const uintptr_t luaM_freegco             = REBASE(0x277F740);
+    const uintptr_t luaM_visitgco            = REBASE(0x277F860);
+    const uintptr_t close_state              = REBASE(0x273C370);
+    const uintptr_t lua_newstate             = REBASE(0x273CA10);
+    const uintptr_t f_luaopen                = REBASE(0x273B650);
+    const uintptr_t lua_rawcheckstack        = REBASE(0x2726E70);
+    const uintptr_t GetLuaState              = REBASE(0xB89450);
+    const uintptr_t GetGlobalState           = REBASE(0xB89450);
+    const uintptr_t ScriptContextResume      = REBASE(0xE0F1A0);
+    const uintptr_t Encrypt_State            = REBASE(0xDFE570);
+    const uintptr_t Impersonator             = REBASE(0x354C760);
+    const uintptr_t PushInstance             = REBASE(0xED75A0);
+    const uintptr_t PushInstance2            = REBASE(0xED75F0);
+    const uintptr_t GetIdentityStruct        = REBASE(0x3A58370);
+    const uintptr_t SetFFlag                 = REBASE(0x3A78D50);
+    const uintptr_t GetFFlag                 = REBASE(0x3A78270);
+    const uintptr_t get_capabilites          = REBASE(0x354C6B0);
+    const uintptr_t SetProtoCapabilities     = REBASE(0xCA4230);
+    const uintptr_t FireTouchInterest        = REBASE(0x1E5BC10);
+    const uintptr_t FireProximityPrompt      = REBASE(0x1D05F10);
+    const uintptr_t RaiseEventInvocation     = REBASE(0x14A1600);
+    const uintptr_t task_spawn               = REBASE(0x10285B0);
+    const uintptr_t task_delay               = REBASE(0x1027BE0);
+    const uintptr_t task_defer               = REBASE(0x1028250);
+    const uintptr_t currfuncname             = REBASE(0x27284C0);
+    const uintptr_t luaA_toobject            = REBASE(0x2726720);
+    const uintptr_t luaT_objtypenamestr      = REBASE(0x278E4E0);
+    const uintptr_t lua_pushvfstring         = REBASE(0x2727820);
+    const uintptr_t pseudo2addr              = REBASE(0x2726660);
+    const uintptr_t auxopen                  = REBASE(0x274AA20);
+// luaopen_base not found
+    const uintptr_t Register                 = REBASE(0x272C0A0);
+    const uintptr_t CastArgs                 = REBASE(0xC101A0);
+    const uintptr_t Print                    = REBASE(0x14F0590);
+    const uintptr_t GetAssemblyPrimitive     = REBASE(0x5D0F00);
+    const uintptr_t GetContextObject         = REBASE(0xE17820);
+    const uintptr_t GetValues                = REBASE(0xC101A0);
+    const uintptr_t GetModuleFromVMStateMap  = REBASE(0xF35530);
+    const uintptr_t VariantCastInt64         = REBASE(0x14AF770);
+    const uintptr_t VariantCastInt           = REBASE(0x14AF560);
+    const uintptr_t VariantCastFloat         = REBASE(0x14AFBB0);
 }
-/* Dumped By V4Dumper in 1.330 */
