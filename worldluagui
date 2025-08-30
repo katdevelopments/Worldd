@@ -3716,7 +3716,7 @@ local function initialiseAntiKick()
 
 			originalIndex = hookmetamethod(game, "__index", function(self, method)
 				if self == localPlayer and method:lower() == "kick" and checkSetting("Client-Based Anti Kick").current and checkSirius() then
-					queueNotification("Kick Prevented", "World has prevented you from being kicked by the client. *You can rejoin but you will not be injected if auto inject is off.", 4400699701)
+					queueNotification("Kick Prevented", "World has prevented you from being kicked by the client.", 4400699701)
 					return error("Expected ':' not '.' calling member function Kick", 2)
 				end
 				return originalIndex(self, method)
@@ -3724,7 +3724,7 @@ local function initialiseAntiKick()
 
 			originalNamecall = hookmetamethod(game, "__namecall", function(self, ...)
 				if self == localPlayer and getnamecallmethod():lower() == "kick" and checkSetting("Client-Based Anti Kick").current and checkSirius() then
-					queueNotification("Kick Prevented", "World has prevented you from being kicked by the client. *You can rejoin but you will not be injected if auto inject is off.", 4400699701)
+					queueNotification("Kick Prevented", "World has prevented you from being kicked by the client.", 4400699701)
 					return
 				end
 				return originalNamecall(self, ...)
@@ -4512,7 +4512,7 @@ while task.wait(1) do
 			})
 		elseif disconnectType == "kick" then
 			disconnectedPrompt.Content.Text = "You've been kicked, would you like to serverhop? *You can serverhop but you will not be injected if auto inject is off."
-			disconnectedPrompt.Action.Text = "Serverhop"
+			disconnectedPrompt.Action.Text = "Attempt Serverhop"
 			disconnectedPrompt.Action.Size = UDim2.new(0, 114, 0, 36)
 
 			disconnectedPrompt.UIGradient.Color = ColorSequence.new({
@@ -4521,7 +4521,7 @@ while task.wait(1) do
 			})
 		elseif disconnectType == "network" then
 			disconnectedPrompt.Content.Text = "You've lost connection, would you like to rejoin? *You can rejoin but you will not be injected if auto inject is off."
-			disconnectedPrompt.Action.Text = "Rejoin"
+			disconnectedPrompt.Action.Text = "Attempt Rejoin"
 			disconnectedPrompt.Action.Size = UDim2.new(0, 82, 0, 36)
 
 			disconnectedPrompt.UIGradient.Color = ColorSequence.new({
