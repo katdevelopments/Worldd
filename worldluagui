@@ -416,7 +416,7 @@ local siriusSettings = {
 			},
 			{
 				name = 'Client-Based Anti Kick',
-				description = 'Cancel any kick request involving you sent by the client. This may prompt detection from Adonis or similar anti-cheats. *You can rejoin but you will not be injected if auto inject is off.',
+				description = 'Cancel any kick request involving you sent by the client. This may prompt detection from Adonis or similar anti-cheats.',
 				settingType = 'Boolean',
 				current = false,
 
