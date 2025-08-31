@@ -70,7 +70,10 @@
     "RoleName": "Partner"
   },
   // TESTERS
-  // none
+  {
+    "UserId": "1354955202523955290", // drew
+    "RoleName": "Tester"
+  },
   // CONTENT CREATORS
   // none
   // BOOSTERS
