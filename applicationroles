@@ -76,4 +76,8 @@
   // BOOSTERS
   // none
   // OTHER
+  {
+    "UserId": "1388801964225073236", // final
+    "RoleName": "Blacklisted"
+  }
 ]
