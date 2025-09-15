@@ -71,6 +71,10 @@
   },
   // TESTERS
   {
+    "UserId": "1253492722048958564", // eternal
+    "RoleName": "Tester"
+  },
+  {
     "UserId": "1354955202523955290", // drew
     "RoleName": "Tester"
   },
