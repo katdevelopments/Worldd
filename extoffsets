@@ -164,3 +164,5 @@ namespace offsets {
     inline constexpr uintptr_t WorkspaceToWorld = 0x3D8;
     inline constexpr uintptr_t viewmatrix = 0x4B0;
 }
+
+// Dump by: @ntopenprocess
