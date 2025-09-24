@@ -1,3 +1,5 @@
+// Roblox Version: version-f6cd26d0e71b47c9 (LIVE)
+// Byfron Version(s): [hyperion-secured] [yara-secured]
 #define LUAU_SHUFFLE3(sep, a1, a2, a3) a1 sep a2 sep a3
 #define LUAU_SHUFFLE4(sep, a1, a2, a3, a4) a1 sep a2 sep a4 sep a3
 #define LUAU_SHUFFLE5(sep, a1, a2, a3, a4, a5) a3 sep a1 sep a2 sep a5 sep a4
