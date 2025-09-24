@@ -1,4 +1,6 @@
 // Roblox Version: version-f6cd26d0e71b47c9 (LIVE)
+// Byfron Version(s): [hyperion-secured] [yara-secured]
+namespace offsets {
 // FUNCIONS:
 
 constexpr uintptr_t callbackvalue_f    = (0x88);
