@@ -1,7 +1,7 @@
-#define LUAU_SHUFFLE3(sep, a1, a2, a3) a2 sep a3 sep a1
+#define LUAU_SHUFFLE3(sep, a1, a2, a3) a1 sep a2 sep a3
 #define LUAU_SHUFFLE4(sep, a1, a2, a3, a4) a1 sep a2 sep a4 sep a3
-#define LUAU_SHUFFLE5(sep, a1, a2, a3, a4, a5) a1 sep a5 sep a2 sep a3 sep a4
-#define LUAU_SHUFFLE6(sep, a1, a2, a3, a4, a5, a6) a4 sep a1 sep a6 sep a5 sep a3 sep a2
-#define LUAU_SHUFFLE7(sep, a1, a2, a3, a4, a5, a6, a7) a7 sep a3 sep a6 sep a4 sep a2 sep a1 sep a5
-#define LUAU_SHUFFLE8(sep, a1, a2, a3, a4, a5, a6, a7, a8) a1 sep a8 sep a4 sep a6 sep a2 sep a7 sep a5 sep a3
-#define LUAU_SHUFFLE9(sep, a1, a2, a3, a4, a5, a6, a7, a8, a9) a1 sep a5 sep a3 sep a2 sep a4 sep a9 sep a8 sep a7 sep a6
+#define LUAU_SHUFFLE5(sep, a1, a2, a3, a4, a5) a3 sep a1 sep a2 sep a5 sep a4
+#define LUAU_SHUFFLE6(sep, a1, a2, a3, a4, a5, a6) a2 sep a6 sep a1 sep a5 sep a4 sep a3
+#define LUAU_SHUFFLE7(sep, a1, a2, a3, a4, a5, a6, a7) a7 sep a5 sep a6 sep a3 sep a1 sep a2 sep a4
+#define LUAU_SHUFFLE8(sep, a1, a2, a3, a4, a5, a6, a7, a8) a6 sep a3 sep a7 sep a1 sep a5 sep a4 sep a2 sep a8
+#define LUAU_SHUFFLE9(sep, a1, a2, a3, a4, a5, a6, a7, a8, a9) a7 sep a4 sep a6 sep a9 sep a1 sep a8 sep a2 sep a5 sep a3
