@@ -3,46 +3,45 @@
 // Roblox version: 2.692.0.843
 //
 
-job_start -> 0x2bf50dc // CORRECT
-job_stop -> 0x2bf543c // CORRECT
-print -> 0x2b9ac8c // CORRECT
-rbx_crash -> 0x6a9ba10 // CORRECT
-getfflag -> 0x2b1ffc8 // CORRECT
-setfflag -> 0x3f8c07c // CORRECT
-task.spawn -> 0x2c1370c // CORRECT
-task.delay -> 0x2fd2590 // CORRECT
-task.defer -> 0x2f03010 // CORRECT
-fireproximityprompt -> 0x4a6f47c // CORRECT
-firetouchinterest -> 0x55a52d8 // CORRECT
-resume_waiting_scripts -> 0x3dea300 // CORRECT
-script_context_resume -> 0x2ed3010 // CORRECT
-get_lua_state -> 0x2ecd218 // CORRECT
-luau_load -> 0x2ed0130 // CORRECT
-bytecode_validator -> 0x2ed1444 // CORRECT
-enable_load_module -> 0x72bfc70 // CORRECT
-ktable -> 0x7ce5478 // CORRECT
-newthread -> 0x2ecd740 // CORRECT
-luavm_load -> 0x2ecf9bc // CORRECT
-create_proto_capabilities -> 0x2ecf3fc // CORRECT
-push_instance -> 0x2ec2154 // CORRECT
-on_game_leave -> 0x31f4014 // CORRECT
-on_game_loaded -> 0x2fdca44 // CORRECT
-luaC_step -> 0x61c029c // CORRECT
-luaO_nilobj -> 0x6e2e120 // CORRECT
-luaH_dummynode -> 0x13c5540 // CORRECT
-luau_execute -> 0x2ed4360 // CORRECT
-luaD_throw -> 0x61bf8e8 // CORRECT
+constexpr uintptr_t job_start = 0x2bf50dc;
+constexpr uintptr_t job_stop = 0x2bf543c;
+constexpr uintptr_t print = 0x2b9ac8c;
+constexpr uintptr_t rbx_crash = 0x6a9ba10;
+constexpr uintptr_t getfflag = 0x2b1ffc8;
+constexpr uintptr_t setfflag = 0x3f8c07c;
+constexpr uintptr_t task_spawn = 0x2c1370c;
+constexpr uintptr_t task_delay = 0x2fd2590;
+constexpr uintptr_t task_defer = 0x2f03010;
+constexpr uintptr_t fireproximityprompt = 0x4a6f47c;
+constexpr uintptr_t firetouchinterest = 0x55a52d8;
+constexpr uintptr_t resume_waiting_scripts = 0x3dea300;
+constexpr uintptr_t script_context_resume = 0x2ed3010;
+constexpr uintptr_t get_lua_state = 0x2ecd218;
+constexpr uintptr_t lvm_load = 0x2ed0130;
+constexpr uintptr_t bytecode_validator = 0x2ed1444;
+constexpr uintptr_t enable_load_module = 0x72bfc70;
+constexpr uintptr_t ktable = 0x7ce5478;
+constexpr uintptr_t newthread = 0x2ecd740;
+constexpr uintptr_t luavm_load = 0x2ecf9bc;
+constexpr uintptr_t create_proto_capabilities = 0x2ecf3fc;
+constexpr uintptr_t push_instance = 0x2ec2154;
+constexpr uintptr_t on_game_leave = 0x31f4014;
+constexpr uintptr_t on_game_loaded = 0x2fdca44;
+constexpr uintptr_t luaC_step = 0x61c029c;
+constexpr uintptr_t luaO_nilobj = 0x6e2e120;
+constexpr uintptr_t luaH_dummynode = 0x13c5540;
+constexpr uintptr_t luau_execute = 0x2ed4360;
+constexpr uintptr_t luaD_throw = 0x61bf8e8;
 
-primitive -> 0x160 // CORRECT
-overlap -> 0x268 // CORRECT
-job_flags -> 0x18 // CORRECT
-job_name -> 0x28 // CORRECT
-job_name2 -> 0x19 // CORRECT
-current_job -> 0x208 // CORRECT
-last_job -> 0x210 // CORRECT
-capabilities -> 0x48 // CORRECT
-identity -> 0x30 // CORRECT
-scriptcontext -> 0x1f8 // CORRECT
-placeid -> 0x340 // CORRECT
-
-Took 12.3045
+// members
+constexpr uintptr_t primitive = 0x160;
+constexpr uintptr_t overlap = 0x268;
+constexpr uintptr_t job_flags = 0x18;
+constexpr uintptr_t job_name = 0x28;
+constexpr uintptr_t job_name2 = 0x19;
+constexpr uintptr_t current_job = 0x208;
+constexpr uintptr_t last_job = 0x210;
+constexpr uintptr_t capabilities = 0x48;
+constexpr uintptr_t identity = 0x30;
+constexpr uintptr_t scriptcontext = 0x1f8;
+constexpr uintptr_t placeid = 0x340;
