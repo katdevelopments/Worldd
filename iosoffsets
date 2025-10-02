@@ -1,5 +1,4 @@
-// Unknown Dumper
-// Unverified
+// DUMPED BY SL4TER
 void (*job_start)(void) = (void(*)(void))getRealOffset(0x39DFE68);
 void (*job_stop)(void) = (void(*)(void))getRealOffset(0x039DFF0C);
 void (*lua_print)(int64_t a1, const char* a2, ...) = (void(*)(int64_t, const char*, ...))getRealOffset(0x13CA4B0);  //updated for 841
