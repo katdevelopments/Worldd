@@ -1,14 +1,14 @@
-// Roblox Version: version-f6cd26d0e71b47c9 (OUTDATED)
+// Roblox Version: version-494828652c274712 (LIVE)
 // Byfron Version(s): [hyperion-secured] [yara-secured]
-#define TSTRING_HASH_ENC VMEnc2
-#define PROTO_DEBUGNAME_ENC VMEnc2
+#define TSTRING_HASH_ENC VMEnc4
+#define PROTO_DEBUGNAME_ENC VMEnc4
 
-#define PROTO_MEMBER2_ENC VMEnc3
-#define CLOSURE_DEBUGNAME_ENC VMEnc3
+#define PROTO_MEMBER2_ENC VMEnc1
+#define CLOSURE_DEBUGNAME_ENC VMEnc1
 
-#define PROTO_DEBUGISN_ENC VMEnc1
-#define CLOSURE_CONT_ENC VMEnc1
-#define UDATA_META_ENC VMEnc1
+#define PROTO_DEBUGISN_ENC VMEnc2
+#define CLOSURE_CONT_ENC VMEnc2
+#define UDATA_META_ENC VMEnc2 
 
-#define PROTO_TYPEINFO_ENC VMEnc4
-#define LSTATE_STACKSIZE_ENC VMEnc4
+#define PROTO_TYPEINFO_ENC VMEnc3
+#define LSTATE_STACKSIZE_ENC VMEnc3
