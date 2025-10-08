@@ -1,13 +1,13 @@
-// Roblox Version: version-494828652c274712 (LIVE)
+// Roblox Version: version-d34359a5577645e2 (LIVE)
 // Byfron Version(s): [hyperion-secured] [yara-secured]
 namespace offsets {
 // FUNCIONS:
 
 constexpr uintptr_t callbackvalue_f    = (0x88);
-constexpr uintptr_t require_lock       = (0x878);
-constexpr uintptr_t overlap            = (0x268);
+constexpr uintptr_t require_lock       = (0x870);
+constexpr uintptr_t overlap            = (0x1F8);
 
-constexpr uintptr_t SCResume           = (0x7B0);
+constexpr uintptr_t SCResume           = (0x7A8);
 constexpr uintptr_t get_set            = (0xA0);
 constexpr uintptr_t class_desc         = (0x18);
 constexpr uintptr_t flag_f             = (0x50);
@@ -15,7 +15,6 @@ constexpr uintptr_t flag_f             = (0x50);
 constexpr uintptr_t PropDescriptor     = (0x3B8);
 constexpr uintptr_t ttype              = (0x58);
 constexpr uintptr_t type_number        = (0x40);
-
 
 // OFFSETS:
 
@@ -55,94 +54,97 @@ struct WeakThreadRef {
 typedef enum { SUCCESS, YIELD, ERR } SCResume_Result;
 
 namespace Offsets {
-    const uintptr_t BitMap                               = Hyperion_Rbase(0x293460);
+    const uintptr_t BitMap                               = Hyperion_Rbase(0x273940);
 
-    const uintptr_t ValidateBytecode                     = REBASE(0x1118A40);
+    const uintptr_t ValidateBytecode                     = REBASE(0x1125B50);
 
-    const uintptr_t luaF_freeproto                       = REBASE(0x2ADD420);
-    const uintptr_t luaL_argerrorL                       = REBASE(0x2A7AE80);
-    const uintptr_t luaL_typeerrorL                      = REBASE(0x2043CC0);
-    const uintptr_t luaL_getmetafield                    = REBASE(0x2A7D120);
-    const uintptr_t luaL_register                        = REBASE(0x2A7E410);
-    const uintptr_t currfuncname                         = REBASE(0x2A7AE00);
+    const uintptr_t luaL_argerrorL                       = REBASE(0x2AA4320);
+    const uintptr_t luaL_typeerrorL                      = REBASE(0x2043810);
+    const uintptr_t luaL_findtable                       = REBASE(0x2AA8720);
+    const uintptr_t luaL_where                           = REBASE(0x2AA44C0);
+    const uintptr_t luaL_getmetafield                    = REBASE(0x2AA6570);
+    const uintptr_t luaL_register                        = REBASE(0x2AA7850);
+    const uintptr_t currfuncname                         = REBASE(0x2AA42A0);
 
-    const uintptr_t newpage                              = REBASE(0x2ACE830);
-    const uintptr_t newclasspage                         = REBASE(0x2ACE8E0);
-    const uintptr_t freeclasspage                        = REBASE(0x2ACE950);
-    const uintptr_t newblock                             = REBASE(0x2ACE9F0);
-    const uintptr_t newgcoblock                          = REBASE(0x2ACEA80);
-    const uintptr_t freeblock                            = REBASE(0x2ACEB20);
-    const uintptr_t luaM_free                            = REBASE(0x2ACEBD0);
-    const uintptr_t luaM_freegco                         = REBASE(0x2ACEC50);
-    const uintptr_t luaM_visitgco                        = REBASE(0x2ACED70);
-    const uintptr_t luaM_toobig                          = REBASE(0x2ACE800);
+    const uintptr_t luaG_runerrorL                       = REBASE(0x2AB6410);
+    const uintptr_t newpage                              = REBASE(0x2AF7B90);
+    const uintptr_t newclasspage                         = REBASE(0x2AF7C40);
+    const uintptr_t freeclasspage                        = REBASE(0x2AF7CB0);
+    const uintptr_t newblock                             = REBASE(0x2AF7D50);
+    const uintptr_t newgcoblock                          = REBASE(0x2AF7DE0);
+    const uintptr_t freeblock                            = REBASE(0x2AF7E80);
+    const uintptr_t luaM_free                            = REBASE(0x2AF7F30);
+    const uintptr_t luaM_freegco                         = REBASE(0x2AF7FB0);
+    const uintptr_t luaM_visitgco                        = REBASE(0x2AF80D0);
+    const uintptr_t luaM_toobig                          = REBASE(0x2AF7B60);
 
-    const uintptr_t close_state                          = REBASE(0x2A8E460);
-    const uintptr_t lua_rawcheckstack                    = REBASE(0x2A797B0);
-    const uintptr_t luaA_toobject                        = REBASE(0x2A79350);
-    const uintptr_t lua_pushvfstring                     = REBASE(0x2A7A160);
-    const uintptr_t pseudo2addr                          = REBASE(0x2A79290);
+    const uintptr_t close_state                          = REBASE(0x2AB7770);
+    const uintptr_t f_luaopen                            = REBASE(0x2AB6A50);
+    const uintptr_t lua_rawcheckstack                    = REBASE(0x2AA2C50);
+    const uintptr_t luaA_toobject                        = REBASE(0x2AA27F0);
+    const uintptr_t lua_pushvfstring                     = REBASE(0x2AA3600);
+    const uintptr_t pseudo2addr                          = REBASE(0x2AA2730);
 
-    const uintptr_t luaT_objtypenamestr                  = REBASE(0x2ADCDA0);
-    const uintptr_t luaT_objtypename                     = REBASE(0x2ADCF30);
-    const uintptr_t auxopen                              = REBASE(0x2AB0AF0);
-    const uintptr_t luaD_throw                           = REBASE(0x2A89450);
-    const uintptr_t luaD_rawrunprotected                 = REBASE(0x2A89420);
-    const uintptr_t get_capabilites                      = REBASE(0x3987D80);
-    const uintptr_t FlogDataBank                         = REBASE(0x6F48718);
-    const uintptr_t ScriptContextResume                  = REBASE(0x1193600);
-    const uintptr_t OpcodeLookupTable                    = REBASE(0x55a2f80);
-    const uintptr_t Print                                = REBASE(0x18069F0);
+    const uintptr_t luaT_objtypenamestr                  = REBASE(0x2B06150);
+    const uintptr_t luaT_objtypename                     = REBASE(0x2B062E0);
+    const uintptr_t auxopen                              = REBASE(0x2AD9FD0);
+    const uintptr_t luaopen_base                         = REBASE(0x2ADA6A0);
+    const uintptr_t luaD_throw                           = REBASE(0x2AB27D0);
+    const uintptr_t luaD_rawrunprotected                 = REBASE(0x2AB27A0);
+    const uintptr_t get_capabilites                      = REBASE(0x39B5BA0);
+    const uintptr_t FlogDataBank                         = REBASE(0x6F86548);
+    const uintptr_t ScriptContextResume                  = REBASE(0x11A0260);
+    const uintptr_t AppdataInfo                          = REBASE(0x7209EA8);
+    const uintptr_t OpcodeLookupTable                    = REBASE(0x55dcd40);
+    const uintptr_t Print                                = REBASE(0x1826D00);
 
-    const uintptr_t GetGlobalState                       = REBASE(0xEC0FA0);
-    const uintptr_t Encrypt_State                        = REBASE(0x11B36A0);
-    const uintptr_t RawScheduler                         = REBASE(0x73DAA78);
-    const uintptr_t TaskSchedulerTargetFps               = REBASE(0x6989684);
-    const uintptr_t LuaVMLoad                            = REBASE(0xE52F70);
-    const uintptr_t Impersonator                         = REBASE(0x340A424E0);
-    const uintptr_t PushInstance                         = REBASE(0x120B010);
-    const uintptr_t PushInstance2                        = REBASE(0x120B060);
-    const uintptr_t Luau_Execute                         = REBASE(0x2A8FD70);
-    const uintptr_t TaskDefer                            = REBASE(0x13E7EA0);
-    const uintptr_t LuaD_throw                           = REBASE(0x2A89450);
-    const uintptr_t LuaO_NilObject                       = REBASE(0x4F011F8);
-    const uintptr_t LuaH_DummyNode                       = REBASE(0x4F75B78);
-    const uintptr_t KTable                               = REBASE(0x6989710);
+    const uintptr_t GetGlobalState                       = REBASE(0xEC65B0);
+    const uintptr_t Encrypt_State                        = REBASE(0x11C02F0);
+    const uintptr_t RawScheduler                         = REBASE(0x7434168);
+    const uintptr_t TaskSchedulerTargetFps               = REBASE(0x69C6C64);
+    const uintptr_t Impersonator                         = REBASE(0x3CF51F0);
+    const uintptr_t PushInstance                         = REBASE(0x121C2C0);
+    const uintptr_t PushInstance2                        = REBASE(0x121C310);
+    const uintptr_t Luau_Execute                         = REBASE(0x2AB9080);
+    const uintptr_t TaskDefer                            = REBASE(0x1231920);
+    const uintptr_t LuaD_throw                           = REBASE(0x2AB27D0);
+    const uintptr_t LuaO_NilObject                       = REBASE(0x4FA6B18);
+    const uintptr_t LuaH_DummyNode                       = REBASE(0x4FA6538);
+    const uintptr_t KTable                               = REBASE(0x69C6CF0);
 
-    const uintptr_t FireMouseClick                       = REBASE(0x1E4ABA0);
-    const uintptr_t FireMouseHoverEnter                  = REBASE(0x1E4C140);
-    const uintptr_t FireMouseHoverLeave                  = REBASE(0x1E4C2E0);
+    const uintptr_t FireMouseClick                       = REBASE(0x1E72AF0);
+    const uintptr_t FireRightMouseClick                  = REBASE(0x1E72C90);
+    const uintptr_t FireMouseHoverEnter                  = REBASE(0x1E74090);
+    const uintptr_t FireMouseHoverLeave                  = REBASE(0x1E74230);
 
-    const uintptr_t FireTouchInterest                    = REBASE(0x2178400);
-    const uintptr_t GetIdentityStruct                    = REBASE(0x3EA3500);
-    const uintptr_t IdentityPtr                          = REBASE(0x69C6EE8);
-    const uintptr_t GetProperty                          = REBASE(0xDBF910);
-    const uintptr_t FireProximityPrompt                  = REBASE(0x1B281E0);
+    const uintptr_t FireTouchInterest                    = REBASE(0x217A5F0);
+    const uintptr_t GetIdentityStruct                    = REBASE(0x3ED10D0);
+    const uintptr_t GetProperty                          = REBASE(0xDC5410);
 
     namespace InternalFastFlags {
-        const uintptr_t EnableLoadModule                 = REBASE(0x60834F8);
-        const uintptr_t DebugCheckRenderThreading        = REBASE(0x60BDF90);
-        const uintptr_t RenderDebugCheckThreading2       = REBASE(0x60BD320);
-        const uintptr_t DisableCorescriptLoadstring      = REBASE(0x60834D8);
-        const uintptr_t LockViolationInstanceCrash       = REBASE(0x608ECC0);
-        const uintptr_t LockViolationScriptCrash         = REBASE(0x6083150);
-        const uintptr_t WndProcessCheck                  = REBASE(0x6068E28);
-        const uintptr_t LuaStepIntervalMsOverrideEnabled = REBASE(0x6086F90);
-        const uintptr_t Crash147727ReportAll             = REBASE(0x6086550);
-        const uintptr_t SetFastFlag                      = REBASE(0x3EC3CA0);
+        const uintptr_t EnableLoadModule                 = REBASE(0x60BF620);
+        const uintptr_t DebugCheckRenderThreading        = REBASE(0x60FA178);
+        const uintptr_t RenderDebugCheckThreading2       = REBASE(0x60F9500);
+        const uintptr_t DisableCorescriptLoadstring      = REBASE(0x60BF600);
+        const uintptr_t LockViolationInstanceCrash       = REBASE(0x60CAF98);
+        const uintptr_t LockViolationScriptCrash         = REBASE(0x60BF258);
+        const uintptr_t WndProcessCheck                  = REBASE(0x60A4DF0);
+        const uintptr_t LuaStepIntervalMsOverrideEnabled = REBASE(0x60C3088);
+        const uintptr_t Crash147727ReportAll             = REBASE(0x60C2648);
+        const uintptr_t SetFastFlag                      = REBASE(0x3EF1840);
     }
 
     namespace yubxuserData {
-        const uintptr_t SCResume_offset                  = 0x7B0;
-        const uintptr_t DisableRequireLock               = 0x878;
+        const uintptr_t SCResume_offset                  = 0x7A8;
+        const uintptr_t DisableRequireLock               = 0x870;
     }
 
     namespace ReplicateSignal {
-        const uintptr_t Register                         = REBASE(0x22F0930);
-        const uintptr_t CastArgs                         = REBASE(0xED80F0);
-        const uintptr_t VariantCastInt64                 = REBASE(0x17D4140);
-        const uintptr_t VariantCastInt                   = REBASE(0x17D3F30);
-        const uintptr_t VariantCastFloat                 = REBASE(0x17D4580);
+        const uintptr_t Register                         = REBASE(0x22F4810);
+        const uintptr_t CastArgs                         = REBASE(0xEDD790);
+        const uintptr_t VariantCastInt64                 = REBASE(0x17F43A0);
+        const uintptr_t VariantCastInt                   = REBASE(0x17F4190);
+        const uintptr_t VariantCastFloat                 = REBASE(0x17F47E0);
     }
 
     namespace Instance {
@@ -185,10 +187,9 @@ namespace Offsets {
 
     namespace DataModel {        
         constexpr uintptr_t FakeDataModelToDataModel     = 0x1C0;
-        const     uintptr_t FakeDataModelPointer         = REBASE(0x71CBE48);
-        constexpr uintptr_t Overlap                      = 0x268;
+        const     uintptr_t FakeDataModelPointer         = REBASE(0x720A138);
+        constexpr uintptr_t Overlap                      = 0x1F8;
 
-        constexpr uintptr_t GameLoaded                   = 0x420;
         constexpr uintptr_t PlaceId                      = 0x1A0;
         constexpr uintptr_t Name                         = 0x88;
         constexpr uintptr_t ClassDescriptor              = 0x18;
@@ -227,3 +228,4 @@ namespace Roblox {
 }
 
 // Dump credits: Yub-X Dumper
+
