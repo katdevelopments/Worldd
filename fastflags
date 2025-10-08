@@ -1,3 +1,5 @@
+// Roblox Version: version-494828652c274712 (LIVE)
+// Byfron Version(s): [hyperion-secured] [yara-secured]
 namespace FFlags {
 	inline uintptr_t ACSReturnPromiseException = 0x60c2210;
 	inline uintptr_t ADS4948SendUniverseIdToEventStream = 0x60e6e70;
