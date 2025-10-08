@@ -1,6 +1,5 @@
 // Roblox Version: version-d34359a5577645e2 (LIVE)
 // Byfron Version(s): [hyperion-secured] [yara-secured]
-namespace offsets {
 // FUNCIONS:
 
 constexpr uintptr_t callbackvalue_f    = (0x88);
@@ -228,4 +227,5 @@ namespace Roblox {
 }
 
 // Dump credits: Yub-X Dumper
+
 
