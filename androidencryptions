@@ -3,6 +3,8 @@
 // Took 9.38219
 //
 
+// Dump for 2.692.843 (OUTDATED)
+
 #define PROTO_MEMBER1_ENC VMValue0
 #define PROTO_MEMBER2_ENC VMValue3
 #define PROTO_DEBUGISN_ENC VMValue1
