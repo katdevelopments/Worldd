@@ -8,10 +8,10 @@
     "UserId": "1215148880052625478", // zinko
     "RoleName": "Admin"
   },
-  // SECURITY
+  // Overseer
   {
     "UserId": "1233013312220827739", // Joe
-    "RoleName": "Security"
+    "RoleName": "Overseer"
   },
   // DEVELOPERS
   //none
