@@ -3,6 +3,8 @@
 // Took 9.38219
 //
 
+// Dump for 2.692.843 (OUTDATED)
+
 #define LUAVM_SHUFFLE3(s, a1, a2, a3) a1 s a2 s a3
 #define LUAVM_SHUFFLE4(s, a1, a2, a3, a4) a2 s a3 s a1 s a4
 #define LUAVM_SHUFFLE5(s, a1, a2, a3, a4, a5) a3 s a1 s a2 s a5 s a4
