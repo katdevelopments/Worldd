@@ -31,7 +31,7 @@ local isLoggingInternally = false
 local tutorialShown = false
 local isInputMaximized = false
 local dragStart, frameStartPos
-local lastMinimizedPosition = UDim2.new(0.5, -110, 0.05, 0)
+local lastMinimizedPosition = UDim2.new(0.5, 0, 0.05, 0)
 local activeTweens = {}
 local connections = {}
 local targetPosition
@@ -98,6 +98,7 @@ mainFrame.BackgroundTransparency = 1
 mainFrame.ClipsDescendants = true
 mainFrame.ZIndex = 1
 mainFrame.Visible = true
+mainFrame.Active = true
 
 local blurFrame = Instance.new("Frame", blurGui)
 blurFrame.Name = "BlurFrame"
@@ -116,7 +117,7 @@ blurStroke.Thickness = 2
 blurStroke.Transparency = 0.2
 
 local header = Instance.new("Frame", mainFrame)
-header.Name = "Header"; header.Size = UDim2.new(1, 0, 0, 40); header.BackgroundTransparency = 1; header.Active = true
+header.Name = "Header"; header.Size = UDim2.new(1, 0, 0, 40); header.BackgroundTransparency = 1; header.Active = true; header.ZIndex = 2
 
 local icon = Instance.new("ImageLabel", header)
 icon.Name = "Icon"; icon.Size = UDim2.new(0, 24, 0, 24); icon.Position = UDim2.new(0, 10, 0.5, 0); icon.AnchorPoint = Vector2.new(0, 0.5); icon.BackgroundTransparency = 1; icon.Image = CONFIG.IconID
@@ -176,13 +177,13 @@ local copyButton = createIconButton(leftControls, "📋", 28, CONFIG.Colors.Util
 local clearButton = createIconButton(leftControls, "🗑️", 28, CONFIG.Colors.UtilButton)
 local refreshButton = createIconButton(leftControls, "🔄", 28, CONFIG.Colors.UtilButton)
 
-local minimizeButton = createIconButton(rightControls, "—", 28, CONFIG.Colors.MinimizeButton)
+local minimizeButton = createIconButton(rightControls, "◼️", 28, CONFIG.Colors.MinimizeButton)
 
 local footer = Instance.new("Frame", mainFrame)
-footer.Name = "Footer"; footer.Size = UDim2.new(1, 0, 0, 80); footer.Position = UDim2.new(0, 0, 1, -80); footer.BackgroundTransparency = 1
+footer.Name = "Footer"; footer.Size = UDim2.new(1, 0, 0, 80); footer.Position = UDim2.new(0, 0, 1, -80); footer.BackgroundTransparency = 1; footer.ZIndex = 3
 
 local logContainer = Instance.new("ScrollingFrame", mainFrame)
-logContainer.Name = "LogContainer"; logContainer.Size = UDim2.new(1, 0, 1, -120); logContainer.Position = UDim2.new(0, 0, 0, 40); logContainer.BackgroundTransparency = 1; logContainer.BorderSizePixel = 0; logContainer.ScrollBarImageColor3 = CONFIG.Colors.PrimaryAccent; logContainer.ScrollBarThickness = 8; logContainer.Active = true
+logContainer.Name = "LogContainer"; logContainer.Size = UDim2.new(1, 0, 1, -120); logContainer.Position = UDim2.new(0, 0, 0, 40); logContainer.BackgroundTransparency = 1; logContainer.BorderSizePixel = 0; logContainer.ScrollBarImageColor3 = CONFIG.Colors.PrimaryAccent; logContainer.ScrollBarThickness = 8; logContainer.Active = true; logContainer.ZIndex = 1
 local uiListLayout = Instance.new("UIListLayout", logContainer); uiListLayout.Padding = UDim.new(0, 5); uiListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
 local runButton = Instance.new("TextButton", footer)
@@ -191,9 +192,10 @@ runButton.Name = "RunButton"; runButton.Size = UDim2.new(0, 80, 1, -10); runButt
 local expandInputButton = createIconButton(footer, "↕", 24, CONFIG.Colors.UtilButton)
 expandInputButton.Position = UDim2.new(1, -110, 0.15, 0)
 expandInputButton.ZIndex = 3
+expandInputButton.Visible = false
 
 local inputContainer = Instance.new("ScrollingFrame", footer)
-inputContainer.Name = "InputContainer"; inputContainer.Size = UDim2.new(1, -100, 1, -10); inputContainer.Position = UDim2.new(0, 5, 0.5, 0); inputContainer.AnchorPoint = Vector2.new(0, 0.5); inputContainer.BackgroundColor3 = Color3.fromRGB(0, 0, 0); inputContainer.BackgroundTransparency = 0.4; inputContainer.BorderSizePixel = 0; inputContainer.ScrollBarImageColor3 = CONFIG.Colors.PrimaryAccent; inputContainer.ScrollBarThickness = 6; Instance.new("UICorner", inputContainer).CornerRadius = UDim.new(0, 6)
+inputContainer.Name = "InputContainer"; inputContainer.Size = UDim2.new(1, -100, 1, -10); inputContainer.Position = UDim2.new(0, 5, 0.5, 0); inputContainer.AnchorPoint = Vector2.new(0, 0.5); inputContainer.BackgroundColor3 = Color3.fromRGB(0, 0, 0); inputContainer.BackgroundTransparency = 0.4; inputContainer.BorderSizePixel = 0; inputContainer.ScrollBarImageColor3 = CONFIG.Colors.PrimaryAccent; inputContainer.ScrollBarThickness = 0; Instance.new("UICorner", inputContainer).CornerRadius = UDim.new(0, 6)
 
 local inputBox = Instance.new("TextBox", inputContainer)
 inputBox.Name = "InputBox"; inputBox.Size = UDim2.new(1, 0, 0, 0); inputBox.AutomaticSize = Enum.AutomaticSize.Y; inputBox.BackgroundTransparency = 1; inputBox.ClearTextOnFocus = false; inputBox.Font = CONFIG.Font; inputBox.PlaceholderText = "Execute Luau code..."; inputBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150); inputBox.TextColor3 = CONFIG.Colors.Text; inputBox.TextSize = 14;
@@ -202,11 +204,22 @@ inputBox.Text = ""
 
 local inputBoxPadding = Instance.new("UIPadding", inputBox); inputBoxPadding.PaddingLeft = UDim.new(0, 10); inputBoxPadding.PaddingRight = UDim.new(0, 10); inputBoxPadding.PaddingTop = UDim.new(0,5); inputBoxPadding.PaddingBottom = UDim.new(0,5);
 
-local updateInputCanvas = function()
+local function updateInputControlsVisibility()
+    task.wait() 
+    local neededHeight = inputBox.TextBounds.Y
+    local availableHeight = inputContainer.AbsoluteSize.Y - inputBoxPadding.PaddingTop.Offset - inputBoxPadding.PaddingBottom.Offset
+    
+    local needsScroll = neededHeight > availableHeight
+    expandInputButton.Visible = needsScroll
+    inputContainer.ScrollBarThickness = needsScroll and 6 or 0
+end
+
+local function updateInputCanvas()
     inputContainer.CanvasSize = UDim2.new(0, 0, 0, inputBox.AbsoluteSize.Y)
     if not isInputMaximized then
       inputContainer.CanvasPosition = Vector2.new(0, inputBox.AbsoluteSize.Y)
     end
+    updateInputControlsVisibility()
 end
 local debouncedUpdate = debounce(updateInputCanvas, 0.1)
 table.insert(connections, inputBox:GetPropertyChangedSignal("Text"):Connect(debouncedUpdate))
@@ -246,9 +259,9 @@ function showTutorial()
     
     local pages = {
         {Title = "Welcome!", Text = "This is the World Client, a powerful tool for developers. Let's walk through the features."},
-        {Title = "Toggling & Moving", Text = "You can click the minimize ('—') button to collapse or expand this window.\n\nTo move it, simply click and drag the top header bar."},
+        {Title = "Toggling & Moving", Text = "You can click the minimize ('◼️') button to collapse or expand this window.\n\nTo move the minimized bar, simply click and drag it."},
         {Title = "Managing Logs", Text = "Hover over any log entry to reveal 📋 (copy) and 🗑️ (delete) buttons for that specific line.\n\nUse the main header buttons to manage all logs at once."},
-        {Title = "Executing Code", Text = "Type any Luau code into the input bar at the bottom and press 'Run' or Enter to execute it.\n\nUse the Up/Down arrow keys to navigate your command history."},
+        {Title = "Executing Code", Text = "Type any Luau code into the input bar and press 'Run' or Enter to execute it.\n\nUse the Up/Down arrow keys to navigate your command history."},
         {Title = "You're all set!", Text = "That's all for now. You can re-open this tutorial by typing 'tutorial()' in the command bar. Enjoy!"}
     }
     local currentPage = 1
@@ -290,6 +303,7 @@ function toggleMinimize()
     footer.Visible = not isMinimized
     logContainer.Visible = not isMinimized
     blur.Enabled = isVisible and not isMinimized
+    mainFrame.Active = not isMinimized
     
     if isMinimized then
         leftControls.Visible = false
@@ -315,7 +329,7 @@ function toggleMinimize()
             AnchorPoint = Vector2.new(0.5, 0.5) 
         }):Play()
 
-        minimizeButton.Text = "—"
+        minimizeButton.Text = "◼️"
         
         if not tutorialShown then showTutorial() end
     end
@@ -411,7 +425,6 @@ function executeCommand()
     if command:gsub("%s", "") == "" then return end
     
     createClickParticles(runButton, CONFIG.Colors.Text)
-    log(command, "Input")
     table.insert(commandHistory, 1, command)
     if #commandHistory > 50 then table.remove(commandHistory) end
     historyIndex = 0; inputBox.Text = ""
@@ -430,8 +443,15 @@ function executeCommand()
     if not func then log("Syntax Error: " .. err, "Error"); return end
     
     local success, result = pcall(func)
-    if not success then log("Runtime Error: " .. tostring(result), "Error")
-    elseif result ~= nil then log(tostring(result), "Output") end
+    if not success then 
+        log("Runtime Error: " .. tostring(result), "Error")
+    else
+        if result ~= nil then 
+            log(tostring(result), "Output") 
+        else
+            log("Script successfully executed.", "Output")
+        end
+    end
 end
 
 table.insert(connections, mainFrame:GetPropertyChangedSignal("Size"):Connect(function() blurFrame.Size = mainFrame.Size end))
@@ -497,19 +517,18 @@ table.insert(connections, expandInputButton.MouseButton1Click:Connect(function()
     isInputMaximized = not isInputMaximized
     local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
     
-    local footerSize, logContainerSize
+    local footerSize, logContainerSize, logContainerPos, footerPos
     if isInputMaximized then
-        footerSize = UDim2.new(1, 0, 0, 300)
-        logContainerSize = UDim2.new(1, 0, 1, -340)
+        footerSize = UDim2.new(1, 0, 1, -40)
+        footerPos = UDim2.new(0, 0, 0, 40)
         expandInputButton.Text = "✕"
     else
         footerSize = UDim2.new(1, 0, 0, 80)
-        logContainerSize = UDim2.new(1, 0, 1, -120)
+        footerPos = UDim2.new(0, 0, 1, -80)
         expandInputButton.Text = "↕"
     end
     
-    TweenService:Create(footer, tweenInfo, {Size = footerSize}):Play()
-    TweenService:Create(logContainer, tweenInfo, {Size = logContainerSize}):Play()
+    TweenService:Create(footer, tweenInfo, {Size = footerSize, Position = footerPos}):Play()
 end))
 
 table.insert(connections, minimizeButton.MouseButton1Click:Connect(toggleMinimize))
@@ -568,3 +587,4 @@ end)
 refreshLogs()
 toggleMinimize()
 loopGlow()
+updateInputControlsVisibility()
