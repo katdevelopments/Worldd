@@ -6,6 +6,9 @@ local Players = game:GetService("Players")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
+local playerScripts = player:WaitForChild("PlayerScripts")
+local playerModule = require(playerScripts:WaitForChild("PlayerModule"))
+local controls = playerModule:GetControls()
 
 if playerGui:FindFirstChild("WorldClientGui") then
     warn("World Client is already running. Aborting duplicate script.")
@@ -89,13 +92,6 @@ blur.Size = 24
 blur.Enabled = isVisible
 blur.Parent = game.Lighting
 
-local interceptorFrame = Instance.new("Frame", screenGui)
-interceptorFrame.Name = "InterceptorFrame"
-interceptorFrame.Size = UDim2.new(1, 0, 1, 0)
-interceptorFrame.BackgroundTransparency = 1
-interceptorFrame.Active = true
-interceptorFrame.ZIndex = 0
-
 local mainFrame = Instance.new("Frame", screenGui)
 mainFrame.Name = "MainFrame"
 mainFrame.Size = UDim2.new(1, 0, 1, 0)
@@ -105,6 +101,7 @@ mainFrame.BackgroundTransparency = 1
 mainFrame.ClipsDescendants = true
 mainFrame.ZIndex = 1
 mainFrame.Visible = true
+mainFrame.Modal = true
 
 local blurFrame = Instance.new("Frame", blurGui)
 blurFrame.Name = "BlurFrame"
@@ -195,13 +192,13 @@ local uiListLayout = Instance.new("UIListLayout", logContainer); uiListLayout.Pa
 local runButton = Instance.new("TextButton", footer)
 runButton.Name = "RunButton"; runButton.Size = UDim2.new(0, 80, 1, -10); runButton.Position = UDim2.new(1, -5, 0.5, 0); runButton.AnchorPoint = Vector2.new(1, 0.5); runButton.BackgroundColor3 = CONFIG.Colors.SecondaryAccent; runButton.Font = CONFIG.BoldFont; runButton.Text = "Run"; runButton.TextColor3 = Color3.new(1, 1, 1); runButton.TextSize = 16; Instance.new("UICorner", runButton).CornerRadius = UDim.new(0, 6)
 
-local expandInputButton = createIconButton(footer, "↕", 24, CONFIG.Colors.UtilButton)
+local expandInputButton = createIconButton(footer, "↗️", 24, CONFIG.Colors.UtilButton)
 expandInputButton.Position = UDim2.new(1, -110, 0.15, 0)
 expandInputButton.ZIndex = 3
 expandInputButton.Visible = false
 
 local inputContainer = Instance.new("ScrollingFrame", footer)
-inputContainer.Name = "InputContainer"; inputContainer.Size = UDim2.new(1, -100, 1, -10); inputContainer.Position = UDim2.new(0, 5, 0.5, 0); inputContainer.AnchorPoint = Vector2.new(0, 0.5); inputContainer.BackgroundColor3 = Color3.fromRGB(0, 0, 0); inputContainer.BackgroundTransparency = 0.4; inputContainer.BorderSizePixel = 0; inputContainer.ScrollBarImageColor3 = CONFIG.Colors.Text; inputContainer.ScrollBarThickness = 0; Instance.new("UICorner", inputContainer).CornerRadius = UDim.new(0, 6)
+inputContainer.Name = "InputContainer"; inputContainer.Size = UDim2.new(1, -100, 1, -10); inputContainer.Position = UDim2.new(0, 5, 0.5, 0); inputContainer.AnchorPoint = Vector2.new(0, 0.5); inputContainer.BackgroundColor3 = Color3.fromRGB(0, 0, 0); inputContainer.BackgroundTransparency = 0.4; inputContainer.BorderSizePixel = 0; inputContainer.ScrollBarImageColor3 = CONFIG.Colors.Text; inputContainer.ScrollBarThickness = 0; inputContainer.ScrollingEnabled = true; Instance.new("UICorner", inputContainer).CornerRadius = UDim.new(0, 6)
 
 local inputBox = Instance.new("TextBox", inputContainer)
 inputBox.Name = "InputBox"; inputBox.Size = UDim2.new(1, 0, 0, 0); inputBox.AutomaticSize = Enum.AutomaticSize.Y; inputBox.BackgroundTransparency = 1; inputBox.ClearTextOnFocus = false; inputBox.Font = CONFIG.Font; inputBox.PlaceholderText = "Execute Luau code..."; inputBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150); inputBox.TextColor3 = CONFIG.Colors.Text; inputBox.TextSize = 14;
@@ -219,7 +216,6 @@ local function updateInputControlsVisibility()
     task.wait() 
     local needsControls = #inputBox.Text >= 100
     expandInputButton.Visible = needsControls and not isInputMaximized
-    inputContainer.ScrollBarThickness = (isInputMaximized and needsControls) and 10 or 0
 end
 
 local function updateInputCanvas()
@@ -311,9 +307,10 @@ function toggleMinimize()
     footer.Visible = not isMinimized
     logContainer.Visible = not isMinimized
     blur.Enabled = isVisible and not isMinimized
-    interceptorFrame.Active = not isMinimized
+    mainFrame.Modal = not isMinimized
     
     if isMinimized then
+        controls:Enable()
         leftControls.Visible = false
         titleLabel.Size = UDim2.new(0, 150, 1, 0)
         
@@ -326,6 +323,7 @@ function toggleMinimize()
         minimizeButton.Text = "🔲"
         
     else
+        controls:Disable()
         lastMinimizedPosition = mainFrame.Position 
         
         leftControls.Visible = true
@@ -625,6 +623,7 @@ screenGui.Destroying:Connect(function()
     for _, connection in ipairs(connections) do
         connection:Disconnect()
     end
+    controls:Enable()
 end)
 
 refreshLogs()
