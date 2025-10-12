@@ -80,24 +80,19 @@ screenGui.Name = "WorldClientGui"
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 screenGui.ResetOnSpawn = false
 screenGui.DisplayOrder = 2147483647
+screenGui.IgnoreGuiInset = true
 
 local blurGui = Instance.new("ScreenGui")
 blurGui.Name = "WorldClientBlurGui"
 blurGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 blurGui.DisplayOrder = 2147483646
 blurGui.ResetOnSpawn = false
+blurGui.IgnoreGuiInset = true
 
 local blur = Instance.new("BlurEffect")
 blur.Size = 24
 blur.Enabled = isVisible
 blur.Parent = game.Lighting
-
-local interceptorFrame = Instance.new("Frame", screenGui)
-interceptorFrame.Name = "InterceptorFrame"
-interceptorFrame.Size = UDim2.new(1, 0, 1, 0)
-interceptorFrame.BackgroundTransparency = 1
-interceptorFrame.Active = true
-interceptorFrame.ZIndex = 0
 
 local mainFrame = Instance.new("Frame", screenGui)
 mainFrame.Name = "MainFrame"
@@ -208,8 +203,16 @@ inputContainer.Name = "InputContainer"; inputContainer.Size = UDim2.new(1, -100,
 
 local inputBox = Instance.new("TextBox", inputContainer)
 inputBox.Name = "InputBox"; inputBox.Size = UDim2.new(1, 0, 0, 0); inputBox.AutomaticSize = Enum.AutomaticSize.Y; inputBox.BackgroundTransparency = 1; inputBox.ClearTextOnFocus = false; inputBox.Font = CONFIG.Font; inputBox.PlaceholderText = "Execute Luau code..."; inputBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150); inputBox.TextColor3 = CONFIG.Colors.Text; inputBox.TextSize = 14;
-inputBox.MultiLine = true
-inputBox.Text = ""
+inputBox.MultiLine = true;
+inputBox.Text = "";
+inputBox.Active = false
+
+local touchOverlay = Instance.new("TextButton", inputContainer)
+touchOverlay.Name = "TouchOverlay"
+touchOverlay.Size = UDim2.new(1, 0, 1, 0)
+touchOverlay.BackgroundTransparency = 1
+touchOverlay.Text = ""
+touchOverlay.ZIndex = 2
 
 Instance.new("UIPadding", inputBox, {
     PaddingLeft = UDim.new(0, 10),
@@ -226,6 +229,7 @@ end
 
 local function updateInputCanvas()
     inputContainer.CanvasSize = UDim2.new(0, 0, 0, inputBox.AbsoluteSize.Y)
+    touchOverlay.Size = UDim2.new(1, 0, 0, inputBox.AbsoluteSize.Y)
     if not isInputMaximized then
       inputContainer.CanvasPosition = Vector2.new(0, inputBox.AbsoluteSize.Y)
     end
@@ -549,7 +553,17 @@ table.insert(connections, RunService.RenderStepped:Connect(function(dt)
     end
 end))
 
-table.insert(connections, inputBox.FocusLost:Connect(function(enterPressed) if enterPressed and inputBox.Text ~= "" and not UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) and not UserInputService:IsKeyDown(Enum.KeyCode.RightShift) then executeCommand(); inputBox:CaptureFocus() end end))
+table.insert(connections, inputBox.FocusLost:Connect(function(enterPressed) 
+    if enterPressed and inputBox.Text ~= "" and not UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) and not UserInputService:IsKeyDown(Enum.KeyCode.RightShift) then 
+        executeCommand()
+    end
+    inputBox.Active = false
+end))
+table.insert(connections, touchOverlay.MouseButton1Click:Connect(function()
+    inputBox.Active = true
+    inputBox:CaptureFocus()
+end))
+
 table.insert(connections, runButton.MouseButton1Click:Connect(executeCommand))
 table.insert(connections, inputBox.InputBegan:Connect(function(input)
     if not isVisible then return end
@@ -606,6 +620,15 @@ end))
 table.insert(connections, LogService.MessageOut:Connect(function(message, messageType)
     if isLoggingInternally then return end
     log(message, tostring(messageType):gsub("Message", ""))
+end))
+
+table.insert(connections, UserInputService:GetPropertyChangedSignal("WindowInsets"):Connect(function()
+    local insets = UserInputService:GetWindowInsets()
+    local keyboardHeight = insets.Bottom.Y
+    if not isMinimized then
+        mainFrame.Size = UDim2.new(1, 0, 1, -keyboardHeight)
+        blurFrame.Size = UDim2.new(1, 0, 1, -keyboardHeight)
+    end
 end))
 
 screenGui.Parent = playerGui
