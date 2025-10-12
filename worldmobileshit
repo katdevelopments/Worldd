@@ -208,12 +208,12 @@ inputBox.Name = "InputBox"; inputBox.Size = UDim2.new(1, 0, 0, 0); inputBox.Auto
 inputBox.MultiLine = true
 inputBox.Text = ""
 
-local inputBoxPadding = Instance.new("UIPadding", inputBox); inputBoxPadding.PaddingLeft = UDim.new(0, 10); inputBoxPadding.PaddingRight = UDim.new(0, 10); inputBoxPadding.PaddingTop = UDim.new(0,5); inputBoxPadding.PaddingBottom = UDim.new(0,5);
+local inputBoxPadding = Instance.new("UIPadding", inputBox); inputBoxPadding.PaddingLeft = UDim2.new(0, 10); inputBoxPadding.PaddingRight = UDim.new(0, 10); inputBoxPadding.PaddingTop = UDim.new(0,5); inputBoxPadding.PaddingBottom = UDim.new(0,5);
 
 local function updateInputControlsVisibility()
     task.wait() 
     local needsControls = #inputBox.Text >= 100
-    expandInputButton.Visible = needsControls
+    expandInputButton.Visible = needsControls and not isInputMaximized
     inputContainer.ScrollBarThickness = (isInputMaximized and needsControls) and 10 or 0
 end
 
@@ -457,6 +457,55 @@ function executeCommand()
     end
 end
 
+local collapseButtonConnection
+function toggleScriptView()
+    isInputMaximized = not isInputMaximized
+    local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+    
+    if collapseButtonConnection then
+        collapseButtonConnection:Disconnect()
+        collapseButtonConnection = nil
+    end
+
+    if isInputMaximized then
+        footer.ZIndex = 5
+        TweenService:Create(footer, tweenInfo, {Size = UDim2.new(1, 0, 1, 0), Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5)}):Play()
+        expandInputButton.Visible = false
+        
+        local collapseButton = createIconButton(footer, "✕", 24, CONFIG.Colors.UtilButton)
+        collapseButton.Name = "CollapseButton"
+        collapseButton.AnchorPoint = Vector2.new(1, 0)
+        collapseButton.Position = UDim2.new(1, -95, 0, 5)
+
+        runButton.Parent = footer
+        runButton.Size = UDim2.new(0, 80, 0, 30)
+        runButton.AnchorPoint = Vector2.new(1, 0)
+        runButton.Position = UDim2.new(1, -5, 0, 5)
+
+        inputContainer.Size = UDim2.new(1, -10, 1, -45)
+        inputContainer.Position = UDim2.new(0.5, 0, 1, -5)
+        inputContainer.AnchorPoint = Vector2.new(0.5, 1)
+
+        collapseButtonConnection = collapseButton.MouseButton1Click:Connect(toggleScriptView)
+
+    else
+        footer.ZIndex = 3
+        TweenService:Create(footer, tweenInfo, {Size = UDim2.new(1, 0, 0, 80), Position = UDim2.new(0, 0, 1, -80), AnchorPoint = Vector2.new(0,0)}):Play()
+        local collapseButton = footer:FindFirstChild("CollapseButton")
+        if collapseButton then collapseButton:Destroy() end
+
+        runButton.Parent = footer
+        runButton.Size = UDim2.new(0, 80, 1, -10)
+        runButton.Position = UDim2.new(1, -5, 0.5, 0)
+        runButton.AnchorPoint = Vector2.new(1, 0.5)
+
+        inputContainer.Size = UDim2.new(1, -100, 1, -10)
+        inputContainer.Position = UDim2.new(0, 5, 0.5, 0)
+        inputContainer.AnchorPoint = Vector2.new(0, 0.5)
+    end
+    updateInputControlsVisibility()
+end
+
 table.insert(connections, mainFrame:GetPropertyChangedSignal("Size"):Connect(function() blurFrame.Size = mainFrame.Size end))
 table.insert(connections, mainFrame:GetPropertyChangedSignal("Position"):Connect(function() blurFrame.Position = mainFrame.Position end))
 table.insert(connections, mainFrame:GetPropertyChangedSignal("AnchorPoint"):Connect(function() blurFrame.AnchorPoint = mainFrame.AnchorPoint end))
@@ -516,45 +565,7 @@ table.insert(connections, discordButton.MouseButton1Click:Connect(function()
     log("Discord link copied to clipboard!", "Output")
 end))
 
-table.insert(connections, expandInputButton.MouseButton1Click:Connect(function()
-    isInputMaximized = not isInputMaximized
-    local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-    
-    if isInputMaximized then
-        TweenService:Create(footer, tweenInfo, {Size = UDim2.new(1, 0, 1, -40), Position = UDim2.new(0, 0, 0, 40)}):Play()
-        expandInputButton:Destroy()
-        
-        local collapseButton = createIconButton(footer, "✕", 24, CONFIG.Colors.UtilButton)
-        collapseButton.Name = "CollapseButton"
-        collapseButton.AnchorPoint = Vector2.new(1, 0)
-        collapseButton.Position = UDim2.new(1, -95, 0, 5)
-
-        runButton.Parent = footer
-        runButton.Size = UDim2.new(0, 80, 0, 30)
-        runButton.AnchorPoint = Vector2.new(1, 0)
-        runButton.Position = UDim2.new(1, -5, 0, 5)
-
-        inputContainer.Size = UDim2.new(1, -10, 1, -45)
-        inputContainer.Position = UDim2.new(0.5, 0, 1, -5)
-        inputContainer.AnchorPoint = Vector2.new(0.5, 1)
-
-        table.insert(connections, collapseButton.MouseButton1Click:Connect(function() expandInputButton.MouseButton1Click:Fire() end))
-
-    else
-        TweenService:Create(footer, tweenInfo, {Size = UDim2.new(1, 0, 0, 80), Position = UDim2.new(0, 0, 1, -80)}):Play()
-        local collapseButton = footer:FindFirstChild("CollapseButton")
-        if collapseButton then collapseButton:Destroy() end
-
-        runButton.Size = UDim2.new(0, 80, 1, -10)
-        runButton.Position = UDim2.new(1, -5, 0.5, 0)
-        runButton.AnchorPoint = Vector2.new(1, 0.5)
-
-        inputContainer.Size = UDim2.new(1, -100, 1, -10)
-        inputContainer.Position = UDim2.new(0, 5, 0.5, 0)
-        inputContainer.AnchorPoint = Vector2.new(0, 0.5)
-    end
-    updateInputControlsVisibility()
-end))
+table.insert(connections, expandInputButton.MouseButton1Click:Connect(toggleScriptView))
 
 table.insert(connections, minimizeButton.MouseButton1Click:Connect(toggleMinimize))
 table.insert(connections, clearButton.MouseButton1Click:Connect(clearLogs))
