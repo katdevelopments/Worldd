@@ -91,7 +91,7 @@ blurGui.IgnoreGuiInset = true
 
 local blur = Instance.new("BlurEffect")
 blur.Size = 24
-blur.Enabled = false 
+blur.Enabled = false
 blur.Parent = game.Lighting
 
 local mainFrame = Instance.new("Frame", screenGui)
@@ -318,8 +318,7 @@ function toggleMinimize()
     
     footer.Visible = not isMinimized
     logContainer.Visible = not isMinimized
-    blur.Enabled = isVisible and not isMinimized
-    screenGui.Enabled = not isMinimized
+    blur.Enabled = not isMinimized
     
     if isMinimized then
         controls:Enable()
@@ -623,17 +622,21 @@ table.insert(connections, LogService.MessageOut:Connect(function(message, messag
     log(message, tostring(messageType):gsub("Message", ""))
 end))
 
-table.insert(connections, screenGui:GetPropertyChangedSignal("ScreenInsets"):Connect(function()
-    local keyboardHeight = screenGui.ScreenInsets.Bottom
+local function onInsetsChanged()
+    local bottomInset = screenGui.ScreenInsets.Max.Y
+    local screenHeight = screenGui.AbsoluteSize.Y
+    local keyboardHeight = screenHeight - bottomInset
+    
     if not isMinimized then
         local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        local newSize = UDim2.new(1, 0, 1, -keyboardHeight)
         
-        local size = UDim2.new(1, 0, 1, -keyboardHeight)
-        
-        TweenService:Create(mainFrame, tweenInfo, {Size = size}):Play()
-        TweenService:Create(blurFrame, tweenInfo, {Size = size}):Play()
+        TweenService:Create(mainFrame, tweenInfo, {Size = newSize}):Play()
+        TweenService:Create(blurFrame, tweenInfo, {Size = newSize}):Play()
     end
-end))
+end
+
+table.insert(connections, screenGui:GetPropertyChangedSignal("ScreenInsets"):Connect(onInsetsChanged))
 
 screenGui.Parent = playerGui
 blurGui.Parent = playerGui
@@ -664,3 +667,4 @@ refreshLogs()
 toggleMinimize()
 loopGlow()
 updateInputControlsVisibility()
+onInsetsChanged() 
