@@ -208,7 +208,11 @@ inputBox.Name = "InputBox"; inputBox.Size = UDim2.new(1, 0, 0, 0); inputBox.Auto
 inputBox.MultiLine = true
 inputBox.Text = ""
 
-local inputBoxPadding = Instance.new("UIPadding", inputBox); inputBoxPadding.PaddingLeft = UDim2.new(0, 10); inputBoxPadding.PaddingRight = UDim.new(0, 10); inputBoxPadding.PaddingTop = UDim.new(0,5); inputBoxPadding.PaddingBottom = UDim.new(0,5);
+local inputBoxPadding = Instance.new("UIPadding", inputBox)
+inputBoxPadding.PaddingLeft = UDim.new(0, 10)
+inputBoxPadding.PaddingRight = UDim.new(0, 10)
+inputBoxPadding.PaddingTop = UDim.new(0, 5)
+inputBoxPadding.PaddingBottom = UDim.new(0, 5)
 
 local function updateInputControlsVisibility()
     task.wait() 
@@ -467,15 +471,17 @@ function toggleScriptView()
         collapseButtonConnection = nil
     end
 
+    local collapseButton = footer:FindFirstChild("CollapseButton")
+    if collapseButton then collapseButton:Destroy() end
+
     if isInputMaximized then
         footer.ZIndex = 5
         TweenService:Create(footer, tweenInfo, {Size = UDim2.new(1, 0, 1, 0), Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5)}):Play()
-        expandInputButton.Visible = false
         
-        local collapseButton = createIconButton(footer, "✕", 24, CONFIG.Colors.UtilButton)
-        collapseButton.Name = "CollapseButton"
-        collapseButton.AnchorPoint = Vector2.new(1, 0)
-        collapseButton.Position = UDim2.new(1, -95, 0, 5)
+        local newCollapseButton = createIconButton(footer, "✕", 24, CONFIG.Colors.UtilButton)
+        newCollapseButton.Name = "CollapseButton"
+        newCollapseButton.AnchorPoint = Vector2.new(1, 0)
+        newCollapseButton.Position = UDim2.new(1, -95, 0, 5)
 
         runButton.Parent = footer
         runButton.Size = UDim2.new(0, 80, 0, 30)
@@ -486,14 +492,12 @@ function toggleScriptView()
         inputContainer.Position = UDim2.new(0.5, 0, 1, -5)
         inputContainer.AnchorPoint = Vector2.new(0.5, 1)
 
-        collapseButtonConnection = collapseButton.MouseButton1Click:Connect(toggleScriptView)
+        collapseButtonConnection = newCollapseButton.MouseButton1Click:Connect(toggleScriptView)
 
     else
         footer.ZIndex = 3
         TweenService:Create(footer, tweenInfo, {Size = UDim2.new(1, 0, 0, 80), Position = UDim2.new(0, 0, 1, -80), AnchorPoint = Vector2.new(0,0)}):Play()
-        local collapseButton = footer:FindFirstChild("CollapseButton")
-        if collapseButton then collapseButton:Destroy() end
-
+        
         runButton.Parent = footer
         runButton.Size = UDim2.new(0, 80, 1, -10)
         runButton.Position = UDim2.new(1, -5, 0.5, 0)
