@@ -29,11 +29,26 @@ local isMinimized = false
 local isDragging = false
 local isLoggingInternally = false
 local tutorialShown = false
+local isInputMaximized = false
 local dragStart, frameStartPos
-local lastMinimizedPosition = UDim2.new(0.5, 0, 0.05, 0)
+local lastMinimizedPosition = UDim2.new(0.5, -110, 0.05, 0)
 local activeTweens = {}
 local connections = {}
 local targetPosition
+
+local function debounce(func, delay)
+    local timer
+    return function(...)
+        local context = self
+        local args = {...}
+        if timer then
+            task.cancel(timer)
+        end
+        timer = task.delay(delay, function()
+            func(context, unpack(args))
+        end)
+    end
+end
 
 local CONFIG = {
     IconID = "rbxassetid://133555354035357",
@@ -173,6 +188,10 @@ local uiListLayout = Instance.new("UIListLayout", logContainer); uiListLayout.Pa
 local runButton = Instance.new("TextButton", footer)
 runButton.Name = "RunButton"; runButton.Size = UDim2.new(0, 80, 1, -10); runButton.Position = UDim2.new(1, -5, 0.5, 0); runButton.AnchorPoint = Vector2.new(1, 0.5); runButton.BackgroundColor3 = CONFIG.Colors.SecondaryAccent; runButton.Font = CONFIG.BoldFont; runButton.Text = "Run"; runButton.TextColor3 = Color3.new(1, 1, 1); runButton.TextSize = 16; Instance.new("UICorner", runButton).CornerRadius = UDim.new(0, 6)
 
+local expandInputButton = createIconButton(footer, "↕", 24, CONFIG.Colors.UtilButton)
+expandInputButton.Position = UDim2.new(1, -110, 0.15, 0)
+expandInputButton.ZIndex = 3
+
 local inputContainer = Instance.new("ScrollingFrame", footer)
 inputContainer.Name = "InputContainer"; inputContainer.Size = UDim2.new(1, -100, 1, -10); inputContainer.Position = UDim2.new(0, 5, 0.5, 0); inputContainer.AnchorPoint = Vector2.new(0, 0.5); inputContainer.BackgroundColor3 = Color3.fromRGB(0, 0, 0); inputContainer.BackgroundTransparency = 0.4; inputContainer.BorderSizePixel = 0; inputContainer.ScrollBarImageColor3 = CONFIG.Colors.PrimaryAccent; inputContainer.ScrollBarThickness = 6; Instance.new("UICorner", inputContainer).CornerRadius = UDim.new(0, 6)
 
@@ -183,10 +202,14 @@ inputBox.Text = ""
 
 local inputBoxPadding = Instance.new("UIPadding", inputBox); inputBoxPadding.PaddingLeft = UDim.new(0, 10); inputBoxPadding.PaddingRight = UDim.new(0, 10); inputBoxPadding.PaddingTop = UDim.new(0,5); inputBoxPadding.PaddingBottom = UDim.new(0,5);
 
-table.insert(connections, inputBox:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+local updateInputCanvas = function()
     inputContainer.CanvasSize = UDim2.new(0, 0, 0, inputBox.AbsoluteSize.Y)
-    inputContainer.CanvasPosition = Vector2.new(0, inputBox.AbsoluteSize.Y)
-end))
+    if not isInputMaximized then
+      inputContainer.CanvasPosition = Vector2.new(0, inputBox.AbsoluteSize.Y)
+    end
+end
+local debouncedUpdate = debounce(updateInputCanvas, 0.1)
+table.insert(connections, inputBox:GetPropertyChangedSignal("Text"):Connect(debouncedUpdate))
 
 function showTutorial()
     tutorialShown = true
@@ -273,7 +296,7 @@ function toggleMinimize()
         titleLabel.Size = UDim2.new(0, 150, 1, 0)
         
         TweenService:Create(mainFrame, tweenInfo, { 
-            Size = UDim2.new(0, 300, 0, 40),
+            Size = UDim2.new(0, 220, 0, 40),
             Position = lastMinimizedPosition,
             AnchorPoint = Vector2.new(0.5, 0) 
         }):Play()
@@ -468,6 +491,25 @@ end))
 table.insert(connections, discordButton.MouseButton1Click:Connect(function()
     pcall(setclipboard, "https://dsc.gg/globes")
     log("Discord link copied to clipboard!", "Output")
+end))
+
+table.insert(connections, expandInputButton.MouseButton1Click:Connect(function()
+    isInputMaximized = not isInputMaximized
+    local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+    
+    local footerSize, logContainerSize
+    if isInputMaximized then
+        footerSize = UDim2.new(1, 0, 0, 300)
+        logContainerSize = UDim2.new(1, 0, 1, -340)
+        expandInputButton.Text = "✕"
+    else
+        footerSize = UDim2.new(1, 0, 0, 80)
+        logContainerSize = UDim2.new(1, 0, 1, -120)
+        expandInputButton.Text = "↕"
+    end
+    
+    TweenService:Create(footer, tweenInfo, {Size = footerSize}):Play()
+    TweenService:Create(logContainer, tweenInfo, {Size = logContainerSize}):Play()
 end))
 
 table.insert(connections, minimizeButton.MouseButton1Click:Connect(toggleMinimize))
