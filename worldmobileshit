@@ -80,19 +80,24 @@ screenGui.Name = "WorldClientGui"
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 screenGui.ResetOnSpawn = false
 screenGui.DisplayOrder = 2147483647
-screenGui.IgnoreGuiInset = true
 
 local blurGui = Instance.new("ScreenGui")
 blurGui.Name = "WorldClientBlurGui"
 blurGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 blurGui.DisplayOrder = 2147483646
 blurGui.ResetOnSpawn = false
-blurGui.IgnoreGuiInset = true
 
 local blur = Instance.new("BlurEffect")
 blur.Size = 24
-blur.Enabled = false
+blur.Enabled = isVisible
 blur.Parent = game.Lighting
+
+local interceptorFrame = Instance.new("Frame", screenGui)
+interceptorFrame.Name = "InterceptorFrame"
+interceptorFrame.Size = UDim2.new(1, 0, 1, 0)
+interceptorFrame.BackgroundTransparency = 1
+interceptorFrame.Active = true
+interceptorFrame.ZIndex = 0
 
 local mainFrame = Instance.new("Frame", screenGui)
 mainFrame.Name = "MainFrame"
@@ -109,7 +114,7 @@ blurFrame.Name = "BlurFrame"
 blurFrame.BackgroundColor3 = CONFIG.Colors.Background
 blurFrame.BackgroundTransparency = 0.3
 blurFrame.ZIndex = 0
-blurFrame.Visible = true
+blurFrame.Visible = isVisible
 blurFrame.Size = mainFrame.Size
 blurFrame.Position = mainFrame.Position
 blurFrame.AnchorPoint = mainFrame.AnchorPoint
@@ -203,16 +208,8 @@ inputContainer.Name = "InputContainer"; inputContainer.Size = UDim2.new(1, -100,
 
 local inputBox = Instance.new("TextBox", inputContainer)
 inputBox.Name = "InputBox"; inputBox.Size = UDim2.new(1, 0, 0, 0); inputBox.AutomaticSize = Enum.AutomaticSize.Y; inputBox.BackgroundTransparency = 1; inputBox.ClearTextOnFocus = false; inputBox.Font = CONFIG.Font; inputBox.PlaceholderText = "Execute Luau code..."; inputBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150); inputBox.TextColor3 = CONFIG.Colors.Text; inputBox.TextSize = 14;
-inputBox.MultiLine = true;
-inputBox.Text = "";
-inputBox.Selectable = false
-
-local touchOverlay = Instance.new("TextButton", inputContainer)
-touchOverlay.Name = "TouchOverlay"
-touchOverlay.Size = UDim2.new(1, 0, 1, 0)
-touchOverlay.BackgroundTransparency = 1
-touchOverlay.Text = ""
-touchOverlay.ZIndex = 2
+inputBox.MultiLine = true
+inputBox.Text = ""
 
 Instance.new("UIPadding", inputBox, {
     PaddingLeft = UDim.new(0, 10),
@@ -225,12 +222,10 @@ local function updateInputControlsVisibility()
     task.wait() 
     local needsControls = #inputBox.Text >= 100
     expandInputButton.Visible = needsControls and not isInputMaximized
-    inputContainer.ScrollBarThickness = (isInputMaximized and needsControls) and 10 or 0
 end
 
 local function updateInputCanvas()
     inputContainer.CanvasSize = UDim2.new(0, 0, 0, inputBox.AbsoluteSize.Y)
-    touchOverlay.Size = UDim2.new(1, 0, 0, inputBox.AbsoluteSize.Y)
     if not isInputMaximized then
       inputContainer.CanvasPosition = Vector2.new(0, inputBox.AbsoluteSize.Y)
     end
@@ -319,8 +314,7 @@ function toggleMinimize()
     
     footer.Visible = not isMinimized
     logContainer.Visible = not isMinimized
-    blur.Enabled = not isMinimized
-    screenGui.Enabled = not isMinimized
+    blur.Enabled = isVisible and not isMinimized
     
     if isMinimized then
         controls:Enable()
@@ -488,7 +482,6 @@ function toggleScriptView()
 
     if isInputMaximized then
         header.Visible = false
-        logContainer.Visible = false
         footer.ZIndex = 5
         TweenService:Create(footer, tweenInfo, {Size = UDim2.new(1, 0, 1, 0), Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5)}):Play()
         
@@ -510,7 +503,6 @@ function toggleScriptView()
 
     else
         header.Visible = true
-        logContainer.Visible = true
         footer.ZIndex = 3
         TweenService:Create(footer, tweenInfo, {Size = UDim2.new(1, 0, 0, 80), Position = UDim2.new(0, 0, 1, -80), AnchorPoint = Vector2.new(0,0)}):Play()
         
@@ -557,17 +549,7 @@ table.insert(connections, RunService.RenderStepped:Connect(function(dt)
     end
 end))
 
-table.insert(connections, inputBox.FocusLost:Connect(function(enterPressed) 
-    if enterPressed and inputBox.Text ~= "" and not UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) and not UserInputService:IsKeyDown(Enum.KeyCode.RightShift) then 
-        executeCommand()
-    end
-    inputBox.Selectable = false
-end))
-table.insert(connections, touchOverlay.MouseButton1Click:Connect(function()
-    inputBox.Selectable = true
-    inputBox:CaptureFocus()
-end))
-
+table.insert(connections, inputBox.FocusLost:Connect(function(enterPressed) if enterPressed and inputBox.Text ~= "" and not UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) and not UserInputService:IsKeyDown(Enum.KeyCode.RightShift) then executeCommand(); inputBox:CaptureFocus() end end))
 table.insert(connections, runButton.MouseButton1Click:Connect(executeCommand))
 table.insert(connections, inputBox.InputBegan:Connect(function(input)
     if not isVisible then return end
@@ -626,34 +608,6 @@ table.insert(connections, LogService.MessageOut:Connect(function(message, messag
     log(message, tostring(messageType):gsub("Message", ""))
 end))
 
-local function onSafeAreaChanged()
-    local safeRect = screenGui.SafeAreaInset
-    local screenHeight = screenGui.AbsoluteSize.Y
-    local keyboardHeight = screenHeight - safeRect.Max.Y
-
-    if not isMinimized then
-        local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-        local newSize, newPos, newAnchor
-
-        if keyboardHeight > 20 then
-            newSize = UDim2.new(1, 0, 1, -keyboardHeight)
-            newPos = UDim2.new(0.5, 0, 0, 0)
-            newAnchor = Vector2.new(0.5, 0)
-        else
-            newSize = UDim2.new(1, 0, 1, 0)
-            newPos = UDim2.new(0.5, 0, 0.5, 0)
-            newAnchor = Vector2.new(0.5, 0.5)
-        end
-        
-        mainFrame.AnchorPoint = newAnchor
-        TweenService:Create(mainFrame, tweenInfo, {Size = newSize, Position = newPos}):Play()
-        blurFrame.AnchorPoint = newAnchor
-        TweenService:Create(blurFrame, tweenInfo, {Size = newSize, Position = newPos}):Play()
-    end
-end
-
-table.insert(connections, screenGui:GetPropertyChangedSignal("SafeAreaInset"):Connect(onSafeAreaChanged))
-
 screenGui.Parent = playerGui
 blurGui.Parent = playerGui
 
@@ -683,5 +637,4 @@ refreshLogs()
 toggleMinimize()
 loopGlow()
 updateInputControlsVisibility()
-onSafeAreaChanged()
 
