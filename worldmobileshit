@@ -92,13 +92,6 @@ blur.Size = 24
 blur.Enabled = isVisible
 blur.Parent = game.Lighting
 
-local interceptorFrame = Instance.new("Frame", screenGui)
-interceptorFrame.Name = "InterceptorFrame"
-interceptorFrame.Size = UDim2.new(1, 0, 1, 0)
-interceptorFrame.BackgroundTransparency = 1
-interceptorFrame.Active = true
-interceptorFrame.ZIndex = 0
-
 local mainFrame = Instance.new("Frame", screenGui)
 mainFrame.Name = "MainFrame"
 mainFrame.Size = UDim2.new(1, 0, 1, 0)
@@ -108,6 +101,7 @@ mainFrame.BackgroundTransparency = 1
 mainFrame.ClipsDescendants = true
 mainFrame.ZIndex = 1
 mainFrame.Visible = true
+mainFrame.Modal = true
 
 local blurFrame = Instance.new("Frame", blurGui)
 blurFrame.Name = "BlurFrame"
@@ -238,7 +232,7 @@ function showTutorial()
     tutorialShown = true
     
     local tutorialFrame = Instance.new("Frame", screenGui)
-    tutorialFrame.Name = "TutorialFrame"; tutorialFrame.Size = UDim2.new(0, 450, 0, 280); tutorialFrame.Position = UDim2.new(0.5, 0, 0.5, 0); tutorialFrame.AnchorPoint = Vector2.new(0.5, 0.5); tutorialFrame.BackgroundColor3 = CONFIG.Colors.Background; tutorialFrame.BackgroundTransparency = 0.1; tutorialFrame.ZIndex = 10
+    tutorialFrame.Name = "TutorialFrame"; tutorialFrame.Size = UDim2.new(0, 450, 0, 250); tutorialFrame.Position = UDim2.new(0.5, 0, 0.5, 0); tutorialFrame.AnchorPoint = Vector2.new(0.5, 0.5); tutorialFrame.BackgroundColor3 = CONFIG.Colors.Background; tutorialFrame.BackgroundTransparency = 0.1; tutorialFrame.ZIndex = 10
     local tutCorner = Instance.new("UICorner", tutorialFrame); tutCorner.CornerRadius = UDim.new(0, 8)
     local tutStroke = Instance.new("UIStroke", tutorialFrame); tutStroke.Color = CONFIG.Colors.PrimaryAccent; tutStroke.Thickness = 2
     
@@ -246,7 +240,7 @@ function showTutorial()
     tutTitle.Size = UDim2.new(1, -20, 0, 30); tutTitle.Position = UDim2.new(0.5, 0, 0, 10); tutTitle.AnchorPoint = Vector2.new(0.5, 0); tutTitle.BackgroundTransparency = 1; tutTitle.Font = CONFIG.BoldFont; tutTitle.TextColor3 = CONFIG.Colors.Text; tutTitle.TextSize = 20
     
     local tutBody = Instance.new("TextLabel", tutorialFrame)
-    tutBody.Size = UDim2.new(1, -20, 0, 160); tutBody.Position = UDim2.new(0.5, 0, 0, 45); tutBody.AnchorPoint = Vector2.new(0.5, 0); tutBody.BackgroundTransparency = 1; tutBody.Font = Enum.Font.SourceSans; tutBody.TextColor3 = CONFIG.Colors.Text; tutBody.TextSize = 16; tutBody.TextWrapped = true; tutBody.TextYAlignment = Enum.TextYAlignment.Top; tutBody.Text = ""
+    tutBody.Size = UDim2.new(1, -20, 0, 130); tutBody.Position = UDim2.new(0.5, 0, 0, 45); tutBody.AnchorPoint = Vector2.new(0.5, 0); tutBody.BackgroundTransparency = 1; tutBody.Font = Enum.Font.SourceSans; tutBody.TextColor3 = CONFIG.Colors.Text; tutBody.TextSize = 16; tutBody.TextWrapped = true; tutBody.TextYAlignment = Enum.TextYAlignment.Top; tutBody.Text = ""
     
     local buttonFrame = Instance.new("Frame", tutorialFrame)
     buttonFrame.Size = UDim2.new(1, 0, 0, 35); buttonFrame.Position = UDim2.new(0.5, 0, 1, -15); buttonFrame.AnchorPoint = Vector2.new(0.5, 1); buttonFrame.BackgroundTransparency = 1
@@ -264,17 +258,15 @@ function showTutorial()
     skipButton.Size = UDim2.new(0, 100, 1, 0); skipButton.Position = UDim2.new(0.5, -110, 0.5, 0); skipButton.AnchorPoint = Vector2.new(0.5, 0.5); skipButton.BackgroundColor3 = CONFIG.Colors.UtilButton; skipButton.Font = CONFIG.BoldFont; skipButton.Text = "Skip"; skipButton.TextColor3 = Color3.new(1,1,1); skipButton.TextSize = 18; Instance.new("UICorner", skipButton).CornerRadius = UDim.new(0, 6)
     
     tutorialFrame.Size = UDim2.new(0,0,0,0)
-    TweenService:Create(tutorialFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0, 450, 0, 280)}):Play()
+    TweenService:Create(tutorialFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0, 450, 0, 250)}):Play()
     createClickParticles(tutorialFrame, CONFIG.Colors.PrimaryAccent)
     
     local pages = {
-        {Title = "Welcome!", Text = "This is the World Client, a powerful in-game tool. This short tutorial will guide you through its features."},
-        {Title = "Basic Controls", Text = "Click the ('◼️') button to minimize the client. When minimized, you can drag the bar anywhere on your screen. Click ('🔲') to bring it back."},
-        {Title = "Player Input", Text = "When the client is open, your character movement and camera controls are disabled so you can interact with the UI without interruption. Minimizing restores your controls instantly."},
-        {Title = "The Header Buttons", Text = "The buttons on the top bar provide quick access to our Script Hub (📜), Website (🌐), and Discord (💬). Clicking them copies the link to your clipboard."},
-        {Title = "Executing Code", Text = "Type or paste any Luau script into the input box at the bottom. Press 'Run' or hit Enter to execute it. You can use the Up/Down arrow keys to navigate your command history."},
-        {Title = "The Script Editor", Text = "If you're working with a large script (>100 characters), a '↗️' button will appear. Click it to expand the editor to a full-screen view for easier editing."},
-        {Title = "You're all set!", Text = "That covers all the main features. You can re-open this tutorial anytime by typing 'tutorial()' in the command bar and running it. Enjoy!"}
+        {Title = "Welcome!", Text = "This is the World Client, a powerful tool for developers. Let's walk through the features."},
+        {Title = "Toggling & Moving", Text = "You can click the minimize ('◼️') button to collapse or expand this window.\n\nTo move the minimized bar, simply click and drag it."},
+        {Title = "Managing Logs", Text = "Hover over any log entry to reveal 📋 (copy) and 🗑️ (delete) buttons for that specific line.\n\nUse the main header buttons to manage all logs at once."},
+        {Title = "Executing Code", Text = "Type any Luau code into the input bar and press 'Run' or Enter to execute it.\n\nUse the Up/Down arrow keys to navigate your command history."},
+        {Title = "You're all set!", Text = "That's all for now. You can re-open this tutorial by typing 'tutorial()' in the command bar. Enjoy!"}
     }
     local currentPage = 1
     
@@ -315,6 +307,7 @@ function toggleMinimize()
     footer.Visible = not isMinimized
     logContainer.Visible = not isMinimized
     blur.Enabled = isVisible and not isMinimized
+    mainFrame.Modal = not isMinimized
     
     if isMinimized then
         controls:Enable()
