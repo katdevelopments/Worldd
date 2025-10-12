@@ -208,11 +208,12 @@ inputBox.Name = "InputBox"; inputBox.Size = UDim2.new(1, 0, 0, 0); inputBox.Auto
 inputBox.MultiLine = true
 inputBox.Text = ""
 
-local inputBoxPadding = Instance.new("UIPadding", inputBox)
-inputBoxPadding.PaddingLeft = UDim.new(0, 10)
-inputBoxPadding.PaddingRight = UDim.new(0, 10)
-inputBoxPadding.PaddingTop = UDim.new(0, 5)
-inputBoxPadding.PaddingBottom = UDim.new(0, 5)
+Instance.new("UIPadding", inputBox, {
+    PaddingLeft = UDim.new(0, 10),
+    PaddingRight = UDim.new(0, 10),
+    PaddingTop = UDim.new(0, 5),
+    PaddingBottom = UDim.new(0, 5)
+})
 
 local function updateInputControlsVisibility()
     task.wait() 
