@@ -225,6 +225,7 @@ local function updateInputControlsVisibility()
     task.wait() 
     local needsControls = #inputBox.Text >= 100
     expandInputButton.Visible = needsControls and not isInputMaximized
+    inputContainer.ScrollBarThickness = (isInputMaximized and needsControls) and 10 or 0
 end
 
 local function updateInputCanvas()
@@ -319,6 +320,7 @@ function toggleMinimize()
     footer.Visible = not isMinimized
     logContainer.Visible = not isMinimized
     blur.Enabled = not isMinimized
+    screenGui.Enabled = not isMinimized
     
     if isMinimized then
         controls:Enable()
@@ -486,6 +488,7 @@ function toggleScriptView()
 
     if isInputMaximized then
         header.Visible = false
+        logContainer.Visible = false
         footer.ZIndex = 5
         TweenService:Create(footer, tweenInfo, {Size = UDim2.new(1, 0, 1, 0), Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5)}):Play()
         
@@ -507,6 +510,7 @@ function toggleScriptView()
 
     else
         header.Visible = true
+        logContainer.Visible = true
         footer.ZIndex = 3
         TweenService:Create(footer, tweenInfo, {Size = UDim2.new(1, 0, 0, 80), Position = UDim2.new(0, 0, 1, -80), AnchorPoint = Vector2.new(0,0)}):Play()
         
@@ -622,21 +626,33 @@ table.insert(connections, LogService.MessageOut:Connect(function(message, messag
     log(message, tostring(messageType):gsub("Message", ""))
 end))
 
-local function onInsetsChanged()
-    local bottomInset = screenGui.ScreenInsets.Max.Y
+local function onSafeAreaChanged()
+    local safeRect = screenGui.SafeAreaInset
     local screenHeight = screenGui.AbsoluteSize.Y
-    local keyboardHeight = screenHeight - bottomInset
-    
+    local keyboardHeight = screenHeight - safeRect.Max.Y
+
     if not isMinimized then
         local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-        local newSize = UDim2.new(1, 0, 1, -keyboardHeight)
+        local newSize, newPos, newAnchor
+
+        if keyboardHeight > 20 then
+            newSize = UDim2.new(1, 0, 1, -keyboardHeight)
+            newPos = UDim2.new(0.5, 0, 0, 0)
+            newAnchor = Vector2.new(0.5, 0)
+        else
+            newSize = UDim2.new(1, 0, 1, 0)
+            newPos = UDim2.new(0.5, 0, 0.5, 0)
+            newAnchor = Vector2.new(0.5, 0.5)
+        end
         
-        TweenService:Create(mainFrame, tweenInfo, {Size = newSize}):Play()
-        TweenService:Create(blurFrame, tweenInfo, {Size = newSize}):Play()
+        mainFrame.AnchorPoint = newAnchor
+        TweenService:Create(mainFrame, tweenInfo, {Size = newSize, Position = newPos}):Play()
+        blurFrame.AnchorPoint = newAnchor
+        TweenService:Create(blurFrame, tweenInfo, {Size = newSize, Position = newPos}):Play()
     end
 end
 
-table.insert(connections, screenGui:GetPropertyChangedSignal("ScreenInsets"):Connect(onInsetsChanged))
+table.insert(connections, screenGui:GetPropertyChangedSignal("SafeAreaInset"):Connect(onSafeAreaChanged))
 
 screenGui.Parent = playerGui
 blurGui.Parent = playerGui
@@ -667,4 +683,4 @@ refreshLogs()
 toggleMinimize()
 loopGlow()
 updateInputControlsVisibility()
-onInsetsChanged() 
+onSafeAreaChanged()
