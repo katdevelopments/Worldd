@@ -256,6 +256,14 @@ table.insert(connections, inputContainer:GetPropertyChangedSignal("AbsoluteSize"
 function showTutorial()
     tutorialShown = true
     
+    local tutorialOverlay = Instance.new("Frame", screenGui)
+    tutorialOverlay.Name = "TutorialOverlay"
+    tutorialOverlay.Size = UDim2.new(1, 0, 1, 0)
+    tutorialOverlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    tutorialOverlay.BackgroundTransparency = 1
+    tutorialOverlay.ZIndex = 9
+    TweenService:Create(tutorialOverlay, TweenInfo.new(0.5), {BackgroundTransparency = 0.6}):Play()
+
     local tutorialFrame = Instance.new("Frame", screenGui)
     tutorialFrame.Name = "TutorialFrame"; tutorialFrame.Size = UDim2.new(0, 450, 0, 280); tutorialFrame.Position = UDim2.new(0.5, 0, 0.5, 0); tutorialFrame.AnchorPoint = Vector2.new(0.5, 0.5); tutorialFrame.BackgroundColor3 = CONFIG.Colors.Background; tutorialFrame.BackgroundTransparency = 0.1; tutorialFrame.ZIndex = 10
     local tutCorner = Instance.new("UICorner", tutorialFrame); tutCorner.CornerRadius = UDim.new(0, 8)
@@ -314,6 +322,15 @@ function showTutorial()
     
     local function closeTutorial()
         if not tutorialFrame.Parent then return end
+
+        local overlay = screenGui:FindFirstChild("TutorialOverlay")
+        if overlay then
+            TweenService:Create(overlay, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
+            task.delay(0.3, function()
+                if overlay.Parent then overlay:Destroy() end
+            end)
+        end
+
         local tween = TweenService:Create(tutorialFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Size = UDim2.new(0,0,0,0)})
         tween:Play()
         tween.Completed:Wait()
