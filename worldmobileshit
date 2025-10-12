@@ -256,12 +256,15 @@ table.insert(connections, inputContainer:GetPropertyChangedSignal("AbsoluteSize"
 function showTutorial()
     tutorialShown = true
     
-    local tutorialOverlay = Instance.new("Frame", screenGui)
+    -- Changed to a TextButton to reliably sink all mouse input, including right-clicks.
+    local tutorialOverlay = Instance.new("TextButton", screenGui)
     tutorialOverlay.Name = "TutorialOverlay"
     tutorialOverlay.Size = UDim2.new(1, 0, 1, 0)
     tutorialOverlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     tutorialOverlay.BackgroundTransparency = 1
     tutorialOverlay.ZIndex = 9
+    tutorialOverlay.Text = ""
+    tutorialOverlay.AutoButtonColor = false
     TweenService:Create(tutorialOverlay, TweenInfo.new(0.5), {BackgroundTransparency = 0.6}):Play()
 
     local tutorialFrame = Instance.new("Frame", screenGui)
