@@ -89,6 +89,13 @@ blur.Size = 24
 blur.Enabled = isVisible
 blur.Parent = game.Lighting
 
+local interceptorFrame = Instance.new("Frame", screenGui)
+interceptorFrame.Name = "InterceptorFrame"
+interceptorFrame.Size = UDim2.new(1, 0, 1, 0)
+interceptorFrame.BackgroundTransparency = 1
+interceptorFrame.Active = true
+interceptorFrame.ZIndex = 0
+
 local mainFrame = Instance.new("Frame", screenGui)
 mainFrame.Name = "MainFrame"
 mainFrame.Size = UDim2.new(1, 0, 1, 0)
@@ -98,7 +105,6 @@ mainFrame.BackgroundTransparency = 1
 mainFrame.ClipsDescendants = true
 mainFrame.ZIndex = 1
 mainFrame.Visible = true
-mainFrame.Active = true
 
 local blurFrame = Instance.new("Frame", blurGui)
 blurFrame.Name = "BlurFrame"
@@ -183,7 +189,7 @@ local footer = Instance.new("Frame", mainFrame)
 footer.Name = "Footer"; footer.Size = UDim2.new(1, 0, 0, 80); footer.Position = UDim2.new(0, 0, 1, -80); footer.BackgroundTransparency = 1; footer.ZIndex = 3
 
 local logContainer = Instance.new("ScrollingFrame", mainFrame)
-logContainer.Name = "LogContainer"; logContainer.Size = UDim2.new(1, 0, 1, -120); logContainer.Position = UDim2.new(0, 0, 0, 40); logContainer.BackgroundTransparency = 1; logContainer.BorderSizePixel = 0; logContainer.ScrollBarImageColor3 = CONFIG.Colors.PrimaryAccent; logContainer.ScrollBarThickness = 8; logContainer.Active = true; logContainer.ZIndex = 1
+logContainer.Name = "LogContainer"; logContainer.Size = UDim2.new(1, 0, 1, -120); logContainer.Position = UDim2.new(0, 0, 0, 40); logContainer.BackgroundTransparency = 1; logContainer.BorderSizePixel = 0; logContainer.ScrollBarImageColor3 = CONFIG.Colors.PrimaryAccent; logContainer.ScrollBarThickness = 8; logContainer.ZIndex = 1
 local uiListLayout = Instance.new("UIListLayout", logContainer); uiListLayout.Padding = UDim.new(0, 5); uiListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
 local runButton = Instance.new("TextButton", footer)
@@ -206,12 +212,9 @@ local inputBoxPadding = Instance.new("UIPadding", inputBox); inputBoxPadding.Pad
 
 local function updateInputControlsVisibility()
     task.wait() 
-    local neededHeight = inputBox.TextBounds.Y
-    local availableHeight = inputContainer.AbsoluteSize.Y - inputBoxPadding.PaddingTop.Offset - inputBoxPadding.PaddingBottom.Offset
-    
-    local needsScroll = neededHeight > availableHeight
-    expandInputButton.Visible = needsScroll
-    inputContainer.ScrollBarThickness = needsScroll and 6 or 0
+    local needsControls = #inputBox.Text >= 100
+    expandInputButton.Visible = needsControls
+    inputContainer.ScrollBarThickness = (isInputMaximized and needsControls) and 6 or 0
 end
 
 local function updateInputCanvas()
@@ -303,7 +306,7 @@ function toggleMinimize()
     footer.Visible = not isMinimized
     logContainer.Visible = not isMinimized
     blur.Enabled = isVisible and not isMinimized
-    mainFrame.Active = not isMinimized
+    interceptorFrame.Active = not isMinimized
     
     if isMinimized then
         leftControls.Visible = false
@@ -517,7 +520,7 @@ table.insert(connections, expandInputButton.MouseButton1Click:Connect(function()
     isInputMaximized = not isInputMaximized
     local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
     
-    local footerSize, logContainerSize, logContainerPos, footerPos
+    local footerSize, footerPos
     if isInputMaximized then
         footerSize = UDim2.new(1, 0, 1, -40)
         footerPos = UDim2.new(0, 0, 0, 40)
@@ -529,6 +532,7 @@ table.insert(connections, expandInputButton.MouseButton1Click:Connect(function()
     end
     
     TweenService:Create(footer, tweenInfo, {Size = footerSize, Position = footerPos}):Play()
+    updateInputControlsVisibility()
 end))
 
 table.insert(connections, minimizeButton.MouseButton1Click:Connect(toggleMinimize))
