@@ -26,11 +26,11 @@ local historyIndex = 0
 local logCounter = 0
 local isVisible = true
 local isMinimized = false
-local isMaximized = false
 local isDragging = false
 local isLoggingInternally = false
 local tutorialShown = false
-local dragStart, frameStartPos, lastSize, lastPosition
+local dragStart, frameStartPos
+local lastMinimizedPosition = UDim2.new(0.5, 0, 0.05, 0)
 local activeTweens = {}
 local connections = {}
 local targetPosition
@@ -48,7 +48,6 @@ local CONFIG = {
         Error = Color3.fromRGB(239, 68, 68),
         Warning = Color3.fromRGB(245, 158, 11),
         InputEcho = Color3.fromRGB(156, 163, 175),
-        MaximizeButton = Color3.fromRGB(30, 64, 175),
         MinimizeButton = Color3.fromRGB(30, 64, 175),
         UtilButton = Color3.fromRGB(30, 64, 175),
         UtilButtonHover = Color3.fromRGB(59, 130, 246),
@@ -62,12 +61,12 @@ local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "WorldClientGui"
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 screenGui.ResetOnSpawn = false
-screenGui.DisplayOrder = 999999999
+screenGui.DisplayOrder = 2147483647
 
 local blurGui = Instance.new("ScreenGui")
 blurGui.Name = "WorldClientBlurGui"
 blurGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-blurGui.DisplayOrder = 999999998
+blurGui.DisplayOrder = 2147483646
 blurGui.ResetOnSpawn = false
 
 local blur = Instance.new("BlurEffect")
@@ -77,9 +76,9 @@ blur.Parent = game.Lighting
 
 local mainFrame = Instance.new("Frame", screenGui)
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0.8, 0, 0.7, 0)
-mainFrame.Position = UDim2.new(0.5, 0, 0.05, 0)
-mainFrame.AnchorPoint = Vector2.new(0.5, 0)
+mainFrame.Size = UDim2.new(1, 0, 1, 0)
+mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 mainFrame.BackgroundTransparency = 1
 mainFrame.ClipsDescendants = true
 mainFrame.ZIndex = 1
@@ -163,7 +162,6 @@ local clearButton = createIconButton(leftControls, "🗑️", 28, CONFIG.Colors.
 local refreshButton = createIconButton(leftControls, "🔄", 28, CONFIG.Colors.UtilButton)
 
 local minimizeButton = createIconButton(rightControls, "—", 28, CONFIG.Colors.MinimizeButton)
-local maximizeButton = createIconButton(rightControls, "🔲", 28, CONFIG.Colors.MaximizeButton)
 
 local footer = Instance.new("Frame", mainFrame)
 footer.Name = "Footer"; footer.Size = UDim2.new(1, 0, 0, 80); footer.Position = UDim2.new(0, 0, 1, -80); footer.BackgroundTransparency = 1
@@ -264,45 +262,39 @@ end
 
 function toggleMinimize()
     isMinimized = not isMinimized
-    local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+    local tweenInfo = TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
     
     footer.Visible = not isMinimized
     logContainer.Visible = not isMinimized
     blur.Enabled = isVisible and not isMinimized
     
     if isMinimized then
-        lastSize = mainFrame.Size
-        lastPosition = mainFrame.Position
-        local minimizedSize = UDim2.new(0, 300, 0, 40)
-        
         leftControls.Visible = false
         titleLabel.Size = UDim2.new(0, 150, 1, 0)
-        titleLabel.TextXAlignment = Enum.TextXAlignment.Left
         
-        TweenService:Create(mainFrame, tweenInfo, { Size = minimizedSize }):Play()
+        TweenService:Create(mainFrame, tweenInfo, { 
+            Size = UDim2.new(0, 300, 0, 40),
+            Position = lastMinimizedPosition,
+            AnchorPoint = Vector2.new(0.5, 0) 
+        }):Play()
+
+        minimizeButton.Text = "🔲"
+        
     else
+        lastMinimizedPosition = mainFrame.Position 
+        
         leftControls.Visible = true
         titleLabel.Size = UDim2.new(1, -400, 1, 0)
-        titleLabel.TextXAlignment = Enum.TextXAlignment.Left
         
-        TweenService:Create(mainFrame, tweenInfo, { Size = lastSize or UDim2.new(0.8, 0, 0.7, 0) }):Play()
-        if not tutorialShown then showTutorial() end
-    end
-end
+        TweenService:Create(mainFrame, tweenInfo, {
+            Size = UDim2.new(1, 0, 1, 0), 
+            Position = UDim2.new(0.5, 0, 0.5, 0), 
+            AnchorPoint = Vector2.new(0.5, 0.5) 
+        }):Play()
 
-function maximizeConsole()
-    isMaximized = not isMaximized
-    local tweenInfo = TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-    
-    if isMaximized then
-        if isMinimized then toggleMinimize() end
-        lastSize = mainFrame.Size
-        lastPosition = mainFrame.Position
-        TweenService:Create(mainFrame, tweenInfo, { Size = UDim2.new(1, 0, 1, 0), Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5) }):Play()
-        maximizeButton.Text = "🔳"
-    else
-        TweenService:Create(mainFrame, tweenInfo, { Size = lastSize, Position = lastPosition, AnchorPoint = Vector2.new(0.5, 0) }):Play()
-        maximizeButton.Text = "🔲"
+        minimizeButton.Text = "—"
+        
+        if not tutorialShown then showTutorial() end
     end
 end
 
@@ -425,8 +417,13 @@ table.insert(connections, mainFrame:GetPropertyChangedSignal("AnchorPoint"):Conn
 
 table.insert(connections, header.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        if isMaximized then return end
-        isDragging = true; dragStart = UserInputService:GetMouseLocation(); frameStartPos = mainFrame.Position; targetPosition = mainFrame.Position
+        if not isMinimized then return end
+        
+        isDragging = true; 
+        dragStart = UserInputService:GetMouseLocation(); 
+        frameStartPos = mainFrame.Position; 
+        targetPosition = mainFrame.Position
+        
         local changedConn
         changedConn = input.Changed:Connect(function() 
             if input.UserInputState == Enum.UserInputState.End then 
@@ -474,7 +471,6 @@ table.insert(connections, discordButton.MouseButton1Click:Connect(function()
 end))
 
 table.insert(connections, minimizeButton.MouseButton1Click:Connect(toggleMinimize))
-table.insert(connections, maximizeButton.MouseButton1Click:Connect(maximizeConsole))
 table.insert(connections, clearButton.MouseButton1Click:Connect(clearLogs))
 table.insert(connections, refreshButton.MouseButton1Click:Connect(refreshLogs))
 
