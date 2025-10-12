@@ -91,7 +91,7 @@ blurGui.IgnoreGuiInset = true
 
 local blur = Instance.new("BlurEffect")
 blur.Size = 24
-blur.Enabled = isVisible
+blur.Enabled = false 
 blur.Parent = game.Lighting
 
 local mainFrame = Instance.new("Frame", screenGui)
@@ -109,7 +109,7 @@ blurFrame.Name = "BlurFrame"
 blurFrame.BackgroundColor3 = CONFIG.Colors.Background
 blurFrame.BackgroundTransparency = 0.3
 blurFrame.ZIndex = 0
-blurFrame.Visible = isVisible
+blurFrame.Visible = true
 blurFrame.Size = mainFrame.Size
 blurFrame.Position = mainFrame.Position
 blurFrame.AnchorPoint = mainFrame.AnchorPoint
@@ -205,7 +205,7 @@ local inputBox = Instance.new("TextBox", inputContainer)
 inputBox.Name = "InputBox"; inputBox.Size = UDim2.new(1, 0, 0, 0); inputBox.AutomaticSize = Enum.AutomaticSize.Y; inputBox.BackgroundTransparency = 1; inputBox.ClearTextOnFocus = false; inputBox.Font = CONFIG.Font; inputBox.PlaceholderText = "Execute Luau code..."; inputBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150); inputBox.TextColor3 = CONFIG.Colors.Text; inputBox.TextSize = 14;
 inputBox.MultiLine = true;
 inputBox.Text = "";
-inputBox.Active = false
+inputBox.Selectable = false
 
 local touchOverlay = Instance.new("TextButton", inputContainer)
 touchOverlay.Name = "TouchOverlay"
@@ -319,6 +319,7 @@ function toggleMinimize()
     footer.Visible = not isMinimized
     logContainer.Visible = not isMinimized
     blur.Enabled = isVisible and not isMinimized
+    screenGui.Enabled = not isMinimized
     
     if isMinimized then
         controls:Enable()
@@ -557,10 +558,10 @@ table.insert(connections, inputBox.FocusLost:Connect(function(enterPressed)
     if enterPressed and inputBox.Text ~= "" and not UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) and not UserInputService:IsKeyDown(Enum.KeyCode.RightShift) then 
         executeCommand()
     end
-    inputBox.Active = false
+    inputBox.Selectable = false
 end))
 table.insert(connections, touchOverlay.MouseButton1Click:Connect(function()
-    inputBox.Active = true
+    inputBox.Selectable = true
     inputBox:CaptureFocus()
 end))
 
@@ -622,12 +623,15 @@ table.insert(connections, LogService.MessageOut:Connect(function(message, messag
     log(message, tostring(messageType):gsub("Message", ""))
 end))
 
-table.insert(connections, UserInputService:GetPropertyChangedSignal("WindowInsets"):Connect(function()
-    local insets = UserInputService:GetWindowInsets()
-    local keyboardHeight = insets.Bottom.Y
+table.insert(connections, screenGui:GetPropertyChangedSignal("ScreenInsets"):Connect(function()
+    local keyboardHeight = screenGui.ScreenInsets.Bottom
     if not isMinimized then
-        mainFrame.Size = UDim2.new(1, 0, 1, -keyboardHeight)
-        blurFrame.Size = UDim2.new(1, 0, 1, -keyboardHeight)
+        local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        
+        local size = UDim2.new(1, 0, 1, -keyboardHeight)
+        
+        TweenService:Create(mainFrame, tweenInfo, {Size = size}):Play()
+        TweenService:Create(blurFrame, tweenInfo, {Size = size}):Play()
     end
 end))
 
