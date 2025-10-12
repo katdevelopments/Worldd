@@ -83,6 +83,14 @@ screenGui.ResetOnSpawn = false
 screenGui.DisplayOrder = 2147483647
 screenGui.IgnoreGuiInset = true
 
+-- This invisible frame will sink input, preventing camera movement when the UI is maximized.
+local inputSink = Instance.new("Frame", screenGui)
+inputSink.Name = "InputSink"
+inputSink.Size = UDim2.new(1, 0, 1, 0)
+inputSink.BackgroundTransparency = 1
+inputSink.ZIndex = 0
+inputSink.Active = true -- Start active, will be toggled based on minimized state.
+
 local blurGui = Instance.new("ScreenGui")
 blurGui.Name = "WorldClientBlurGui"
 blurGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
@@ -326,9 +334,11 @@ function toggleMinimize()
     footer.Visible = not isMinimized
     logContainer.Visible = not isMinimized
     blur.Enabled = not isMinimized
+    inputSink.Active = not isMinimized -- Activate/deactivate the input sink
     
     if isMinimized then
         controls:Enable()
+        UserInputService.MouseBehavior = Enum.MouseBehavior.Default -- Do not lock mouse when minimized
         icon.Visible = true
         titleLabel.Visible = true
         leftControls.Visible = false
@@ -344,6 +354,7 @@ function toggleMinimize()
         
     else
         controls:Disable()
+        UserInputService.MouseBehavior = Enum.MouseBehavior.Default -- Unlock mouse for UI
         lastMinimizedPosition = mainFrame.Position 
         
         icon.Visible = true
@@ -383,9 +394,17 @@ function refreshLogs()
         log("Warning: 'loadstring' is disabled. Code execution will not work.", "Warning")
     end
     for _, entry in ipairs(LogService:GetLogHistory()) do
-        log(entry.message, tostring(entry.messageType):gsub("Message", ""))
+        local typeStr = "Output" -- Default for prints
+        if entry.messageType == Enum.MessageType.MessageWarning then
+            typeStr = "Warning"
+        elseif entry.messageType == Enum.MessageType.MessageError then
+            typeStr = "Error"
+        elseif entry.messageType == Enum.MessageType.MessageInfo then
+            typeStr = "Info"
+        end
+        log(entry.message, typeStr)
     end
-    log("Console logs refreshed. Type 'tutorial()' to see the intro again.", "Output")
+    log("Console logs refreshed. Type 'tutorial()' to see the intro again.", "Info")
 end
 
 function log(message, messageType)
@@ -412,10 +431,10 @@ function log(message, messageType)
     elseif messageType == "Input" then
         logEntry.TextColor3 = CONFIG.Colors.InputEcho
         logEntry.Text = "> " .. messageStr
-    elseif messageType == "Output" or messageType == "Info" then
+    elseif messageType == "Info" then
         logEntry.TextColor3 = CONFIG.Colors.Info
-        logEntry.Text = "<u>" .. messageStr .. "</u>"
-    else
+        logEntry.Text = messageStr
+    else -- Handles "Output" and any other types, defaulting to white
         logEntry.TextColor3 = CONFIG.Colors.Text
         logEntry.Text = messageStr
     end
@@ -493,8 +512,6 @@ function executeCommand()
     else
         if result ~= nil then 
             log(tostring(result), "Output") 
-        else
-            log("Script successfully executed.", "Output")
         end
     end
 end
@@ -658,7 +675,17 @@ end))
 
 table.insert(connections, LogService.MessageOut:Connect(function(message, messageType)
     if isLoggingInternally then return end
-    log(message, tostring(messageType):gsub("Message", ""))
+    
+    local typeStr = "Output" -- Default for prints
+    if messageType == Enum.MessageType.MessageWarning then
+        typeStr = "Warning"
+    elseif messageType == Enum.MessageType.MessageError then
+        typeStr = "Error"
+    elseif messageType == Enum.MessageType.MessageInfo then
+        typeStr = "Info"
+    end
+    
+    log(message, typeStr)
 end))
 
 local function onInsetsChanged()
@@ -712,6 +739,7 @@ screenGui.Destroying:Connect(function()
         connection:Disconnect()
     end
     controls:Enable()
+    UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
 end)
 
 refreshLogs()
