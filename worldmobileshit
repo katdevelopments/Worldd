@@ -36,7 +36,6 @@ local connections = {}
 local targetPosition
 
 local CONFIG = {
-    ToggleKey = Enum.KeyCode.F8,
     IconID = "rbxassetid://133555354035357",
     Title = "World Client",
     MaxLogs = 150,
@@ -63,11 +62,12 @@ local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "WorldClientGui"
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 screenGui.ResetOnSpawn = false
+screenGui.DisplayOrder = 999999999
 
 local blurGui = Instance.new("ScreenGui")
 blurGui.Name = "WorldClientBlurGui"
 blurGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-blurGui.DisplayOrder = -1
+blurGui.DisplayOrder = 999999998
 blurGui.ResetOnSpawn = false
 
 local blur = Instance.new("BlurEffect")
@@ -102,13 +102,13 @@ blurStroke.Thickness = 2
 blurStroke.Transparency = 0.2
 
 local header = Instance.new("Frame", mainFrame)
-header.Name = "Header"; header.Size = UDim2.new(1, 0, 0, 40); header.BackgroundTransparency = 1
+header.Name = "Header"; header.Size = UDim2.new(1, 0, 0, 40); header.BackgroundTransparency = 1; header.Active = true
 
 local icon = Instance.new("ImageLabel", header)
 icon.Name = "Icon"; icon.Size = UDim2.new(0, 24, 0, 24); icon.Position = UDim2.new(0, 10, 0.5, 0); icon.AnchorPoint = Vector2.new(0, 0.5); icon.BackgroundTransparency = 1; icon.Image = CONFIG.IconID
 
 local titleLabel = Instance.new("TextLabel", header)
-titleLabel.Name = "Title"; titleLabel.Size = UDim2.new(1, -350, 1, 0); titleLabel.Position = UDim2.new(0, 40, 0, 0); titleLabel.BackgroundTransparency = 1; titleLabel.Font = CONFIG.BoldFont; titleLabel.Text = CONFIG.Title; titleLabel.TextColor3 = CONFIG.Colors.Text; titleLabel.TextSize = 18; titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+titleLabel.Name = "Title"; titleLabel.Size = UDim2.new(1, -400, 1, 0); titleLabel.Position = UDim2.new(0, 40, 0, 0); titleLabel.BackgroundTransparency = 1; titleLabel.Font = CONFIG.BoldFont; titleLabel.Text = CONFIG.Title; titleLabel.TextColor3 = CONFIG.Colors.Text; titleLabel.TextSize = 18; titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 
 local function createClickParticles(parent, color)
     local emitter = Instance.new("ParticleEmitter")
@@ -144,7 +144,7 @@ local function createIconButton(parent, emoji, size, color)
 end
 
 local allControls = Instance.new("Frame", header)
-allControls.Name = "AllControls"; allControls.Size = UDim2.new(0, 350, 1, 0); allControls.Position = UDim2.new(1, -10, 0, 0); allControls.AnchorPoint = Vector2.new(1, 0); allControls.BackgroundTransparency = 1
+allControls.Name = "AllControls"; allControls.Size = UDim2.new(0, 400, 1, 0); allControls.Position = UDim2.new(1, -10, 0, 0); allControls.AnchorPoint = Vector2.new(1, 0); allControls.BackgroundTransparency = 1
 local allControlsLayout = Instance.new("UIListLayout", allControls); allControlsLayout.FillDirection = Enum.FillDirection.Horizontal; allControlsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right; allControlsLayout.VerticalAlignment = Enum.VerticalAlignment.Center; allControlsLayout.Padding = UDim.new(0, 8)
 
 local leftControls = Instance.new("Frame", allControls)
@@ -155,6 +155,7 @@ local rightControls = Instance.new("Frame", allControls)
 rightControls.Name = "RightControls"; rightControls.BackgroundTransparency = 1; rightControls.AutomaticSize = Enum.AutomaticSize.X
 local rightControlsLayout = Instance.new("UIListLayout", rightControls); rightControlsLayout.FillDirection = Enum.FillDirection.Horizontal; rightControlsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right; rightControlsLayout.VerticalAlignment = Enum.VerticalAlignment.Center; rightControlsLayout.Padding = UDim.new(0, 8)
 
+local scriptHubButton = createIconButton(leftControls, "📜", 28, CONFIG.Colors.UtilButton)
 local siteButton = createIconButton(leftControls, "🌐", 28, CONFIG.Colors.UtilButton)
 local discordButton = createIconButton(leftControls, "💬", 28, CONFIG.Colors.UtilButton)
 local copyButton = createIconButton(leftControls, "📋", 28, CONFIG.Colors.UtilButton)
@@ -281,7 +282,7 @@ function toggleMinimize()
         TweenService:Create(mainFrame, tweenInfo, { Size = minimizedSize }):Play()
     else
         leftControls.Visible = true
-        titleLabel.Size = UDim2.new(1, -350, 1, 0)
+        titleLabel.Size = UDim2.new(1, -400, 1, 0)
         titleLabel.TextXAlignment = Enum.TextXAlignment.Left
         
         TweenService:Create(mainFrame, tweenInfo, { Size = lastSize or UDim2.new(0.8, 0, 0.7, 0) }):Play()
@@ -444,7 +445,7 @@ table.insert(connections, RunService.RenderStepped:Connect(function(dt)
     end
 end))
 
-table.insert(connections, inputBox.FocusLost:Connect(function(enterPressed) if enterPressed and inputBox.Text ~= "" then executeCommand(); inputBox:CaptureFocus() end end))
+table.insert(connections, inputBox.FocusLost:Connect(function(enterPressed) if enterPressed and inputBox.Text ~= "" and not UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) and not UserInputService:IsKeyDown(Enum.KeyCode.RightShift) then executeCommand(); inputBox:CaptureFocus() end end))
 table.insert(connections, runButton.MouseButton1Click:Connect(executeCommand))
 table.insert(connections, inputBox.InputBegan:Connect(function(input)
     if not isVisible then return end
@@ -455,6 +456,11 @@ table.insert(connections, inputBox.InputBegan:Connect(function(input)
         historyIndex = math.max(historyIndex - 1, 0)
         inputBox.Text = historyIndex == 0 and "" or commandHistory[historyIndex]
     end
+end))
+
+table.insert(connections, scriptHubButton.MouseButton1Click:Connect(function()
+    pcall(setclipboard, "https://world-script-hub.netlify.app/")
+    log("Script Hub link copied to clipboard!", "Output")
 end))
 
 table.insert(connections, siteButton.MouseButton1Click:Connect(function()
@@ -524,4 +530,3 @@ end)
 refreshLogs()
 toggleMinimize()
 loopGlow()
-
