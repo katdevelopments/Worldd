@@ -201,7 +201,7 @@ expandInputButton.ZIndex = 3
 expandInputButton.Visible = false
 
 local inputContainer = Instance.new("ScrollingFrame", footer)
-inputContainer.Name = "InputContainer"; inputContainer.Size = UDim2.new(1, -100, 1, -10); inputContainer.Position = UDim2.new(0, 5, 0.5, 0); inputContainer.AnchorPoint = Vector2.new(0, 0.5); inputContainer.BackgroundColor3 = Color3.fromRGB(0, 0, 0); inputContainer.BackgroundTransparency = 0.4; inputContainer.BorderSizePixel = 0; inputContainer.ScrollBarImageColor3 = CONFIG.Colors.PrimaryAccent; inputContainer.ScrollBarThickness = 0; Instance.new("UICorner", inputContainer).CornerRadius = UDim.new(0, 6)
+inputContainer.Name = "InputContainer"; inputContainer.Size = UDim2.new(1, -100, 1, -10); inputContainer.Position = UDim2.new(0, 5, 0.5, 0); inputContainer.AnchorPoint = Vector2.new(0, 0.5); inputContainer.BackgroundColor3 = Color3.fromRGB(0, 0, 0); inputContainer.BackgroundTransparency = 0.4; inputContainer.BorderSizePixel = 0; inputContainer.ScrollBarImageColor3 = CONFIG.Colors.Text; inputContainer.ScrollBarThickness = 0; Instance.new("UICorner", inputContainer).CornerRadius = UDim.new(0, 6)
 
 local inputBox = Instance.new("TextBox", inputContainer)
 inputBox.Name = "InputBox"; inputBox.Size = UDim2.new(1, 0, 0, 0); inputBox.AutomaticSize = Enum.AutomaticSize.Y; inputBox.BackgroundTransparency = 1; inputBox.ClearTextOnFocus = false; inputBox.Font = CONFIG.Font; inputBox.PlaceholderText = "Execute Luau code..."; inputBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150); inputBox.TextColor3 = CONFIG.Colors.Text; inputBox.TextSize = 14;
@@ -476,10 +476,11 @@ function toggleScriptView()
     if collapseButton then collapseButton:Destroy() end
 
     if isInputMaximized then
+        header.Visible = false
         footer.ZIndex = 5
         TweenService:Create(footer, tweenInfo, {Size = UDim2.new(1, 0, 1, 0), Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5)}):Play()
         
-        local newCollapseButton = createIconButton(footer, "✕", 24, CONFIG.Colors.UtilButton)
+        local newCollapseButton = createIconButton(footer, "↙️", 24, CONFIG.Colors.UtilButton)
         newCollapseButton.Name = "CollapseButton"
         newCollapseButton.AnchorPoint = Vector2.new(1, 0)
         newCollapseButton.Position = UDim2.new(1, -95, 0, 5)
@@ -496,6 +497,7 @@ function toggleScriptView()
         collapseButtonConnection = newCollapseButton.MouseButton1Click:Connect(toggleScriptView)
 
     else
+        header.Visible = true
         footer.ZIndex = 3
         TweenService:Create(footer, tweenInfo, {Size = UDim2.new(1, 0, 0, 80), Position = UDim2.new(0, 0, 1, -80), AnchorPoint = Vector2.new(0,0)}):Play()
         
