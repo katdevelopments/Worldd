@@ -65,13 +65,14 @@ local CONFIG = {
         Text = Color3.fromRGB(229, 231, 235),
         Error = Color3.fromRGB(239, 68, 68),
         Warning = Color3.fromRGB(245, 158, 11),
+        Info = Color3.fromRGB(96, 165, 250),
         InputEcho = Color3.fromRGB(156, 163, 175),
         MinimizeButton = Color3.fromRGB(30, 64, 175),
         UtilButton = Color3.fromRGB(30, 64, 175),
         UtilButtonHover = Color3.fromRGB(59, 130, 246),
     },
     
-    Font = Enum.Font.Code,
+    Font = Enum.Font.SourceSans,
     BoldFont = Enum.Font.SourceSansBold,
 }
 
@@ -91,12 +92,12 @@ blurGui.IgnoreGuiInset = true
 
 local blur = Instance.new("BlurEffect")
 blur.Size = 24
-blur.Enabled = isVisible
+blur.Enabled = false
 blur.Parent = game.Lighting
 
 local mainFrame = Instance.new("Frame", screenGui)
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(1, 0, 1, 0)
+mainFrame.Size = UDim2.new(0.8, 0, 0.7, 0)
 mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
 mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 mainFrame.BackgroundTransparency = 1
@@ -109,7 +110,7 @@ blurFrame.Name = "BlurFrame"
 blurFrame.BackgroundColor3 = CONFIG.Colors.Background
 blurFrame.BackgroundTransparency = 0.3
 blurFrame.ZIndex = 0
-blurFrame.Visible = isVisible
+blurFrame.Visible = true
 blurFrame.Size = mainFrame.Size
 blurFrame.Position = mainFrame.Position
 blurFrame.AnchorPoint = mainFrame.AnchorPoint
@@ -127,7 +128,7 @@ local icon = Instance.new("ImageLabel", header)
 icon.Name = "Icon"; icon.Size = UDim2.new(0, 24, 0, 24); icon.Position = UDim2.new(0, 10, 0.5, 0); icon.AnchorPoint = Vector2.new(0, 0.5); icon.BackgroundTransparency = 1; icon.Image = CONFIG.IconID
 
 local titleLabel = Instance.new("TextLabel", header)
-titleLabel.Name = "Title"; titleLabel.Size = UDim2.new(1, -400, 1, 0); titleLabel.Position = UDim2.new(0, 40, 0, 0); titleLabel.BackgroundTransparency = 1; titleLabel.Font = CONFIG.BoldFont; titleLabel.Text = CONFIG.Title; titleLabel.TextColor3 = CONFIG.Colors.Text; titleLabel.TextSize = 18; titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+titleLabel.Name = "Title"; titleLabel.Size = UDim2.new(1, -400, 1, 0); titleLabel.Position = UDim2.new(0, 40, 0, 0); titleLabel.BackgroundTransparency = 1; titleLabel.Font = CONFIG.BoldFont; titleLabel.Text = CONFIG.Title; titleLabel.TextColor3 = CONFIG.Colors.Text; titleLabel.TextSize = 18; titleLabel.TextXAlignment = Enum.TextXAlignment.Left; titleLabel.RichText = true
 
 local function createClickParticles(parent, color)
     local emitter = Instance.new("ParticleEmitter")
@@ -145,7 +146,7 @@ end
 
 local function createIconButton(parent, emoji, size, color)
     local btn = Instance.new("TextButton", parent)
-    btn.Size = UDim2.new(0, size, 0, size); btn.BackgroundColor3 = color; btn.Font = Enum.Font.SourceSans; btn.Text = emoji; btn.TextColor3 = Color3.new(1, 1, 1); btn.TextSize = math.floor(size * 0.7); Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    btn.Size = UDim2.new(0, size, 0, size); btn.BackgroundColor3 = color; btn.Font = Enum.Font.SourceSans; btn.Text = emoji; btn.TextColor3 = Color3.new(1, 1, 1); btn.TextSize = math.floor(size * 0.7); btn.RichText = true; Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
     
     local originalSize = btn.Size
     table.insert(connections, btn.MouseEnter:Connect(function() TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = CONFIG.Colors.UtilButtonHover}):Play() end))
@@ -163,7 +164,7 @@ local function createIconButton(parent, emoji, size, color)
 end
 
 local allControls = Instance.new("Frame", header)
-allControls.Name = "AllControls"; allControls.Size = UDim2.new(0, 400, 1, 0); allControls.Position = UDim2.new(1, -10, 0, 0); allControls.AnchorPoint = Vector2.new(1, 0); allControls.BackgroundTransparency = 1
+allControls.Name = "AllControls"; allControls.AutomaticSize = Enum.AutomaticSize.X; allControls.Size = UDim2.new(0, 0, 1, 0); allControls.Position = UDim2.new(1, -10, 0, 0); allControls.AnchorPoint = Vector2.new(1, 0); allControls.BackgroundTransparency = 1
 local allControlsLayout = Instance.new("UIListLayout", allControls); allControlsLayout.FillDirection = Enum.FillDirection.Horizontal; allControlsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right; allControlsLayout.VerticalAlignment = Enum.VerticalAlignment.Center; allControlsLayout.Padding = UDim.new(0, 8)
 
 local leftControls = Instance.new("Frame", allControls)
@@ -193,26 +194,21 @@ local uiListLayout = Instance.new("UIListLayout", logContainer); uiListLayout.Pa
 local runButton = Instance.new("TextButton", footer)
 runButton.Name = "RunButton"; runButton.Size = UDim2.new(0, 80, 1, -10); runButton.Position = UDim2.new(1, -5, 0.5, 0); runButton.AnchorPoint = Vector2.new(1, 0.5); runButton.BackgroundColor3 = CONFIG.Colors.SecondaryAccent; runButton.Font = CONFIG.BoldFont; runButton.Text = "Run"; runButton.TextColor3 = Color3.new(1, 1, 1); runButton.TextSize = 16; Instance.new("UICorner", runButton).CornerRadius = UDim.new(0, 6)
 
-local expandInputButton = createIconButton(footer, "↗️", 24, CONFIG.Colors.UtilButton)
+local expandInputButton = createIconButton(footer, "^", 24, CONFIG.Colors.UtilButton)
 expandInputButton.Position = UDim2.new(1, -110, 0.15, 0)
 expandInputButton.ZIndex = 3
 expandInputButton.Visible = false
 
 local inputContainer = Instance.new("ScrollingFrame", footer)
-inputContainer.Name = "InputContainer"; inputContainer.Size = UDim2.new(1, -100, 1, -10); inputContainer.Position = UDim2.new(0, 5, 0.5, 0); inputContainer.AnchorPoint = Vector2.new(0, 0.5); inputContainer.BackgroundColor3 = Color3.fromRGB(0, 0, 0); inputContainer.BackgroundTransparency = 0.4; inputContainer.BorderSizePixel = 0; inputContainer.ScrollBarImageColor3 = CONFIG.Colors.Text; inputContainer.ScrollBarThickness = 0; inputContainer.ScrollingEnabled = true; Instance.new("UICorner", inputContainer).CornerRadius = UDim.new(0, 6)
+inputContainer.Name = "InputContainer"; inputContainer.Size = UDim2.new(1, -100, 1, -10); inputContainer.Position = UDim2.new(0, 5, 0.5, 0); inputContainer.AnchorPoint = Vector2.new(0, 0.5); inputContainer.BackgroundColor3 = Color3.fromRGB(0, 0, 0); inputContainer.BackgroundTransparency = 0.4; inputContainer.BorderSizePixel = 0; inputContainer.ScrollBarImageColor3 = Color3.new(255, 255, 255); inputContainer.ScrollBarThickness = 8; inputContainer.ScrollingDirection = Enum.ScrollingDirection.XY; Instance.new("UICorner", inputContainer).CornerRadius = UDim.new(0, 6)
 
 local inputBox = Instance.new("TextBox", inputContainer)
-inputBox.Name = "InputBox"; inputBox.Size = UDim2.new(1, 0, 0, 0); inputBox.AutomaticSize = Enum.AutomaticSize.Y; inputBox.BackgroundTransparency = 1; inputBox.ClearTextOnFocus = false; inputBox.Font = CONFIG.Font; inputBox.PlaceholderText = "Execute Luau code..."; inputBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150); inputBox.TextColor3 = CONFIG.Colors.Text; inputBox.TextSize = 14;
+inputBox.Name = "InputBox"; inputBox.BackgroundTransparency = 1; inputBox.ClearTextOnFocus = false; inputBox.Font = CONFIG.Font; inputBox.PlaceholderText = "Execute Luau code..."; inputBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150); inputBox.TextColor3 = CONFIG.Colors.Text; inputBox.TextSize = 14;
 inputBox.MultiLine = true;
 inputBox.Text = "";
-inputBox.Active = false
-
-local touchOverlay = Instance.new("TextButton", inputContainer)
-touchOverlay.Name = "TouchOverlay"
-touchOverlay.Size = UDim2.new(1, 0, 1, 0)
-touchOverlay.BackgroundTransparency = 1
-touchOverlay.Text = ""
-touchOverlay.ZIndex = 2
+inputBox.TextWrapped = false;
+inputBox.TextXAlignment = Enum.TextXAlignment.Left;
+inputBox.TextYAlignment = Enum.TextYAlignment.Top
 
 Instance.new("UIPadding", inputBox, {
     PaddingLeft = UDim.new(0, 10),
@@ -225,18 +221,29 @@ local function updateInputControlsVisibility()
     task.wait() 
     local needsControls = #inputBox.Text >= 100
     expandInputButton.Visible = needsControls and not isInputMaximized
+    if isInputMaximized and needsControls then
+        inputContainer.ScrollBarThickness = 10
+    else
+        inputContainer.ScrollBarThickness = 8
+    end
 end
 
 local function updateInputCanvas()
-    inputContainer.CanvasSize = UDim2.new(0, 0, 0, inputBox.AbsoluteSize.Y)
-    touchOverlay.Size = UDim2.new(1, 0, 0, inputBox.AbsoluteSize.Y)
-    if not isInputMaximized then
-      inputContainer.CanvasPosition = Vector2.new(0, inputBox.AbsoluteSize.Y)
-    end
+    local padding = Vector2.new(20, 10)
+    local newSize = inputBox.TextBounds + padding
+    local containerSize = inputContainer.AbsoluteSize
+    
+    local finalWidth = math.max(newSize.X, containerSize.X)
+    local finalHeight = math.max(newSize.Y, containerSize.Y)
+    
+    inputBox.Size = UDim2.fromOffset(finalWidth, finalHeight)
+    inputContainer.CanvasSize = UDim2.fromOffset(finalWidth, finalHeight)
+
     updateInputControlsVisibility()
 end
 local debouncedUpdate = debounce(updateInputCanvas, 0.1)
 table.insert(connections, inputBox:GetPropertyChangedSignal("Text"):Connect(debouncedUpdate))
+table.insert(connections, inputContainer:GetPropertyChangedSignal("AbsoluteSize"):Connect(debouncedUpdate))
 
 function showTutorial()
     tutorialShown = true
@@ -277,7 +284,7 @@ function showTutorial()
         {Title = "Player Input", Text = "When the client is open, your character movement and camera controls are disabled so you can interact with the UI without interruption. Minimizing restores your controls instantly."},
         {Title = "The Header Buttons", Text = "The buttons on the top bar provide quick access to our Script Hub (📜), Website (🌐), and Discord (💬). Clicking them copies the link to your clipboard."},
         {Title = "Executing Code", Text = "Type or paste any Luau script into the input box at the bottom. Press 'Run' or hit Enter to execute it. You can use the Up/Down arrow keys to navigate your command history."},
-        {Title = "The Script Editor", Text = "If you're working with a large script (>100 characters), a '↗️' button will appear. Click it to expand the editor to a full-screen view for easier editing."},
+        {Title = "The Script Editor", Text = "If you're working with a large script (>100 characters), a '^' button will appear. Click it to expand the editor to a full-screen view for easier editing."},
         {Title = "You're all set!", Text = "That covers all the main features. You can re-open this tutorial anytime by typing 'tutorial()' in the command bar and running it. Enjoy!"}
     }
     local currentPage = 1
@@ -318,15 +325,17 @@ function toggleMinimize()
     
     footer.Visible = not isMinimized
     logContainer.Visible = not isMinimized
-    blur.Enabled = isVisible and not isMinimized
+    blur.Enabled = not isMinimized
     
     if isMinimized then
         controls:Enable()
+        icon.Visible = true
+        titleLabel.Visible = true
         leftControls.Visible = false
-        titleLabel.Size = UDim2.new(0, 150, 1, 0)
+        titleLabel.Size = UDim2.new(1, -80, 1, 0)
         
         TweenService:Create(mainFrame, tweenInfo, { 
-            Size = UDim2.new(0, 220, 0, 40),
+            Size = UDim2.new(0, 250, 0, 40),
             Position = lastMinimizedPosition,
             AnchorPoint = Vector2.new(0.5, 0) 
         }):Play()
@@ -337,11 +346,13 @@ function toggleMinimize()
         controls:Disable()
         lastMinimizedPosition = mainFrame.Position 
         
+        icon.Visible = true
+        titleLabel.Visible = true
         leftControls.Visible = true
         titleLabel.Size = UDim2.new(1, -400, 1, 0)
         
         TweenService:Create(mainFrame, tweenInfo, {
-            Size = UDim2.new(1, 0, 1, 0), 
+            Size = UDim2.new(0.8, 0, 0.7, 0), 
             Position = UDim2.new(0.5, 0, 0.5, 0), 
             AnchorPoint = Vector2.new(0.5, 0.5) 
         }):Play()
@@ -388,12 +399,26 @@ function log(message, messageType)
     logLayout.FillDirection = Enum.FillDirection.Horizontal; logLayout.VerticalAlignment = Enum.VerticalAlignment.Top
     
     local logEntry = Instance.new("TextLabel", logFrame)
-    logEntry.Name = "LogEntry"; logEntry.BackgroundTransparency = 1; logEntry.Font = CONFIG.Font; logEntry.Text = tostring(message); logEntry.TextSize = 14; logEntry.TextWrapped = true; logEntry.TextXAlignment = Enum.TextXAlignment.Left; logEntry.Size = UDim2.new(1, -60, 0, 0); logEntry.AutomaticSize = Enum.AutomaticSize.Y
+    logEntry.Name = "LogEntry"; logEntry.BackgroundTransparency = 1; logEntry.Font = CONFIG.Font; logEntry.TextSize = 14; logEntry.TextWrapped = true; logEntry.TextXAlignment = Enum.TextXAlignment.Left; logEntry.Size = UDim2.new(1, -60, 0, 0); logEntry.AutomaticSize = Enum.AutomaticSize.Y; logEntry.RichText = true
 
-    if messageType == "Error" then logEntry.TextColor3 = CONFIG.Colors.Error
-    elseif messageType == "Warning" then logEntry.TextColor3 = CONFIG.Colors.Warning
-    elseif messageType == "Input" then logEntry.TextColor3 = CONFIG.Colors.InputEcho; logEntry.Text = "> " .. tostring(message)
-    else logEntry.TextColor3 = CONFIG.Colors.Text end
+    local messageStr = tostring(message)
+
+    if messageType == "Error" then
+        logEntry.TextColor3 = CONFIG.Colors.Error
+        logEntry.Text = "<b>" .. messageStr .. "</b>"
+    elseif messageType == "Warning" then
+        logEntry.TextColor3 = CONFIG.Colors.Warning
+        logEntry.Text = "<b>" .. messageStr .. "</b>"
+    elseif messageType == "Input" then
+        logEntry.TextColor3 = CONFIG.Colors.InputEcho
+        logEntry.Text = "> " .. messageStr
+    elseif messageType == "Output" or messageType == "Info" then
+        logEntry.TextColor3 = CONFIG.Colors.Info
+        logEntry.Text = "<u>" .. messageStr .. "</u>"
+    else
+        logEntry.TextColor3 = CONFIG.Colors.Text
+        logEntry.Text = messageStr
+    end
 
     local actionsFrame = Instance.new("Frame", logFrame)
     actionsFrame.Name = "Actions"; actionsFrame.Size = UDim2.new(0, 60, 1, 0); actionsFrame.BackgroundTransparency = 1; actionsFrame.Visible = false
@@ -403,11 +428,14 @@ function log(message, messageType)
     local deleteLogButton = createIconButton(actionsFrame, "🗑️", 22, CONFIG.Colors.UtilButton)
     
     table.insert(connections, copyLogButton.MouseButton1Click:Connect(function()
+        local textToCopy = messageStr
+        if messageType == "Input" then textToCopy = "> " .. messageStr end
+        
         local success, err = pcall(function()
-            setclipboard(logEntry.Text)
+            setclipboard(textToCopy)
         end)
         if success then
-            log("Copied: " .. string.sub(logEntry.Text, 1, 40) .. "...", "Output")
+            log("Copied: " .. string.sub(textToCopy, 1, 40) .. "...", "Output")
         else
             log("Clipboard write failed: " .. tostring(err), "Error")
         end
@@ -444,7 +472,7 @@ function executeCommand()
     createClickParticles(runButton, CONFIG.Colors.Text)
     table.insert(commandHistory, 1, command)
     if #commandHistory > 50 then table.remove(commandHistory) end
-    historyIndex = 0; inputBox.Text = ""
+    historyIndex = 0
     
     if command:lower():gsub("%s", "") == "tutorial()" then
         showTutorial()
@@ -472,6 +500,7 @@ function executeCommand()
 end
 
 local collapseButtonConnection
+local clearInputButtonConnection
 function toggleScriptView()
     isInputMaximized = not isInputMaximized
     local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
@@ -480,19 +509,31 @@ function toggleScriptView()
         collapseButtonConnection:Disconnect()
         collapseButtonConnection = nil
     end
+    if clearInputButtonConnection then
+        clearInputButtonConnection:Disconnect()
+        clearInputButtonConnection = nil
+    end
 
     local collapseButton = footer:FindFirstChild("CollapseButton")
     if collapseButton then collapseButton:Destroy() end
+    local clearInputButton = footer:FindFirstChild("ClearInputButton")
+    if clearInputButton then clearInputButton:Destroy() end
 
     if isInputMaximized then
         header.Visible = false
+        logContainer.Visible = false
         footer.ZIndex = 5
         TweenService:Create(footer, tweenInfo, {Size = UDim2.new(1, 0, 1, 0), Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5)}):Play()
         
-        local newCollapseButton = createIconButton(footer, "↙️", 24, CONFIG.Colors.UtilButton)
+        local newCollapseButton = createIconButton(footer, "X", 24, CONFIG.Colors.UtilButton)
         newCollapseButton.Name = "CollapseButton"
         newCollapseButton.AnchorPoint = Vector2.new(1, 0)
         newCollapseButton.Position = UDim2.new(1, -95, 0, 5)
+
+        local newClearButton = createIconButton(footer, "🧹", 24, CONFIG.Colors.UtilButton)
+        newClearButton.Name = "ClearInputButton"
+        newClearButton.AnchorPoint = Vector2.new(1, 0)
+        newClearButton.Position = UDim2.new(1, -124, 0, 5)
 
         runButton.Parent = footer
         runButton.Size = UDim2.new(0, 80, 0, 30)
@@ -504,9 +545,13 @@ function toggleScriptView()
         inputContainer.AnchorPoint = Vector2.new(0.5, 1)
 
         collapseButtonConnection = newCollapseButton.MouseButton1Click:Connect(toggleScriptView)
+        clearInputButtonConnection = newClearButton.MouseButton1Click:Connect(function()
+            inputBox.Text = ""
+        end)
 
     else
         header.Visible = true
+        logContainer.Visible = true
         footer.ZIndex = 3
         TweenService:Create(footer, tweenInfo, {Size = UDim2.new(1, 0, 0, 80), Position = UDim2.new(0, 0, 1, -80), AnchorPoint = Vector2.new(0,0)}):Play()
         
@@ -527,9 +572,8 @@ table.insert(connections, mainFrame:GetPropertyChangedSignal("Position"):Connect
 table.insert(connections, mainFrame:GetPropertyChangedSignal("AnchorPoint"):Connect(function() blurFrame.AnchorPoint = mainFrame.AnchorPoint end))
 
 table.insert(connections, header.InputBegan:Connect(function(input)
+    if not isMinimized then return end
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        if not isMinimized then return end
-        
         isDragging = true; 
         dragStart = UserInputService:GetMouseLocation(); 
         frameStartPos = mainFrame.Position; 
@@ -557,11 +601,6 @@ table.insert(connections, inputBox.FocusLost:Connect(function(enterPressed)
     if enterPressed and inputBox.Text ~= "" and not UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) and not UserInputService:IsKeyDown(Enum.KeyCode.RightShift) then 
         executeCommand()
     end
-    inputBox.Active = false
-end))
-table.insert(connections, touchOverlay.MouseButton1Click:Connect(function()
-    inputBox.Active = true
-    inputBox:CaptureFocus()
 end))
 
 table.insert(connections, runButton.MouseButton1Click:Connect(executeCommand))
@@ -622,22 +661,41 @@ table.insert(connections, LogService.MessageOut:Connect(function(message, messag
     log(message, tostring(messageType):gsub("Message", ""))
 end))
 
-table.insert(connections, UserInputService:GetPropertyChangedSignal("WindowInsets"):Connect(function()
-    local insets = UserInputService:GetWindowInsets()
-    local keyboardHeight = insets.Bottom.Y
+local function onInsetsChanged()
+    local keyboardHeight = UserInputService.OnScreenKeyboardSize.Y
     if not isMinimized then
-        mainFrame.Size = UDim2.new(1, 0, 1, -keyboardHeight)
-        blurFrame.Size = UDim2.new(1, 0, 1, -keyboardHeight)
+        local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        local newSize, newPos, newAnchor
+
+        if keyboardHeight > 0 then
+            newSize = UDim2.new(1, 0, 1, -keyboardHeight)
+            newPos = UDim2.new(0.5, 0, 0, 0)
+            newAnchor = Vector2.new(0.5, 0)
+        else
+            newSize = UDim2.new(0.8, 0, 0.7, 0)
+            newPos = UDim2.new(0.5, 0, 0.5, 0)
+            newAnchor = Vector2.new(0.5, 0.5)
+        end
+        
+        mainFrame.AnchorPoint = newAnchor
+        TweenService:Create(mainFrame, tweenInfo, {Size = newSize, Position = newPos}):Play()
+        blurFrame.AnchorPoint = newAnchor
+        TweenService:Create(blurFrame, tweenInfo, {Size = newSize, Position = newPos}):Play()
     end
-end))
+end
+
+table.insert(connections, UserInputService:GetPropertyChangedSignal("OnScreenKeyboardSize"):Connect(onInsetsChanged))
 
 screenGui.Parent = playerGui
 blurGui.Parent = playerGui
 
 local function loopGlow()
-    local info = TweenInfo.new(1.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
-    activeTweens.glow = TweenService:Create(blurStroke, info, {Transparency = 0.8})
-    activeTweens.glow:Play()
+    local info = TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
+    activeTweens.glowTransparency = TweenService:Create(blurStroke, info, {Transparency = 0.8})
+    activeTweens.glowThickness = TweenService:Create(blurStroke, info, {Thickness = 3.5})
+    
+    activeTweens.glowTransparency:Play()
+    activeTweens.glowThickness:Play()
 end
 
 screenGui.Destroying:Connect(function()
@@ -660,4 +718,5 @@ refreshLogs()
 toggleMinimize()
 loopGlow()
 updateInputControlsVisibility()
+onInsetsChanged()
 
