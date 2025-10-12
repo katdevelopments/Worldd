@@ -202,7 +202,7 @@ local uiListLayout = Instance.new("UIListLayout", logContainer); uiListLayout.Pa
 local runButton = Instance.new("TextButton", footer)
 runButton.Name = "RunButton"; runButton.Size = UDim2.new(0, 80, 1, -10); runButton.Position = UDim2.new(1, -5, 0.5, 0); runButton.AnchorPoint = Vector2.new(1, 0.5); runButton.BackgroundColor3 = CONFIG.Colors.SecondaryAccent; runButton.Font = CONFIG.BoldFont; runButton.Text = "Run"; runButton.TextColor3 = Color3.new(1, 1, 1); runButton.TextSize = 16; Instance.new("UICorner", runButton).CornerRadius = UDim.new(0, 6)
 
-local expandInputButton = createIconButton(footer, "^", 24, CONFIG.Colors.UtilButton)
+local expandInputButton = createIconButton(footer, "↗️", 24, CONFIG.Colors.UtilButton)
 expandInputButton.Position = UDim2.new(1, -110, 0.15, 0)
 expandInputButton.ZIndex = 3
 expandInputButton.Visible = false
@@ -562,7 +562,7 @@ function toggleScriptView()
         footer.ZIndex = 5
         TweenService:Create(footer, tweenInfo, {Size = UDim2.new(1, 0, 1, 0), Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5)}):Play()
         
-        local newCollapseButton = createIconButton(footer, "X", 24, CONFIG.Colors.UtilButton)
+        local newCollapseButton = createIconButton(footer, "↙️", 24, CONFIG.Colors.UtilButton)
         newCollapseButton.Name = "CollapseButton"
         newCollapseButton.AnchorPoint = Vector2.new(1, 0)
         newCollapseButton.Position = UDim2.new(1, -95, 0, 5)
