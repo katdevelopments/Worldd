@@ -96,7 +96,7 @@ blur.Parent = game.Lighting
 
 local mainFrame = Instance.new("Frame", screenGui)
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0.8, 0, 0.7, 0)
+mainFrame.Size = UDim2.new(1, 0, 1, 0)
 mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
 mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 mainFrame.BackgroundTransparency = 1
@@ -199,7 +199,7 @@ expandInputButton.ZIndex = 3
 expandInputButton.Visible = false
 
 local inputContainer = Instance.new("ScrollingFrame", footer)
-inputContainer.Name = "InputContainer"; inputContainer.Size = UDim2.new(1, -100, 1, -10); inputContainer.Position = UDim2.new(0, 5, 0.5, 0); inputContainer.AnchorPoint = Vector2.new(0, 0.5); inputContainer.BackgroundColor3 = Color3.fromRGB(0, 0, 0); inputContainer.BackgroundTransparency = 0.4; inputContainer.BorderSizePixel = 0; inputContainer.ScrollBarImageColor3 = Color3.new(255, 255, 255); inputContainer.ScrollBarThickness = 0; inputContainer.ScrollingEnabled = true; Instance.new("UICorner", inputContainer).CornerRadius = UDim.new(0, 6)
+inputContainer.Name = "InputContainer"; inputContainer.Size = UDim2.new(1, -100, 1, -10); inputContainer.Position = UDim2.new(0, 5, 0.5, 0); inputContainer.AnchorPoint = Vector2.new(0, 0.5); inputContainer.BackgroundColor3 = Color3.fromRGB(0, 0, 0); inputContainer.BackgroundTransparency = 0.4; inputContainer.BorderSizePixel = 0; inputContainer.ScrollBarImageColor3 = CONFIG.Colors.Text; inputContainer.ScrollBarThickness = 0; inputContainer.ScrollingEnabled = true; Instance.new("UICorner", inputContainer).CornerRadius = UDim.new(0, 6)
 
 local inputBox = Instance.new("TextBox", inputContainer)
 inputBox.Name = "InputBox"; inputBox.Size = UDim2.new(1, 0, 0, 0); inputBox.AutomaticSize = Enum.AutomaticSize.Y; inputBox.BackgroundTransparency = 1; inputBox.ClearTextOnFocus = false; inputBox.Font = CONFIG.Font; inputBox.PlaceholderText = "Execute Luau code..."; inputBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150); inputBox.TextColor3 = CONFIG.Colors.Text; inputBox.TextSize = 14;
@@ -225,11 +225,7 @@ local function updateInputControlsVisibility()
     task.wait() 
     local needsControls = #inputBox.Text >= 100
     expandInputButton.Visible = needsControls and not isInputMaximized
-    if isInputMaximized and needsControls then
-        inputContainer.ScrollBarThickness = 10
-    else
-        inputContainer.ScrollBarThickness = 0
-    end
+    inputContainer.ScrollBarThickness = (isInputMaximized and needsControls) and 10 or 0
 end
 
 local function updateInputCanvas()
@@ -328,12 +324,11 @@ function toggleMinimize()
     
     if isMinimized then
         controls:Enable()
-        icon.Visible = false
-        titleLabel.Visible = false
         leftControls.Visible = false
+        titleLabel.Size = UDim2.new(0, 150, 1, 0)
         
         TweenService:Create(mainFrame, tweenInfo, { 
-            Size = UDim2.new(0, 80, 0, 40),
+            Size = UDim2.new(0, 220, 0, 40),
             Position = lastMinimizedPosition,
             AnchorPoint = Vector2.new(0.5, 0) 
         }):Play()
@@ -344,12 +339,11 @@ function toggleMinimize()
         controls:Disable()
         lastMinimizedPosition = mainFrame.Position 
         
-        icon.Visible = true
-        titleLabel.Visible = true
         leftControls.Visible = true
+        titleLabel.Size = UDim2.new(1, -400, 1, 0)
         
         TweenService:Create(mainFrame, tweenInfo, {
-            Size = UDim2.new(0.8, 0, 0.7, 0), 
+            Size = UDim2.new(1, 0, 1, 0), 
             Position = UDim2.new(0.5, 0, 0.5, 0), 
             AnchorPoint = Vector2.new(0.5, 0.5) 
         }):Play()
@@ -476,10 +470,6 @@ function executeCommand()
         else
             log("Script successfully executed.", "Output")
         end
-    end
-    
-    if not isMinimized then
-        toggleMinimize()
     end
 end
 
@@ -636,18 +626,21 @@ table.insert(connections, LogService.MessageOut:Connect(function(message, messag
     log(message, tostring(messageType):gsub("Message", ""))
 end))
 
-local function onInsetsChanged()
-    local keyboardHeight = UserInputService.OnScreenKeyboardSize.Y
+local function onSafeAreaChanged()
+    local safeRect = screenGui.SafeAreaInset
+    local screenHeight = screenGui.AbsoluteSize.Y
+    local keyboardHeight = screenHeight - safeRect.Max.Y
+
     if not isMinimized then
         local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
         local newSize, newPos, newAnchor
 
-        if keyboardHeight > 0 then
+        if keyboardHeight > 20 then
             newSize = UDim2.new(1, 0, 1, -keyboardHeight)
             newPos = UDim2.new(0.5, 0, 0, 0)
             newAnchor = Vector2.new(0.5, 0)
         else
-            newSize = UDim2.new(0.8, 0, 0.7, 0)
+            newSize = UDim2.new(1, 0, 1, 0)
             newPos = UDim2.new(0.5, 0, 0.5, 0)
             newAnchor = Vector2.new(0.5, 0.5)
         end
@@ -659,7 +652,7 @@ local function onInsetsChanged()
     end
 end
 
-table.insert(connections, UserInputService:GetPropertyChangedSignal("OnScreenKeyboardSize"):Connect(onInsetsChanged))
+table.insert(connections, screenGui:GetPropertyChangedSignal("SafeAreaInset"):Connect(onSafeAreaChanged))
 
 screenGui.Parent = playerGui
 blurGui.Parent = playerGui
@@ -690,5 +683,5 @@ refreshLogs()
 toggleMinimize()
 loopGlow()
 updateInputControlsVisibility()
-onInsetsChanged()
+onSafeAreaChanged()
 
