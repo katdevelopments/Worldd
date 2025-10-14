@@ -303,7 +303,7 @@ function showTutorial()
         {Title = "Player Input", Text = "When the client is open, your character movement and camera controls are disabled so you can interact with the UI without interruption. Minimizing restores your controls instantly."},
         {Title = "The Header Buttons", Text = "The buttons on the top bar provide quick access to our Script Hub (📜), Website (🌐), and Discord (💬). Clicking them copies the link to your clipboard."},
         {Title = "Executing Code", Text = "Type or paste any Luau script into the input box at the bottom. Press 'Run' or hit Enter to execute it. You can use the Up/Down arrow keys to navigate your command history."},
-        {Title = "The Script Editor", Text = "If you're working with a large script (>100 characters), a '^' button will appear. Click it to expand the editor to a full-screen view for easier editing."},
+        {Title = "The Script Editor", Text = "If you're working with a large script (>100 characters), a '↗️' button will appear. Click it to expand the editor to a full-screen view for easier editing."},
         {Title = "You're all set!", Text = "That covers all the main features. You can re-open this tutorial anytime by typing 'tutorial()' in the command bar and running it. Enjoy!"}
     }
     local currentPage = 1
