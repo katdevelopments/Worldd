@@ -1,6 +1,6 @@
 //
 // Some offsets by World Works at 10/11/2025
-// Roblox version: 2.693.960 (UPDATED)
+// Roblox version: 2.693.960 (OUTDATED)
 //
 
 constexpr uintptr_t script_start = 0x2EE1468
