@@ -1,3 +1,5 @@
+// Roblox Version: version-4aeb17bd13994560 (LIVE)
+// Byfron Version(s): [hyperion-secured] [yara-secured]
 namespace FFlags {
 	inline uintptr_t ACSReturnPromiseException = REBASE(0x624d7b0);
 	inline uintptr_t ADS4948SendUniverseIdToEventStream = REBASE(0x6271f08);
@@ -10983,3 +10985,4 @@ namespace FFlags {
 	inline uintptr_t ttMetricP1 = REBASE(0x62611b8);
 	inline uintptr_t userRequestedExitAsSuccess = REBASE(0x62a0a48);
 }
+
