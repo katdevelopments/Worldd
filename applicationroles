@@ -21,6 +21,10 @@
     "RoleName": "Admin"
   },
   {
+    "UserId": "1002515129822355586", // clockman
+    "RoleName": "Staff"
+  },
+  {
     "UserId": "1125069435800133692", // tizzu
     "RoleName": "Staff"
   },
