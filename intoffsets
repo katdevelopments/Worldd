@@ -9,7 +9,20 @@ for (auto pg = pBase; pg < pBase + pOpt->SizeOfImage; pg += 0x1000) {
 }
 
 // DLL OFFSET
-const uintptr_t BitMap = Hyperion_Rbase(0x2BC718);
+const uintptr_t BitMap = Hyperion_Rbase(0x28BF48);
+
+// GET STATE
+lua_State* DecryptLuaState(uintptr_t ScriptContext)
+{
+    *reinterpret_cast<BOOLEAN*>(ScriptContext + 0x870) = TRUE;
+
+    auto Address = ScriptContext + 0x210;
+    auto EncryptedState = reinterpret_cast<uint32_t*>(Address);
+
+    uint32_t Low = EncryptedState[0] ^ static_cast<uint32_t>(Address);
+    uint32_t High = EncryptedState[1] ^ static_cast<uint32_t>(Address);
+    return reinterpret_cast<lua_State*>((static_cast<uint64_t>(High) << 32) | Low);
+}
 
 // CLIENT FUNCTIONS
 
