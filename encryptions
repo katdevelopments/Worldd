@@ -1,64 +1,20 @@
 // Roblox Version: version-889d2588b25a43d1 (LIVE)
 // Byfron Version(s): [hyperion-secured] [yara-secured]
 
-#define PROTO_LINEINFO_ENC VMValue3
-#define PROTO_ABSLINEINFO_ENC VMValue4
-#define PROTO_LOCVARS_ENC VMValue2
-#define PROTO_UPVALUES_ENC VMValue1
-#define PROTO_SOURCE_ENC VMValue3
+#define TSTRING_HASH_ENC      lua_vm_value1_t
+#define PROTO_DEBUGNAME_ENC   lua_vm_value3_t  
+#define PROTO_LOCVARS_ENC     lua_vm_value4_t  
+#define CLOSURE_CONT_ENC      lua_vm_value3_t  
 
-#define PROTO_DEBUGINSN_ENC VMValue1
-#define PROTO_DEBUGNAME_ENC VMValue2
-#define PROTO_TYPEINFO_ENC VMValue4
-#define PROTO_USERDATA_ENC VMValue1
+#define PROTO_LINEINFO_ENC    lua_vm_value1_t 
+#define PROTO_SOURCE_ENC      lua_vm_value2_t 
 
-#define LSTATE_STACKSIZE_ENC VMValue1
+#define PROTO_UPVALUES_ENC    lua_vm_value4_t
+#define PROTO_DEBUGISN_ENC    lua_vm_value2_t 
+#define PROTO_USERDATA_ENC    lua_vm_value3_t  
+#define CLOSURE_DEBUGNAME_ENC lua_vm_value1_t 
+#define UDATA_META_ENC        lua_vm_value3_t  
+#define LSTATE_STACKSIZE_ENC  lua_vm_value2_t
 
-#define CLOSURE_CONT_ENC VMValue1
-#define CLOSURE_DEBUGNAME_ENC VMValue1
-
-#define UDATA_META_ENC VMValue1
-
-#define TSTRING_HASH_ENC VMValue2
-
-#define PROTO_LINEINFO_ENC VMValue3
-#define PROTO_ABSLINEINFO_ENC VMValue4
-#define PROTO_LOCVARS_ENC VMValue2
-#define PROTO_UPVALUES_ENC VMValue1
-#define PROTO_SOURCE_ENC VMValue3
-
-#define PROTO_DEBUGISN_ENC VMvalue1
-#define PROTO_DEBUGNAME_ENC VMvalue2
-#define PROTO_TYPEINFO_ENC VMvalue4
-#define PROTO_USERDATA_ENC VMValue1
-
-#define LSTATE_STACKSIZE_ENC VMvalue1
-
-#define CLOSURE_CONT_ENC VMvalue1
-#define CLOSURE_DEBUGNAME_ENC VMvalue3
-
-#define UDATA_META_ENC VMvalue1
-
-#define TSTRING_HASH_ENC VMvalue2
-#define LSTATE_GLOBAL_ENC VMvalue0
-#define CLOSURE_FUNC_ENC VMvalue0
-
-#define TABLE_MEMBER_ENC VMvalue0
-#define TABLE_META_ENC VMvalue0
-
-#define TSTRING_LEN_ENC VMvalue0
-#define PROTO_MEMBER1_ENC VMvalue0
-
-#define GSTATE_TTNAME_ENC VMvalue0
-#define GSTATE_TMNAME_ENC VMvalue0
-
-#define TABLE_MEMBER_ENC VMValue0
-#define TABLE_META_ENC VMValue0
-
-#define UDATA_META_ENC VMValue4
-
-#define TSTRING_HASH_ENC VMValue3
-#define TSTRING_LEN_ENC VMValue0
-
-#define GSTATE_TTNAME_ENC VMValue0
-#define GSTATE_TMNAME_ENC VMValue0
+#define PROTO_TYPEINFO_ENC    lua_vm_value4_t  
+#define PROTO_ABSLINEINFO_ENC lua_vm_value1_t  
