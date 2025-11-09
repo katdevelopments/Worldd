@@ -1,10 +1,35 @@
 //
-// Some offsets by World Works at 10/11/2025
-// Roblox version: 2.693.960 (OUTDATED)
+// Some offsets by World Works at 11/09/2025
+// Roblox version: 2.697.926 (LIVE)
 //
 
-constexpr uintptr_t script_start = 0x2EE1468
-constexpr uintptr_t decryptstate = 0x2EE3138
-constexpr uintptr_t rbxprint = 0x2BBA098
-constexpr uintptr_t sethiddenproperty = 0x6742760
-constexpr uintptr_t ongameloaded = 0x2FF0AB0
+#pragma once
+
+#include <cstdint>
+#include "manager/gamelibrary.hpp"
+
+#include "lua.h"
+#include "lstate.h"
+
+namespace Roblox::Addresses {
+    void InitAddresses();
+
+    static lua_State* rL{}; // Roblox stack
+    static lua_State* eL{}; // exploit stack
+
+    inline std::uintptr_t print_off  = 0x2CD8AAC; // Current Identity is %s
+    inline std::uintptr_t join_off   = 0x30C9F20; // onGameLoaded() SessionReporterState_GameLoaded placeId:%lld
+    inline std::uintptr_t scriptstart_off = 0x3035E08; // startScript re-entrancy has exceeded 3
+    inline std::uintptr_t getPermissions_off = 0x7025478; // Current Identity is %s
+    inline std::uintptr_t getstate_off = 0x3037E6C; // lazy to explain + 304
+    inline std::uintptr_t newthread_off = 0x3038308; // Unable to create a new thread for %s
+    inline std::uintptr_t luauload_off = 0x303AE04; // %s: bytecode version mismatch (expected [%d..%d], got %d)
+
+    extern std::uintptr_t print;
+    extern std::uintptr_t join;
+    extern std::uintptr_t scriptstart;
+    extern std::uintptr_t getpermissions;
+    extern std::uintptr_t getstate;
+    extern std::uintptr_t newthread;
+    extern std::uintptr_t luauload;
+}
