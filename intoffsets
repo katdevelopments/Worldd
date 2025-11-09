@@ -5,7 +5,6 @@
 
 // DLL OFFSET
 
-
 // GET STATE
 
 // FUNCTIONS (yub)
@@ -381,3 +380,4 @@ namespace Signatures {
     inline auto LuaD_Throw = (void(__fastcall*)(lua_State*, int))Offsets::LuaD_throw;
     inline auto LuaVMLoad = (uintptr_t(__fastcall*)(int64_t, std::string*, const char*, int))Offsets::LuaVMLoad;
 }
+
