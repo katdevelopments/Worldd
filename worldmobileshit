@@ -1,3 +1,4 @@
+local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local LogService = game:GetService("LogService")
 local RunService = game:GetService("RunService")
@@ -8,8 +9,6 @@ local playerGui = player:WaitForChild("PlayerGui")
 local playerScripts = player:WaitForChild("PlayerScripts")
 local playerModule = require(playerScripts:WaitForChild("PlayerModule"))
 local controls = playerModule:GetControls()
-
-local platform = UserInputService:GetPlatform()
 
 if playerGui:FindFirstChild("WorldClientGui") then
 	warn("World Client is already running. Aborting duplicate script.")
@@ -716,13 +715,11 @@ local function onInsetsChanged()
 		local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 		local newSize, newPos, newAnchor
 
-		if keyboardHeight > 0 and platform == Enum.Platform.Android then
-			-- Only resize/move on Android when keyboard is up
+		if keyboardHeight > 0 then
 			newSize = UDim2.new(1, 0, 1, -keyboardHeight)
 			newPos = UDim2.new(0.5, 0, 0, 0)
 			newAnchor = Vector2.new(0.5, 0)
 		else
-			-- Default position for iOS (even with keyboard) or when keyboard is closed
 			newSize = UDim2.new(0.8, 0, 0.7, 0)
 			newPos = UDim2.new(0.5, 0, 0.5, 0)
 			newAnchor = Vector2.new(0.5, 0.5)
