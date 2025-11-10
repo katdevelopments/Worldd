@@ -39,6 +39,12 @@ local activeTweens = {}
 local connections = {}
 local targetPosition
 
+local function safeSetCursor(object, cursor)
+	pcall(function()
+		object.CursorIcon = cursor
+	end)
+end
+
 local function debounce(func, delay)
 	local timer
 	return function(...)
@@ -112,6 +118,8 @@ mainFrame.BackgroundTransparency = 1
 mainFrame.ClipsDescendants = true
 mainFrame.ZIndex = 1
 mainFrame.Visible = true
+local mainCorner = Instance.new("UICorner", mainFrame)
+mainCorner.CornerRadius = UDim.new(0, 8)
 
 local blurFrame = Instance.new("Frame", blurGui)
 blurFrame.Name = "BlurFrame"
@@ -133,7 +141,7 @@ local header = Instance.new("Frame", mainFrame)
 header.Name = "Header"; header.Size = UDim2.new(1, 0, 0, 40); header.BackgroundTransparency = 1; header.Active = true; header.ZIndex = 2
 
 local icon = Instance.new("ImageLabel", header)
-icon.Name = "Icon"; icon.Size = UDim2.new(0, 24, 0, 24); icon.Position = UDim2.new(0, 10, 0.5, 0); icon.AnchorPoint = Vector2.new(0, 0.5); icon.BackgroundTransparency = 1; icon.Image = CONFIG.IconID
+icon.Name = "Icon"; icon.Size = UDim2.new(0, 24, 0, 24); icon.Position = UDim2.new(0, 10, 0.5, 0); icon.AnchorPoint = Vector2.new(0, 0.5); icon.BackgroundTransparency = 1; icon.Image = CONFIG.IconID; icon.ZIndex = 3
 
 local titleLabel = Instance.new("TextLabel", header)
 titleLabel.Name = "Title"; titleLabel.Size = UDim2.new(1, -400, 1, 0); titleLabel.Position = UDim2.new(0, 40, 0, 0); titleLabel.BackgroundTransparency = 1; titleLabel.Font = CONFIG.BoldFont; titleLabel.Text = CONFIG.Title; titleLabel.TextColor3 = CONFIG.Colors.Text; titleLabel.TextSize = 18; titleLabel.TextXAlignment = Enum.TextXAlignment.Left; titleLabel.RichText = true
@@ -155,6 +163,7 @@ end
 local function createIconButton(parent, emoji, size, color)
 	local btn = Instance.new("TextButton", parent)
 	btn.Size = UDim2.new(0, size, 0, size); btn.BackgroundColor3 = color; btn.Font = Enum.Font.SourceSans; btn.Text = emoji; btn.TextColor3 = Color3.new(1, 1, 1); btn.TextSize = math.floor(size * 0.7); btn.RichText = true; Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+	safeSetCursor(btn, "rbxasset://SystemCursor/Arrow")
 	
 	local originalSize = btn.Size
 	table.insert(connections, btn.MouseEnter:Connect(function() TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = CONFIG.Colors.UtilButtonHover}):Play() end))
@@ -190,17 +199,19 @@ local copyButton = createIconButton(leftControls, "📋", 28, CONFIG.Colors.Util
 local clearButton = createIconButton(leftControls, "🗑️", 28, CONFIG.Colors.UtilButton)
 local refreshButton = createIconButton(leftControls, "🔄", 28, CONFIG.Colors.UtilButton)
 
-local minimizeButton = createIconButton(rightControls, "◼️", 28, CONFIG.Colors.MinimizeButton)
+local minimizeButton = createIconButton(rightControls, "✖️", 28, CONFIG.Colors.MinimizeButton)
 
 local footer = Instance.new("Frame", mainFrame)
 footer.Name = "Footer"; footer.Size = UDim2.new(1, 0, 0, 80); footer.Position = UDim2.new(0, 0, 1, -80); footer.BackgroundTransparency = 1; footer.ZIndex = 3
 
 local logContainer = Instance.new("ScrollingFrame", mainFrame)
 logContainer.Name = "LogContainer"; logContainer.Size = UDim2.new(1, 0, 1, -120); logContainer.Position = UDim2.new(0, 0, 0, 40); logContainer.BackgroundTransparency = 1; logContainer.BorderSizePixel = 0; logContainer.ScrollBarImageColor3 = CONFIG.Colors.PrimaryAccent; logContainer.ScrollBarThickness = 8; logContainer.ZIndex = 1
+safeSetCursor(logContainer, "rbxasset://SystemCursor/Arrow")
 local uiListLayout = Instance.new("UIListLayout", logContainer); uiListLayout.Padding = UDim.new(0, 5); uiListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
 local runButton = Instance.new("TextButton", footer)
 runButton.Name = "RunButton"; runButton.Size = UDim2.new(0, 80, 1, -10); runButton.Position = UDim2.new(1, -5, 0.5, 0); runButton.AnchorPoint = Vector2.new(1, 0.5); runButton.BackgroundColor3 = CONFIG.Colors.SecondaryAccent; runButton.Font = CONFIG.BoldFont; runButton.Text = "Run"; runButton.TextColor3 = Color3.new(1, 1, 1); runButton.TextSize = 16; Instance.new("UICorner", runButton).CornerRadius = UDim.new(0, 6)
+safeSetCursor(runButton, "rbxasset://SystemCursor/Arrow")
 
 local expandInputButton = createIconButton(footer, "↗️", 24, CONFIG.Colors.UtilButton)
 expandInputButton.Position = UDim2.new(1, -110, 0.15, 0)
@@ -209,9 +220,11 @@ expandInputButton.Visible = false
 
 local inputContainer = Instance.new("ScrollingFrame", footer)
 inputContainer.Name = "InputContainer"; inputContainer.Size = UDim2.new(1, -100, 1, -10); inputContainer.Position = UDim2.new(0, 5, 0.5, 0); inputContainer.AnchorPoint = Vector2.new(0, 0.5); inputContainer.BackgroundColor3 = Color3.fromRGB(0, 0, 0); inputContainer.BackgroundTransparency = 0.4; inputContainer.BorderSizePixel = 0; inputContainer.ScrollBarImageColor3 = Color3.new(255, 255, 255); inputContainer.ScrollBarThickness = 8; inputContainer.ScrollingDirection = Enum.ScrollingDirection.XY; Instance.new("UICorner", inputContainer).CornerRadius = UDim.new(0, 6)
+safeSetCursor(inputContainer, "rbxasset://SystemCursor/Arrow")
 
 local inputBox = Instance.new("TextBox", inputContainer)
 inputBox.Name = "InputBox"; inputBox.BackgroundTransparency = 1; inputBox.ClearTextOnFocus = false; inputBox.Font = CONFIG.Font; inputBox.PlaceholderText = "Execute Luau code..."; inputBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150); inputBox.TextColor3 = CONFIG.Colors.Text; inputBox.TextSize = 14;
+safeSetCursor(inputBox, "rbxasset://SystemCursor/Arrow")
 inputBox.MultiLine = true;
 inputBox.Text = "";
 inputBox.TextWrapped = false;
@@ -266,6 +279,7 @@ function showTutorial()
 	tutorialOverlay.ZIndex = 9
 	tutorialOverlay.Text = ""
 	tutorialOverlay.AutoButtonColor = false
+	safeSetCursor(tutorialOverlay, "rbxasset://SystemCursor/Arrow")
 	TweenService:Create(tutorialOverlay, TweenInfo.new(0.5), {BackgroundTransparency = 0.6}):Play()
 
 	local tutorialFrame = Instance.new("Frame", screenGui)
@@ -293,6 +307,7 @@ function showTutorial()
 
 	local skipButton = Instance.new("TextButton", buttonFrame)
 	skipButton.Size = UDim2.new(0, 100, 1, 0); skipButton.Position = UDim2.new(0.5, -110, 0.5, 0); skipButton.AnchorPoint = Vector2.new(0.5, 0.5); skipButton.BackgroundColor3 = CONFIG.Colors.UtilButton; skipButton.Font = CONFIG.BoldFont; skipButton.Text = "Skip"; skipButton.TextColor3 = Color3.new(1,1,1); skipButton.TextSize = 18; Instance.new("UICorner", skipButton).CornerRadius = UDim.new(0, 6)
+	safeSetCursor(skipButton, "rbxasset://SystemCursor/Arrow")
 	
 	tutorialFrame.Size = UDim2.new(0,0,0,0)
 	TweenService:Create(tutorialFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0, 450, 0, 280)}):Play()
@@ -300,9 +315,11 @@ function showTutorial()
 	
 	local pages = {
 		{Title = "Welcome!", Text = "This is the World Client, a powerful in-game tool. This short tutorial will guide you through its features."},
-		{Title = "Basic Controls", Text = "Click the ('◼️') button to minimize the client. When minimized, you can drag the bar anywhere on your screen. Click ('🔲') to bring it back."},
+		{Title = "Minimizing", Text = "Click the ('✖️') button to minimize the client. This will turn it into a small icon. Click the icon again to maximize it."},
+		{Title = "Dragging", Text = "When minimized, you can drag the icon anywhere on your screen. It's designed to stay on-screen so you won't lose it!"},
 		{Title = "Player Input", Text = "When the client is open, your character movement and camera controls are disabled so you can interact with the UI without interruption. Minimizing restores your controls instantly."},
-		{Title = "The Header Buttons", Text = "The buttons on the top bar provide quick access to our Script Hub (📜), Website (🌐), and Discord (💬). Clicking them copies the link to your clipboard."},
+		{Title = "Header Buttons", Text = "The buttons on the top bar provide quick access to our Script Hub (📜), Website (🌐), and Discord (💬). Clicking them copies the link to your clipboard."},
+		{Title = "Log Controls", Text = "You can clear all logs with (🗑️) or refresh them from the game's console with (🔄). You can also copy all logs to your clipboard with (📋)."},
 		{Title = "Executing Code", Text = "Type or paste any Luau script into the input box at the bottom. Press 'Run' or hit Enter to execute it. You can use the Up/Down arrow keys to navigate your command history."},
 		{Title = "The Script Editor", Text = "If you're working with a large script (>100 characters), a '↗️' button will appear. Click it to expand the editor to a full-screen view for easier editing."},
 		{Title = "You're all set!", Text = "That covers all the main features. You can re-open this tutorial anytime by typing 'tutorial()' in the command bar and running it. Enjoy!"}
@@ -360,36 +377,54 @@ function toggleMinimize()
 	if isMinimized then
 		controls:Enable()
 		UserInputService.MouseBehavior = Enum.MouseBehavior.Default -- Do not lock mouse when minimized
-		icon.Visible = true
-		titleLabel.Visible = true
-		leftControls.Visible = false
-		titleLabel.Size = UDim2.new(1, -80, 1, 0)
 		
+		-- Animate to circular icon
+		TweenService:Create(mainCorner, tweenInfo, {CornerRadius = UDim.new(1, 0)}):Play()
+		TweenService:Create(blurCorner, tweenInfo, {CornerRadius = UDim.new(1, 0)}):Play()
 		TweenService:Create(mainFrame, tweenInfo, { 
-			Size = UDim2.new(0, 250, 0, 40),
+			Size = UDim2.new(0, 60, 0, 60),
 			Position = lastMinimizedPosition,
 			AnchorPoint = Vector2.new(0.5, 0) 
 		}):Play()
 
-		minimizeButton.Text = "🔲"
+		-- Configure header for minimized state
+		header.Size = UDim2.new(1, 0, 1, 0) -- Make header fill circle for dragging
+		
+		icon.Visible = true
+		icon.Position = UDim2.new(0.5, 0, 0.5, 0)
+		icon.AnchorPoint = Vector2.new(0.5, 0.5)
+		icon.Size = UDim2.new(0, 36, 0, 36)
+		
+		titleLabel.Visible = false
+		leftControls.Visible = false
+		rightControls.Visible = false -- Hides the minimize button
 		
 	else
 		controls:Disable()
 		UserInputService.MouseBehavior = Enum.MouseBehavior.Default -- Unlock mouse for UI
 		lastMinimizedPosition = mainFrame.Position 
 		
-		icon.Visible = true
-		titleLabel.Visible = true
-		leftControls.Visible = true
-		titleLabel.Size = UDim2.new(1, -400, 1, 0)
-		
+		-- Animate back to rounded rectangle
+		TweenService:Create(mainCorner, tweenInfo, {CornerRadius = UDim.new(0, 8)}):Play()
+		TweenService:Create(blurCorner, tweenInfo, {CornerRadius = UDim.new(0, 8)}):Play()
 		TweenService:Create(mainFrame, tweenInfo, {
 			Size = UDim2.new(0.8, 0, 0.7, 0), 
 			Position = UDim2.new(0.5, 0, 0.5, 0), 
 			AnchorPoint = Vector2.new(0.5, 0.5) 
 		}):Play()
 
-		minimizeButton.Text = "◼️"
+		-- Configure header for maximized state
+		header.Size = UDim2.new(1, 0, 0, 40)
+		
+		icon.Visible = true
+		icon.Position = UDim2.new(0, 10, 0.5, 0)
+		icon.AnchorPoint = Vector2.new(0, 0.5)
+		icon.Size = UDim2.new(0, 24, 0, 24)
+
+		titleLabel.Visible = true
+		leftControls.Visible = true
+		rightControls.Visible = true
+		minimizeButton.Text = "✖️"
 		
 		if not tutorialShown then showTutorial() end
 	end
@@ -609,8 +644,9 @@ table.insert(connections, mainFrame:GetPropertyChangedSignal("Size"):Connect(fun
 table.insert(connections, mainFrame:GetPropertyChangedSignal("Position"):Connect(function() blurFrame.Position = mainFrame.Position end))
 table.insert(connections, mainFrame:GetPropertyChangedSignal("AnchorPoint"):Connect(function() blurFrame.AnchorPoint = mainFrame.AnchorPoint end))
 
+-- MODIFIED: Added click-to-toggle when minimized
 table.insert(connections, header.InputBegan:Connect(function(input)
-	if not isMinimized then return end
+	if not isMinimized then return end -- Only run this logic when minimized
 	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 		isDragging = true; 
 		dragStart = UserInputService:GetMouseLocation(); 
@@ -621,16 +657,51 @@ table.insert(connections, header.InputBegan:Connect(function(input)
 		changedConn = input.Changed:Connect(function() 
 			if input.UserInputState == Enum.UserInputState.End then 
 				isDragging = false 
+				
+				local delta = (UserInputService:GetMouseLocation() - dragStart).Magnitude
+				-- If mouse/touch moved less than 10 pixels, treat as a click and toggle
+				if delta < 10 then
+					toggleMinimize()
+				end
+				
 				changedConn:Disconnect()
 			end 
 		end)
 	end
 end))
 
+-- MODIFIED: Added screen clamping logic
 table.insert(connections, RunService.RenderStepped:Connect(function(dt)
 	if isDragging then
+		local viewportSize = workspace.CurrentCamera.ViewportSize
 		local mouseDelta = UserInputService:GetMouseLocation() - dragStart
-		targetPosition = UDim2.new(frameStartPos.X.Scale, frameStartPos.X.Offset + mouseDelta.X, frameStartPos.Y.Scale, frameStartPos.Y.Offset + mouseDelta.Y)
+		
+		-- Calculate target pixel position
+		local targetPixelX = (frameStartPos.X.Scale * viewportSize.X) + frameStartPos.X.Offset + mouseDelta.X
+		local targetPixelY = (frameStartPos.Y.Scale * viewportSize.Y) + frameStartPos.Y.Offset + mouseDelta.Y
+		
+		-- Get frame size and anchor point
+		local frameSize = mainFrame.AbsoluteSize
+		local frameAnchor = mainFrame.AnchorPoint
+		
+		-- Calculate pixel boundaries
+		local minX = frameSize.X * frameAnchor.X
+		local maxX = viewportSize.X - (frameSize.X * (1 - frameAnchor.X))
+		local minY = frameSize.Y * frameAnchor.Y
+		local maxY = viewportSize.Y - (frameSize.Y * (1 - frameAnchor.Y))
+		
+		-- Clamp pixel position
+		local clampedPixelX = math.clamp(targetPixelX, minX, maxX)
+		local clampedPixelY = math.clamp(targetPixelY, minY, maxY)
+		
+		-- Convert clamped pixel position back to UDim2, preserving original scale
+		targetPosition = UDim2.new(
+			frameStartPos.X.Scale,
+			clampedPixelX - (frameStartPos.X.Scale * viewportSize.X),
+			frameStartPos.Y.Scale,
+			clampedPixelY - (frameStartPos.Y.Scale * viewportSize.Y)
+		)
+		
 		mainFrame.Position = mainFrame.Position:Lerp(targetPosition, dt * 15)
 	end
 end))
@@ -737,10 +808,11 @@ table.insert(connections, UserInputService:GetPropertyChangedSignal("OnScreenKey
 screenGui.Parent = playerGui
 blurGui.Parent = playerGui
 
+-- MODIFIED: Made glow more prominent
 local function loopGlow()
-	local info = TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
-	activeTweens.glowTransparency = TweenService:Create(blurStroke, info, {Transparency = 0.8})
-	activeTweens.glowThickness = TweenService:Create(blurStroke, info, {Thickness = 3.5})
+	local info = TweenInfo.new(1.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
+	activeTweens.glowTransparency = TweenService:Create(blurStroke, info, {Transparency = 0.9})
+	activeTweens.glowThickness = TweenService:Create(blurStroke, info, {Thickness = 6})
 	
 	activeTweens.glowTransparency:Play()
 	activeTweens.glowThickness:Play()
