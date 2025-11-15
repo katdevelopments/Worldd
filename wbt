@@ -211,14 +211,14 @@ end
 
 function GUI:UpdateStatus(text)
     if not GUI.StatusLabel then return end
-    task.spawn(function()
+    pcall(function()
         GUI.StatusLabel.Text = tostring(text)
     end)
 end
 
 function GUI:UpdateScore(passed, total)
     if not GUI.ScoreLabel then return end
-    task.spawn(function()
+    pcall(function()
         local percent = 0
         if total > 0 then
             percent = math.floor((passed / total) * 100)
@@ -240,7 +240,7 @@ function GUI:ShowFinalLink(url)
     
     GUI:UpdateStatus("Test Complete! Result link copied.")
     
-    task.spawn(function()
+    pcall(function()
         local linkBox = Instance.new("TextBox")
         linkBox.Name = "LinkBox"
         linkBox.Size = UDim2.new(1, -110, 0, 40)
@@ -278,7 +278,7 @@ function GUI:ShowFinalLink(url)
             if setclipboard then
                 pcall(setclipboard, url)
                 copyBtn.Text = "Copied!"
-                task.wait(2)
+                wait(2)
                 copyBtn.Text = "Copy"
             else
                 GUI:UpdateStatus("setclipboard not found. Copy manually.")
@@ -364,7 +364,7 @@ function WBT:RunAllTests()
     
     WBT:GetExecutorInfo()
     GUI:UpdateStatus(("Executor: %s"):format(WBT.Info.Executor))
-    task.wait(0.5)
+    wait(0.5)
     
     local T = WBT.Test
     
@@ -424,7 +424,7 @@ function WBT:RunAllTests()
         local s, is_exec = pcall(checkcaller)
         return s and type(is_exec) == "boolean"
     end)
-    task.wait(0.01)
+    wait(0.01)
 
     category = "Filesystem (I/O)"
     GUI:UpdateStatus("Testing: " .. category)
@@ -438,7 +438,7 @@ function WBT:RunAllTests()
     T:Run(category, "makefolder", function() return not not makefolder end)
     T:Run(category, "delfile", function() return not not delfile end)
     T:Run(category, "delfolder", function() return not not delfolder end)
-    task.wait(0.01)
+    wait(0.01)
 
     category = "Metatable & Debugging"
     GUI:UpdateStatus("Testing: " .. category)
@@ -476,7 +476,7 @@ function WBT:RunAllTests()
     T:Run(category, "debug.setupvalue", function() return debug and not not debug.setupvalue end)
     T:Run(category, "debug.getproto", function() return debug and not not debug.getproto end)
     T:Run(category, "debug.setstack", function() return debug and not not debug.setstack end)
-    task.wait(0.01)
+    wait(0.01)
 
     category = "Console"
     GUI:UpdateStatus("Testing: " .. category)
@@ -487,7 +487,7 @@ function WBT:RunAllTests()
     T:Run(category, "rconsoleclear", function() return not not rconsoleclear end)
     T:Run(category, "rconsolename", function() return not not rconsolename end)
     T:Run(category, "rconsoleinput", function() return not not rconsoleinput end)
-    task.wait(0.01)
+    wait(0.01)
     
     category = "Input Simulation"
     GUI:UpdateStatus("Testing: " .. category)
@@ -499,7 +499,7 @@ function WBT:RunAllTests()
     T:Run(category, "mouse2click", function() return not not mouse2click end)
     T:Run(category, "mousemoveabs", function() return not not mousemoveabs end)
     T:Run(category, "mousemoverel", function() return not not mousemoverel end)
-    task.wait(0.01)
+    wait(0.01)
     
     category = "Cryptography & Encoding"
     GUI:UpdateStatus("Testing: " .. category)
@@ -507,10 +507,10 @@ function WBT:RunAllTests()
     T:Run(category, "crypt.decrypt", function() return crypt and not not crypt.decrypt end)
     T:Run(category, "crypt.hash", function() return crypt and not not crypt.hash end)
     T:Run(category, "base64.encode", function() return base64 and not not base64.encode end)
-    T:Run(category,Details "base64.decode", function() return base64 and not not base64.decode end)
+    T:Run(category, "base64.decode", function() return base64 and not not base64.decode end)
     T:Run(category, "lz4.compress", function() return lz4 and not not lz4.compress end)
     T:Run(category, "lz4.decompress", function() return lz4 and not not lz4.decompress end)
-    task.wait(0.01)
+    wait(0.01)
     
     category = "Drawing Library"
     GUI:UpdateStatus("Testing: " .. category)
@@ -521,7 +521,7 @@ function WBT:RunAllTests()
         pcall(obj.Remove, obj)
         return true
     end)
-    task.wait(0.01)
+    wait(0.01)
 
     category = "SUNC Extensions"
     GUI:UpdateStatus("Testing: " .. category)
@@ -675,4 +675,4 @@ function WBT:Main()
     GUI:ShowFinalLink(url)
 end
 
-task.spawn(WBT.Main, WBT)
+pcall(WBT.Main, WT)
