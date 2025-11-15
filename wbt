@@ -79,7 +79,7 @@ function GUI:Create()
     
     GUI.MainFrame = CreateInstance("Frame", {
         Name = "MainFrame",
-        Size = UDim2.fromOffset(450, 280),
+        Size = UDim2.fromOffset(350, 250),
         Position = UDim2.fromScale(0.5, 0.5),
         AnchorPoint = Vector2.new(0.5, 0.5),
         BackgroundColor3 = Color3.fromRGB(20, 20, 20),
@@ -87,9 +87,9 @@ function GUI:Create()
         Parent = GUI.ScreenGui
     })
     
-    CreateInstance("UICorner", { CornerRadius = new(UDim, 0, 8), Parent = GUI.MainFrame })
-    CreateInstance("UIStroke", { Color = Color3.fromRGB(80, 80, 80), Thickness = 1, Parent = GUI.MainFrame })
-    CreateInstance("UIGradient", {
+    pcall(CreateInstance, "UICorner", { CornerRadius = UDim.new(0, 8), Parent = GUI.MainFrame })
+    pcall(CreateInstance, "UIStroke", { Color = Color3.fromRGB(80, 80, 80), Thickness = 1, Parent = GUI.MainFrame })
+    pcall(CreateInstance, "UIGradient", {
         Color = ColorSequence.new({
             ColorSequenceKeypoint.new(0, Color3.fromRGB(35, 35, 35)),
             ColorSequenceKeypoint.new(1, Color3.fromRGB(25, 25, 25))
@@ -108,8 +108,8 @@ function GUI:Create()
         Draggable = true
     })
     
-    CreateInstance("UICorner", { CornerRadius = new(UDim, 0, 8), Parent = header })
-    CreateInstance("UIStroke", { Color = Color3.fromRGB(80, 80, 80), Thickness = 1, Parent = header })
+    pcall(CreateInstance, "UICorner", { CornerRadius = UDim.new(0, 8), Parent = header })
+    pcall(CreateInstance, "UIStroke", { Color = Color3.fromRGB(80, 80, 80), Thickness = 1, Parent = header })
 
     local title = CreateInstance("TextLabel", {
         Name = "Title",
@@ -136,8 +136,11 @@ function GUI:Create()
         TextSize = 16,
         Parent = header
     })
-    closeButton.MouseButton1Click:Connect(function()
-        GUI.ScreenGui:Destroy()
+    
+    pcall(function()
+        closeButton.MouseButton1Click:Connect(function()
+            GUI.ScreenGui:Destroy()
+        end)
     end)
     
     GUI.ScoreLabel = CreateInstance("TextLabel", {
@@ -178,11 +181,13 @@ function GUI:Create()
         TextSize = 14,
         Parent = GUI.MainFrame
     })
-    CreateInstance("UICorner", { CornerRadius = new(UDim, 0, 6), Parent = consoleBtn })
-    CreateInstance("UIStroke", { Color = Color3.fromRGB(80, 80, 80), Thickness = 1, Parent = consoleBtn })
+    pcall(CreateInstance, "UICorner", { CornerRadius = UDim.new(0, 6), Parent = consoleBtn })
+    pcall(CreateInstance, "UIStroke", { Color = Color3.fromRGB(80, 80, 80), Thickness = 1, Parent = consoleBtn })
 
-    consoleBtn.MouseButton1Click:Connect(function()
-        GUI:ViewInConsole()
+    pcall(function()
+        consoleBtn.MouseButton1Click:Connect(function()
+            GUI:ViewInConsole()
+        end)
     end)
     
     Log("Info", "GUI Created successfully.")
@@ -231,8 +236,8 @@ function GUI:ShowFinalLink(url)
             TextXAlignment = Enum.TextXAlignment.Left,
             Parent = GUI.MainFrame
         })
-        CreateInstance("UICorner", { CornerRadius = new(UDim, 0, 6), Parent = linkBox })
-        CreateInstance("UIStroke", { Color = Color3.fromRGB(80, 80, 80), Thickness = 1, Parent = linkBox })
+        pcall(CreateInstance, "UICorner", { CornerRadius = UDim.new(0, 6), Parent = linkBox })
+        pcall(CreateInstance, "UIStroke", { Color = Color3.fromRGB(80, 80, 80), Thickness = 1, Parent = linkBox })
 
         local copyBtn = CreateInstance("TextButton", {
             Name = "CopyButton",
@@ -246,18 +251,20 @@ function GUI:ShowFinalLink(url)
             TextSize = 14,
             Parent = GUI.MainFrame
         })
-        CreateInstance("UICorner", { CornerRadius = new(UDim, 0, 6), Parent = copyBtn })
-        CreateInstance("UIStroke", { Color = Color3.fromRGB(80, 80, 80), Thickness = 1, Parent = copyBtn })
+        pcall(CreateInstance, "UICorner", { CornerRadius = UDim.new(0, 6), Parent = copyBtn })
+        pcall(CreateInstance, "UIStroke", { Color = Color3.fromRGB(80, 80, 80), Thickness = 1, Parent = copyBtn })
         
-        copyBtn.MouseButton1Click:Connect(function()
-            if setclipboard then
-                pcall(setclipboard, url)
-                copyBtn.Text = "Copied!"
-                wait(2)
-                copyBtn.Text = "Copy"
-            else
-                GUI:UpdateStatus("setclipboard not found. Copy manually.")
-            end
+        pcall(function()
+            copyBtn.MouseButton1Click:Connect(function()
+                if setclipboard then
+                    pcall(setclipboard, url)
+                    copyBtn.Text = "Copied!"
+                    wait(2)
+                    copyBtn.Text = "Copy"
+                else
+                    GUI:UpdateStatus("setclipboard not found. Copy manually.")
+                end
+            end)
         end)
     end)
 end
@@ -497,7 +504,7 @@ function WBT:RunAllTests()
     T:Run(category, "debug.getupvalues", function() return debug and not not debug.getupvalues end)
     T:Run(category, "debug.setupvalue", function() return debug and not not debug.setupvalue end)
     T:Run(category, "debug.getproto", function() return debug and not not debug.getproto end)
-    T:Run(category,KA, "debug.setstack", function() return debug and not not debug.setstack end)
+    T:Run(category, "debug.setstack", function() return debug and not not debug.setstack end)
     T:Run(category, "debug.getmetatable", function() return debug and not not debug.getmetatable end)
     T:Run(category, "debug.setmetatable", function() return debug and not not debug.setmetatable end)
     T:Run(category, "debug.getfenv", function() return debug and not not debug.getfenv end)
