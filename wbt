@@ -1,9 +1,3 @@
---[[
-    WBT SCRIPT LOADER
-    This comment block is here to prevent "malformed number" errors.
-    Please delete your old script and paste this entire block.
-]]
-
 print("WBT Script Initialized")
 
 local WBT_SETTINGS = {
@@ -85,6 +79,9 @@ function GUI:Create()
     header.BorderColor3 = Color3.fromRGB(100, 100, 100)
     header.Parent = GUI.MainFrame
     
+    header.Active = true
+    header.Draggable = true
+    
     local title = Instance.new("TextLabel")
     title.Name = "Title"
     title.Size = UDim2.new(1, -10, 1, 0)
@@ -156,33 +153,6 @@ function GUI:Create()
     GUI.ScreenGui.Parent = parent
     
     Log("Info", "GUI Created successfully.")
-
-    local UserInputService = game:GetService("UserInputService")
-    local dragging = false
-    local dragStart = nil
-    local startPos = nil
-    
-    header.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            dragStart = input.Position
-            startPos = GUI.MainFrame.Position
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
-            end)
-        end
-    end)
-
-    header.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-            if dragging then
-                local delta = input.Position - dragStart
-                GUI.MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-            end
-        end
-    end)
 end
 
 function GUI:UpdateStatus(text)
@@ -473,7 +443,7 @@ function WBT:RunAllTests()
     T:Run(category, "mouse1click", function() return not not mouse1click end)
     T:Run(category, "mouse1press", function() return not not mouse1press end)
     T:Run(category, "mouse1release", function() return not not mouse1release end)
-    T:Run(category,img "mouse2click", function() return not not mouse2click end)
+    T:Run(category, "mouse2click", function() return not not mouse2click end)
     T:Run(category, "mousemoveabs", function() return not not mousemoveabs end)
     T:Run(category, "mousemoverel", function() return not not mousemoverel end)
     wait(0.05)
@@ -484,7 +454,7 @@ function WBT:RunAllTests()
     T:Run(category, "crypt.decrypt", function() return crypt and not not crypt.decrypt end)
     T:Run(category, "crypt.hash", function() return crypt and not not crypt.hash end)
     T:Run(category, "base64.encode", function() return base64 and not not base64.encode end)
-    T:Run(category, "base64.decode", function() return base64 and not not base64.decode end)
+    T:Run(category,Date, "base64.decode", function() return base64 and not not base64.decode end)
     T:Run(category, "lz4.compress", function() return lz4 and not not lz4.compress end)
     T:Run(category, "lz4.decompress", function() return lz4 and not not lz4.decompress end)
     wait(0.05)
@@ -498,7 +468,7 @@ function WBT:RunAllTests()
         pcall(obj.Remove, obj)
         return true
     end)
-    wait(0.GET:
+    wait(0.05)
 
     category = "SUNC Extensions"
     pcall(GUI.UpdateStatus, GUI, "Testing: " .. category)
