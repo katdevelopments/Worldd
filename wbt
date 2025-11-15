@@ -50,6 +50,18 @@ GUI.MainFrame = nil
 GUI.StatusLabel = nil
 GUI.ScoreLabel = nil
 
+local function CreateInstance(type, properties)
+    local s, obj = pcall(Instance.new, type)
+    if not s or not obj then return nil end
+    
+    for prop, value in pairs(properties) do
+        pcall(function()
+            obj[prop] = value
+        end)
+    end
+    return obj
+end
+
 function GUI:Create()
     if not WBT_SETTINGS.UseGui then return end
     
@@ -59,98 +71,119 @@ function GUI:Create()
     
     local parent = gethui and gethui() or game:GetService("CoreGui")
     
-    GUI.ScreenGui = Instance.new("ScreenGui")
-    GUI.ScreenGui.Name = "WBT_Gui_" .. math.random(1e5, 1e6)
-    GUI.ScreenGui.ResetOnSpawn = false
+    GUI.ScreenGui = CreateInstance("ScreenGui", {
+        Name = "WBT_Gui_" .. math.random(1e5, 1e6),
+        ResetOnSpawn = false,
+        Parent = parent
+    })
     
-    GUI.MainFrame = Instance.new("Frame")
-    GUI.MainFrame.Name = "MainFrame"
-    GUI.MainFrame.Size = UDim2.fromOffset(400, 250)
-    GUI.MainFrame.Position = UDim2.fromScale(0.5, 0.5)
-    GUI.MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-    GUI.MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    GUI.MainFrame.BorderColor3 = Color3.fromRGB(100, 100, 100)
-    GUI.MainFrame.BorderSizePixel = 1
+    GUI.MainFrame = CreateInstance("Frame", {
+        Name = "MainFrame",
+        Size = UDim2.fromOffset(450, 280),
+        Position = UDim2.fromScale(0.5, 0.5),
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+        BorderSizePixel = 0,
+        Parent = GUI.ScreenGui
+    })
+    
+    CreateInstance("UICorner", { CornerRadius = new(UDim, 0, 8), Parent = GUI.MainFrame })
+    CreateInstance("UIStroke", { Color = Color3.fromRGB(80, 80, 80), Thickness = 1, Parent = GUI.MainFrame })
+    CreateInstance("UIGradient", {
+        Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(35, 35, 35)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(25, 25, 25))
+        }),
+        Rotation = 90,
+        Parent = GUI.MainFrame
+    })
 
-    local header = Instance.new("Frame")
-    header.Name = "Header"
-    header.Size = UDim2.new(1, 0, 0, 40)
-    header.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    header.BorderColor3 = Color3.fromRGB(100, 100, 100)
-    header.Parent = GUI.MainFrame
+    local header = CreateInstance("Frame", {
+        Name = "Header",
+        Size = UDim2.new(1, 0, 0, 40),
+        BackgroundColor3 = Color3.fromRGB(15, 15, 15),
+        BorderSizePixel = 0,
+        Parent = GUI.MainFrame,
+        Active = true,
+        Draggable = true
+    })
     
-    header.Active = true
-    header.Draggable = true
+    CreateInstance("UICorner", { CornerRadius = new(UDim, 0, 8), Parent = header })
+    CreateInstance("UIStroke", { Color = Color3.fromRGB(80, 80, 80), Thickness = 1, Parent = header })
+
+    local title = CreateInstance("TextLabel", {
+        Name = "Title",
+        Size = UDim2.new(1, -50, 1, 0),
+        Position = UDim2.fromOffset(15, 0),
+        BackgroundTransparency = 1,
+        Text = "WBT - World Benchmark Test",
+        Font = Enum.Font.Code,
+        TextColor3 = Color3.fromRGB(220, 220, 220),
+        TextSize = 18,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Parent = header
+    })
     
-    local title = Instance.new("TextLabel")
-    title.Name = "Title"
-    title.Size = UDim2.new(1, -10, 1, 0)
-    title.Position = UDim2.fromOffset(10, 0)
-    title.BackgroundTransparency = 1
-    title.Text = "WBT - World Benchmark Test"
-    title.Font = Enum.Font.Code
-    title.TextColor3 = Color3.fromRGB(255, 255, 255)
-    title.TextSize = 18
-    title.TextXAlignment = Enum.TextXAlignment.Left
-    title.Parent = header
-    
-    local closeButton = Instance.new("TextButton")
-    closeButton.Name = "CloseButton"
-    closeButton.Size = UDim2.fromOffset(20, 20)
-    closeButton.Position = UDim2.new(1, -25, 0.5, 0)
-    closeButton.AnchorPoint = Vector2.new(0.5, 0.5)
-    closeButton.BackgroundTransparency = 1
-    closeButton.Text = "X"
-    closeButton.Font = Enum.Font.Code
-    closeButton.TextColor3 = Color3.fromRGB(220, 220, 220)
-    closeButton.TextSize = 16
-    closeButton.Parent = header
+    local closeButton = CreateInstance("TextButton", {
+        Name = "CloseButton",
+        Size = UDim2.fromOffset(40, 40),
+        Position = UDim2.new(1, 0, 0, 0),
+        AnchorPoint = Vector2.new(1, 0),
+        BackgroundTransparency = 1,
+        Text = "X",
+        Font = Enum.Font.Code,
+        TextColor3 = Color3.fromRGB(200, 200, 200),
+        TextSize = 16,
+        Parent = header
+    })
     closeButton.MouseButton1Click:Connect(function()
         GUI.ScreenGui:Destroy()
     end)
     
-    GUI.ScoreLabel = Instance.new("TextLabel")
-    GUI.ScoreLabel.Name = "ScoreLabel"
-    GUI.ScoreLabel.Size = UDim2.new(1, -20, 0, 40)
-    GUI.ScoreLabel.Position = UDim2.fromOffset(10, 50)
-    GUI.ScoreLabel.BackgroundTransparency = 1
-    GUI.ScoreLabel.Font = Enum.Font.Code
-    GUI.ScoreLabel.TextColor3 = Color3.fromRGB(74, 222, 128)
-    GUI.ScoreLabel.TextSize = 32
-    GUI.ScoreLabel.Text = "0%"
-    GUI.ScoreLabel.TextXAlignment = Enum.TextXAlignment.Left
-    GUI.ScoreLabel.Parent = GUI.MainFrame
+    GUI.ScoreLabel = CreateInstance("TextLabel", {
+        Name = "ScoreLabel",
+        Size = UDim2.new(1, -40, 0, 50),
+        Position = UDim2.fromOffset(20, 55),
+        BackgroundTransparency = 1,
+        Font = Enum.Font.Code,
+        TextColor3 = Color3.fromRGB(74, 222, 128),
+        TextSize = 50,
+        Text = "0%",
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Parent = GUI.MainFrame
+    })
     
-    GUI.StatusLabel = Instance.new("TextLabel")
-    GUI.StatusLabel.Name = "StatusLabel"
-    GUI.StatusLabel.Size = UDim2.new(1, -20, 0, 20)
-    GUI.StatusLabel.Position = UDim2.fromOffset(10, 85)
-    GUI.StatusLabel.BackgroundTransparency = 1
-    GUI.StatusLabel.Font = Enum.Font.Code
-    GUI.StatusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-    GUI.StatusLabel.TextSize = 14
-    GUI.StatusLabel.Text = "Initializing..."
-    GUI.StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
-    GUI.StatusLabel.Parent = GUI.MainFrame
+    GUI.StatusLabel = CreateInstance("TextLabel", {
+        Name = "StatusLabel",
+        Size = UDim2.new(1, -40, 0, 20),
+        Position = UDim2.fromOffset(20, 105),
+        BackgroundTransparency = 1,
+        Font = Enum.Font.Code,
+        TextColor3 = Color3.fromRGB(180, 180, 180),
+        TextSize = 14,
+        Text = "Initializing...",
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Parent = GUI.MainFrame
+    })
     
-    local consoleBtn = Instance.new("TextButton")
-    consoleBtn.Name = "ViewConsoleButton"
-    consoleBtn.Size = UDim2.new(1, -20, 0, 30)
-    consoleBtn.Position = UDim2.fromAnchorPoint(0.5, 1, 0, -15)
-    consoleBtn.AnchorPoint = Vector2.new(0.5, 1)
-    consoleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    consoleBtn.BorderColor3 = Color3.fromRGB(100, 100, 100)
-    consoleBtn.Font = Enum.Font.Code
-    consoleBtn.Text = "View Details in Console"
-    consoleBtn.TextColor3 = Color3.fromRGB(220, 220, 220)
-    consoleBtn.TextSize = 14
-    consoleBtn.Parent = GUI.MainFrame
+    local consoleBtn = CreateInstance("TextButton", {
+        Name = "ViewConsoleButton",
+        Size = UDim2.new(1, -40, 0, 35),
+        Position = UDim2.fromAnchorPoint(0.5, 1, 0, -20),
+        AnchorPoint = Vector2.new(0.5, 1),
+        BackgroundColor3 = Color3.fromRGB(40, 40, 40),
+        Font = Enum.Font.Code,
+        Text = "View Details in Console",
+        TextColor3 = Color3.fromRGB(220, 220, 220),
+        TextSize = 14,
+        Parent = GUI.MainFrame
+    })
+    CreateInstance("UICorner", { CornerRadius = new(UDim, 0, 6), Parent = consoleBtn })
+    CreateInstance("UIStroke", { Color = Color3.fromRGB(80, 80, 80), Thickness = 1, Parent = consoleBtn })
+
     consoleBtn.MouseButton1Click:Connect(function()
         GUI:ViewInConsole()
     end)
-    
-    GUI.MainFrame.Parent = GUI.ScreenGui
-    GUI.ScreenGui.Parent = parent
     
     Log("Info", "GUI Created successfully.")
 end
@@ -184,35 +217,37 @@ end
 function GUI:ShowFinalLink(url)
     if not GUI.MainFrame then return end
     
-    GUI:UpdateStatus("Test Complete! Result link copied.")
-    
     pcall(function()
-        local linkBox = Instance.new("TextBox")
-        linkBox.Name = "LinkBox"
-        linkBox.Size = UDim2.new(1, -110, 0, 40)
-        linkBox.Position = UDim2.fromOffset(10, 120)
-        linkBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-        linkBox.BorderColor3 = Color3.fromRGB(100, 100, 100)
-        linkBox.ClearTextOnFocus = false
-        linkBox.Text = url
-        linkBox.Font = Enum.Font.Code
-        linkBox.TextColor3 = Color3.fromRGB(167, 243, 208)
-        linkBox.TextSize = 12
-        linkBox.TextXAlignment = Enum.TextXAlignment.Left
-        linkBox.Parent = GUI.MainFrame
-        
-        local copyBtn = Instance.new("TextButton")
-        copyBtn.Name = "CopyButton"
-        copyBtn.Size = UDim2.fromOffset(80, 40)
-        copyBtn.Position = UDim2.new(1, -10, 0, 120)
-        copyBtn.AnchorPoint = Vector2.new(1, 0)
-        copyBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-        copyBtn.BorderColor3 = Color3.fromRGB(100, 100, 100)
-        copyBtn.Font = Enum.Font.Code
-        copyBtn.Text = "Copy"
-        copyBtn.TextColor3 = Color3.fromRGB(220, 220, 220)
-        copyBtn.TextSize = 14
-        copyBtn.Parent = GUI.MainFrame
+        local linkBox = CreateInstance("TextBox", {
+            Name = "LinkBox",
+            Size = UDim2.new(1, -130, 0, 40),
+            Position = UDim2.fromOffset(20, 135),
+            BackgroundColor3 = Color3.fromRGB(10, 10, 10),
+            ClearTextOnFocus = false,
+            Text = url,
+            Font = Enum.Font.Code,
+            TextColor3 = Color3.fromRGB(167, 243, 208),
+            TextSize = 14,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            Parent = GUI.MainFrame
+        })
+        CreateInstance("UICorner", { CornerRadius = new(UDim, 0, 6), Parent = linkBox })
+        CreateInstance("UIStroke", { Color = Color3.fromRGB(80, 80, 80), Thickness = 1, Parent = linkBox })
+
+        local copyBtn = CreateInstance("TextButton", {
+            Name = "CopyButton",
+            Size = UDim2.fromOffset(90, 40),
+            Position = UDim2.new(1, -20, 0, 135),
+            AnchorPoint = Vector2.new(1, 0),
+            BackgroundColor3 = Color3.fromRGB(60, 60, 60),
+            Font = Enum.Font.Code,
+            Text = "Copy",
+            TextColor3 = Color3.fromRGB(220, 220, 220),
+            TextSize = 14,
+            Parent = GUI.MainFrame
+        })
+        CreateInstance("UICorner", { CornerRadius = new(UDim, 0, 6), Parent = copyBtn })
+        CreateInstance("UIStroke", { Color = Color3.fromRGB(80, 80, 80), Thickness = 1, Parent = copyBtn })
         
         copyBtn.MouseButton1Click:Connect(function()
             if setclipboard then
@@ -237,7 +272,7 @@ function GUI:ViewInConsole()
         print(":: " .. category .. " ::")
         for funcName, status in pairs(funcs) do
             local statusText = ("[%s]"):format(status:upper())
-            print(string.format("  %-15s %s", statusText, funcName))
+            print(string.format("  %-20s %s", funcName, statusText))
         end
     end
     
@@ -355,10 +390,22 @@ function WBT:RunAllTests()
         local s, conns = pcall(getconnections, game:GetService("RunService").Heartbeat)
         return s and type(conns) == "table"
     end)
+    T:Run(category, "getthreadidentity", function()
+        if not getthreadidentity then return "unsupported" end
+        local s, ident = pcall(getthreadidentity)
+        return s and type(ident) == "number"
+    end)
+    T:Run(category, "setthreadidentity", function()
+        if not setthreadidentity then return "unsupported" end
+        local s = pcall(setthreadidentity, 7)
+        pcall(setthreadidentity, 2)
+        return s
+    end)
     T:Run(category, "firesignal", function() return not not firesignal end)
     T:Run(category, "fireclickdetector", function() return not not fireclickdetector end)
     T:Run(category, "firetouchinterest", function() return not not firetouchinterest end)
     T:Run(category, "is_executor_closure", function() return not not is_executor_closure end)
+    T:Run(category, "is_syn_closure", function() return not not is_syn_closure end)
     T:Run(category, "checkcaller", function()
         if not checkcaller then return "unsupported" end
         local s, is_exec = pcall(checkcaller)
@@ -368,8 +415,8 @@ function WBT:RunAllTests()
 
     category = "Filesystem (I/O)"
     pcall(GUI.UpdateStatus, GUI, "Testing: " .. category)
-    T:Run(category, "readfile", function() return not not readfile end)
     T:Run(category, "writefile", function() return not not writefile end)
+    T:Run(category, "readfile", function() return not not readfile end)
     T:Run(category, "appendfile", function() return not not appendfile end)
     T:Run(category, "loadfile", function() return not not loadfile end)
     T:Run(category, "listfiles", function() return not not listfiles end)
@@ -378,6 +425,21 @@ function WBT:RunAllTests()
     T:Run(category, "makefolder", function() return not not makefolder end)
     T:Run(category, "delfile", function() return not not delfile end)
     T:Run(category, "delfolder", function() return not not delfolder end)
+    T:Run(category, "FS I/O Test", function()
+        if not writefile or not readfile or not isfile or not delfile then return "unsupported" end
+        local test_path = "wbt_test_file.txt"
+        local test_content = "WBT_FS_TEST_" .. math.random(1e5, 1e6)
+        local s_write = pcall(writefile, test_path, test_content)
+        if not s_write then return "writefail" end
+        local s_read, content = pcall(readfile, test_path)
+        if not s_read then 
+            pcall(delfile, test_path)
+            return "readfail"
+        end
+        local s_del = pcall(delfile, test_path)
+        if not s_del then return "delfail" end
+        return content == test_content
+    end)
     wait(0.05)
 
     category = "Metatable & Debugging"
@@ -393,6 +455,20 @@ function WBT:RunAllTests()
         local mt = {}
         local s = pcall(setrawmetatable, t, mt)
         return s and getrawmetatable(t) == mt
+    end)
+    T:Run(category, "getmetatable", function()
+        if not getmetatable then return "unsupported" end
+        local t = {}
+        local mt = {}
+        setmetatable(t, mt)
+        return getmetatable(t) == mt
+    end)
+    T:Run(category, "setmetatable", function()
+        if not setmetatable then return "unsupported" end
+        local t = {}
+        local mt = {}
+        pcall(setmetatable, t, mt)
+        return getmetatable(t) == mt
     end)
     T:Run(category, "setreadonly", function() return not not setreadonly end)
     T:Run(category, "isreadonly", function() return not not isreadonly end)
@@ -412,7 +488,6 @@ function WBT:RunAllTests()
         end
         
         pcall(print, "")
-        
         pcall(hookfunction, print, old_print)
         return success
     end)
@@ -422,7 +497,11 @@ function WBT:RunAllTests()
     T:Run(category, "debug.getupvalues", function() return debug and not not debug.getupvalues end)
     T:Run(category, "debug.setupvalue", function() return debug and not not debug.setupvalue end)
     T:Run(category, "debug.getproto", function() return debug and not not debug.getproto end)
-    T:Run(category, "debug.setstack", function() return debug and not not debug.setstack end)
+    T:Run(category,KA, "debug.setstack", function() return debug and not not debug.setstack end)
+    T:Run(category, "debug.getmetatable", function() return debug and not not debug.getmetatable end)
+    T:Run(category, "debug.setmetatable", function() return debug and not not debug.setmetatable end)
+    T:Run(category, "debug.getfenv", function() return debug and not not debug.getfenv end)
+    T:Run(category, "debug.setfenv", function() return debug and not not debug.setfenv end)
     wait(0.05)
 
     category = "Console"
@@ -444,6 +523,9 @@ function WBT:RunAllTests()
     T:Run(category, "mouse1press", function() return not not mouse1press end)
     T:Run(category, "mouse1release", function() return not not mouse1release end)
     T:Run(category, "mouse2click", function() return not not mouse2click end)
+    T:Run(category, "mouse2press", function() return not not mouse2press end)
+    T:Run(category, "mouse2release", function() return not not mouse2release end)
+    T:Run(category, "mousescroll", function() return not not mousescroll end)
     T:Run(category, "mousemoveabs", function() return not not mousemoveabs end)
     T:Run(category, "mousemoverel", function() return not not mousemoverel end)
     wait(0.05)
@@ -452,22 +534,38 @@ function WBT:RunAllTests()
     pcall(GUI.UpdateStatus, GUI, "Testing: " .. category)
     T:Run(category, "crypt.encrypt", function() return crypt and not not crypt.encrypt end)
     T:Run(category, "crypt.decrypt", function() return crypt and not not crypt.decrypt end)
-    T:Run(category, "crypt.hash", function() return crypt and not not crypt.hash end)
+    T:Run(category, "crypt.hash (md5)", function()
+        if not crypt or not crypt.hash then return "unsupported" end
+        local s, h = pcall(crypt.hash, "md5", "test")
+        return s and h == "098f6bcd4621d373cade4e832627b4f6"
+    end)
+    T:Run(category, "crypt.hash (sha256)", function()
+        if not crypt or not crypt.hash then return "unsupported" end
+        local s, h = pcall(crypt.hash, "sha256", "test")
+        return s and h == "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
+    end)
     T:Run(category, "base64.encode", function() return base64 and not not base64.encode end)
-    T:Run(category,Date, "base64.decode", function() return base64 and not not base64.decode end)
+    T:Run(category, "base64.decode", function() return base64 and not not base64.decode end)
     T:Run(category, "lz4.compress", function() return lz4 and not not lz4.compress end)
     T:Run(category, "lz4.decompress", function() return lz4 and not not lz4.decompress end)
     wait(0.05)
     
     category = "Drawing Library"
     pcall(GUI.UpdateStatus, GUI, "Testing: " .. category)
-    T:Run(category, "Drawing.new", function()
+    local function testDrawing(type)
         if not Drawing or not Drawing.new then return "unsupported" end
-        local s, obj = pcall(Drawing.new, "Line")
+        local s, obj = pcall(Drawing.new, type)
         if not s or not obj then return false end
         pcall(obj.Remove, obj)
         return true
-    end)
+    end
+    T:Run(category, "Drawing.new(Line)", function() return testDrawing("Line") end)
+    T:Run(category, "Drawing.new(Text)", function() return testDrawing("Text") end)
+    T:Run(category, "Drawing.new(Image)", function() return testDrawing("Image") end)
+    T:Run(category, "Drawing.new(Circle)", function() return testDrawing("Circle") end)
+    T:Run(category, "Drawing.new(Square)", function() return testDrawing("Square") end)
+    T:Run(category, "Drawing.new(Quad)", function() return testDrawing("Quad") end)
+    T:Run(category, "Drawing.new(Triangle)", function() return testDrawing("Triangle") end)
     wait(0.05)
 
     category = "SUNC Extensions"
@@ -483,6 +581,9 @@ function WBT:RunAllTests()
     T:Run(category, "queue_on_teleport", function() return not not queue_on_teleport end)
     T:Run(category, "setclipboard", function() return not not setclipboard end)
     T:Run(category, "getcustomasset", function() return not not getcustomasset end)
+    T:Run(category, "secure_call", function() return not not secure_call end)
+    T:Run(category, "getinstancein", function() return not not getinstancein end)
+    T:Run(category, "getinstancesin", function() return not not getinstancesin end)
     
     category = "Executor Info"
     pcall(GUI.UpdateStatus, GUI, "Testing: " .. category)
@@ -494,6 +595,24 @@ function WBT:RunAllTests()
         local s, name = pcall(getexecutorname)
         return s and type(name) == "string"
     end)
+
+    category = "bit Library"
+    pcall(GUI.UpdateStatus, GUI, "Testing: " .. category)
+    local bit_lib = bit or bit32
+    T:Run(category, "bit.band", function() return bit_lib and not not bit_lib.band end)
+    T:Run(category, "bit.bor", function() return bit_lib and not not bit_lib.bor end)
+    T:Run(category, "bit.bxor", function() return bit_lib and not not bit_lib.bxor end)
+    T:Run(category, "bit.lshift", function() return bit_lib and not not bit_lib.lshift end)
+    T:Run(category, "bit.rshift", function() return bit_lib and not not bit_lib.rshift end)
+    T:Run(category, "bit.arshift", function() return bit_lib and not not bit_lib.arshift end)
+    T:Run(category, "bit.not", function() return bit_lib and not not bit_lib["not"] end)
+    
+    category = "http Library"
+    pcall(GUI.UpdateStatus, GUI, "Testing: " .. category)
+    T:Run(category, "http_request", function() return not not http_request end)
+    T:Run(category, "request", function() return not not request end)
+    T:Run(category, "http.get", function() return http and not not http.get end)
+    T:Run(category, "http.post", function() return http and not not http.post end)
 
     Log("Info", "All tests completed.")
     pcall(GUI.UpdateStatus, GUI, "All tests completed.")
