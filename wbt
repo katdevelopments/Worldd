@@ -8,7 +8,7 @@ local WBT_SETTINGS = {
 }
 
 local WBT = {}
-WBT.Info = { Executor = "Unknown", Version = "N/A" }
+WBT.Info = { Executor = "Unknown", Version = "N/A", Level = "N/A" }
 WBT.Results = {}
 WBT.Logs = {}
 WBT.Stats = { Total = 0, Passed = 0 }
@@ -79,11 +79,13 @@ function GUI:Create()
     
     GUI.MainFrame = CreateInstance("Frame", {
         Name = "MainFrame",
-        Size = UDim2.fromOffset(350, 250),
+        Size = UDim2.fromOffset(400, 260),
         Position = UDim2.fromScale(0.5, 0.5),
         AnchorPoint = Vector2.new(0.5, 0.5),
         BackgroundColor3 = Color3.fromRGB(20, 20, 20),
         BorderSizePixel = 0,
+        Active = true,
+        Draggable = true,
         Parent = GUI.ScreenGui
     })
     
@@ -103,9 +105,7 @@ function GUI:Create()
         Size = UDim2.new(1, 0, 0, 40),
         BackgroundColor3 = Color3.fromRGB(15, 15, 15),
         BorderSizePixel = 0,
-        Parent = GUI.MainFrame,
-        Active = true,
-        Draggable = true
+        Parent = GUI.MainFrame
     })
     
     pcall(CreateInstance, "UICorner", { CornerRadius = UDim.new(0, 8), Parent = header })
@@ -223,13 +223,18 @@ function GUI:ShowFinalLink(url)
     if not GUI.MainFrame then return end
     
     pcall(function()
+        local truncatedUrl = url
+        if #url > 45 then
+             truncatedUrl = string.sub(url, 1, 42) .. "..."
+        end
+
         local linkBox = CreateInstance("TextBox", {
             Name = "LinkBox",
             Size = UDim2.new(1, -130, 0, 40),
             Position = UDim2.fromOffset(20, 135),
             BackgroundColor3 = Color3.fromRGB(10, 10, 10),
             ClearTextOnFocus = false,
-            Text = url,
+            Text = truncatedUrl,
             Font = Enum.Font.Code,
             TextColor3 = Color3.fromRGB(167, 243, 208),
             TextSize = 14,
@@ -271,7 +276,7 @@ end
 
 function GUI:ViewInConsole()
     Log("Info", "================ WBT TEST LOGS ================")
-    Log("Info", ("Executor: %s (Version: %s)"):format(WBT.Info.Executor, WBT.Info.Version))
+    Log("Info", ("Executor: %s (Version: %s, Level: %s)"):format(WBT.Info.Executor, WBT.Info.Version, WBT.Info.Level))
     Log("Info", ("Final Score: %d/%d (%d%%)"):format(WBT.Stats.Passed, WBT.Stats.Total, (WBT.Stats.Total > 0 and math.floor((WBT.Stats.Passed / WBT.Stats.Total) * 100) or 0)))
     Log("Info", "===============================================")
     
@@ -326,17 +331,18 @@ function WBT:GetExecutorInfo()
         if s_ver and ver then
             WBT.Info.Version = tostring(ver)
         end
-        return
+    else
+        s, name = pcall(getexecutorname)
+        if s and type(name) == "string" then
+            WBT.Info.Executor = name
+        elseif _G._VERSION then
+            WBT.Info.Executor = _G._VERSION
+        end
     end
     
-    s, name = pcall(getexecutorname)
-    if s and type(name) == "string" then
-        WBT.Info.Executor = name
-        return
-    end
-
-    if _G._VERSION then
-        WBT.Info.Executor = _G._VERSION
+    local s_level, level = pcall(getthreadidentity)
+    if s_level and level then
+        WBT.Info.Level = tostring(level)
     end
 end
 
@@ -345,7 +351,7 @@ function WBT:RunAllTests()
     pcall(GUI.UpdateStatus, GUI, "Running tests...")
     
     WBT:GetExecutorInfo()
-    pcall(GUI.UpdateStatus, GUI, ("Executor: %s"):format(WBT.Info.Executor))
+    pcall(GUI.UpdateStatus, GUI, ("Executor: %s (L%s)"):format(WBT.Info.Executor, WBT.Info.Level))
     wait(0.5)
     
     local T = WBT.Test
@@ -420,6 +426,30 @@ function WBT:RunAllTests()
     end)
     wait(0.05)
 
+    category = "Instance Functions"
+    pcall(GUI.UpdateStatus, GUI, "Testing: " .. category)
+    T:Run(category, "getchildren", function()
+        local s, children = pcall(game.GetChildren, game)
+        return s and type(children) == "table" and #children > 0
+    end)
+    T:Run(category, "getdescendants", function()
+        local s, desc = pcall(game.GetDescendants, game)
+        return s and type(desc) == "table" and #desc > 0
+    end)
+    T:Run(category, "findfirstchild", function()
+        local s, child = pcall(game.FindFirstChild, game, "Workspace")
+        return s and child == game.Workspace
+    end)
+    T:Run(category, "findfirstchildofclass", function()
+        local s, child = pcall(game.FindFirstChildOfClass, game, "Workspace")
+        return s and child == game.Workspace
+    end)
+    T:Run(category, "findfirstancestor", function()
+        local s, ances = pcall(game.Workspace.FindFirstAncestor, game.Workspace, "game")
+        return s and ances == game
+    end)
+    wait(0.05)
+    
     category = "Filesystem (I/O)"
     pcall(GUI.UpdateStatus, GUI, "Testing: " .. category)
     T:Run(category, "writefile", function() return not not writefile end)
