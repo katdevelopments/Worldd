@@ -1,20 +1,3 @@
-// Roblox Version: version-f6dd34ecac7b4642 (OUTDATED)
+// Roblox Version: version-8e6e698468a04d3f (LIVE)
 // Byfron Version(s): [hyperion-secured] [yara-secured]
-
-#define TSTRING_HASH_ENC      lua_vm_value1_t
-#define PROTO_DEBUGNAME_ENC   lua_vm_value3_t  
-#define PROTO_LOCVARS_ENC     lua_vm_value4_t  
-#define CLOSURE_CONT_ENC      lua_vm_value3_t  
-
-#define PROTO_LINEINFO_ENC    lua_vm_value1_t 
-#define PROTO_SOURCE_ENC      lua_vm_value2_t 
-
-#define PROTO_UPVALUES_ENC    lua_vm_value4_t
-#define PROTO_DEBUGISN_ENC    lua_vm_value2_t 
-#define PROTO_USERDATA_ENC    lua_vm_value3_t  
-#define CLOSURE_DEBUGNAME_ENC lua_vm_value1_t 
-#define UDATA_META_ENC        lua_vm_value3_t  
-#define LSTATE_STACKSIZE_ENC  lua_vm_value2_t
-
-#define PROTO_TYPEINFO_ENC    lua_vm_value4_t  
-#define PROTO_ABSLINEINFO_ENC lua_vm_value1_t  
+// ❌ Enc not found
