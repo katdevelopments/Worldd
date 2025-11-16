@@ -1,11 +1,21 @@
 // Roblox Version: version-8e6e698468a04d3f (LIVE)
 // Byfron Version(s): [hyperion-secured] [yara-secured]
 
-// CFG BYPASS
-
 // DLL OFFSET
+const uintptr_t BitMap = Hyperion_Rbase(0x2A7DF0);
 
 // GET STATE
+lua_State* DecryptLuaState(uintptr_t ScriptContext)
+{
+    *reinterpret_cast<BOOLEAN*>(ScriptContext + 0x914) = TRUE;
+
+    auto Address = ScriptContext + 0x2B0;
+    auto EncryptedState = reinterpret_cast<uint32_t*>(Address);
+
+    uint32_t Low = EncryptedState[0] - static_cast<uint32_t>(Address);
+    uint32_t High = EncryptedState[1] - static_cast<uint32_t>(Address);
+    return reinterpret_cast<lua_State*>((static_cast<uint64_t>(High) << 32) | Low);
+}
 
 // FUNCTIONS (yub)
 constexpr uintptr_t callbackvalue_f    = (0x88);
@@ -236,6 +246,7 @@ namespace Roblox {
     inline auto ValidateBytecode = (int(__fastcall*)(__int64, const char*, unsigned char*, unsigned __int64, int))Offsets::ValidateBytecode_offset;
 
 }
+
 // CLIENT OFFSETS (rblxoffsets)
 namespace offsets {
     inline constexpr uintptr_t Adornee = 0xC8;
