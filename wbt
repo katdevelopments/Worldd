@@ -267,18 +267,6 @@ function GUI:Create()
     pcall(CreateInstance, "UICorner", { CornerRadius = UDim.new(0, 6), Parent = GUI.LinkBox })
     pcall(CreateInstance, "UIStroke", { Color = Color3.fromRGB(80, 80, 80), Thickness = 1, Parent = GUI.LinkBox })
 
-    local consoleBtn = CreateInstance("TextButton", {
-        Name = "ViewConsoleButton",
-        Size = UDim2.new(1, -40, 0, 35),
-        Position = UDim2.new(0.5, 0, 1, -20), -- CORRECTED
-        AnchorPoint = Vector2.new(0.5, 1),
-        BackgroundColor3 = Color3.fromRGB(40, 40, 40),
-        Font = Enum.Font.Code,
-        Text = "View Details in Console",
-        TextColor3 = Color3.fromRGB(220, 220, 220),
-        TextSize = 14,
-        Parent = GUI.MainFrame
-    })
     pcall(CreateInstance, "UICorner", { CornerRadius = UDim.new(0, 6), Parent = consoleBtn })
     pcall(CreateInstance, "UIStroke", { Color = Color3.fromRGB(80, 80, 80), Thickness = 1, Parent = consoleBtn })
 
@@ -987,7 +975,7 @@ function WBT:RunAllTests()
         local s, st = pcall(Stats)
         return s and st:IsA("Stats")
     end)
-    wait(0.g)
+    wait(0.05)
 
     category = "Anti-Detection"
     pcall(GUI.UpdateStatus, GUI, "Testing: " .. category)
