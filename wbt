@@ -50,6 +50,8 @@ GUI.ScreenGui = nil
 GUI.MainFrame = nil
 GUI.StatusLabel = nil
 GUI.ScoreLabel = nil
+GUI.LinkBox = nil -- Store reference to link box
+GUI.CopyButton = nil -- Store reference to copy button
 
 local function CreateInstance(type, properties)
     local s, obj = pcall(Instance.new, type)
@@ -170,6 +172,43 @@ function GUI:Create()
         Parent = GUI.MainFrame
     })
     
+    -- Create the link box (hidden)
+    GUI.LinkBox = CreateInstance("TextBox", {
+        Name = "LinkBox",
+        Size = UDim2.new(1, -130, 0, 40),
+        Position = UDim2.fromOffset(20, 135),
+        BackgroundColor3 = Color3.fromRGB(10, 10, 10),
+        ClearTextOnFocus = false,
+        Text = "",
+        Font = Enum.Font.Code,
+        TextColor3 = Color3.fromRGB(167, 243, 208),
+        TextSize = 14,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Visible = false, -- Hide it
+        Parent = GUI.MainFrame
+    })
+    pcall(CreateInstance, "UICorner", { CornerRadius = UDim.new(0, 6), Parent = GUI.LinkBox })
+    pcall(CreateInstance, "UIStroke", { Color = Color3.fromRGB(80, 80, 80), Thickness = 1, Parent = GUI.LinkBox })
+
+    -- Create the copy button (hidden)
+    GUI.CopyButton = CreateInstance("TextButton", {
+        Name = "CopyButton",
+        Size = UDim2.fromOffset(90, 40),
+        Position = UDim2.new(1, -20, 0, 135),
+        AnchorPoint = Vector2.new(1, 0),
+        BackgroundColor3 = Color3.fromRGB(60, 60, 60),
+        Font = Enum.Font.Code,
+        Text = "Copy",
+        TextColor3 = Color3.fromRGB(220, 220, 220),
+        TextSize = 14,
+        Visible = false, -- Hide it
+        Active = false, -- Disable it
+        Parent = GUI.MainFrame
+    })
+    pcall(CreateInstance, "UICorner", { CornerRadius = UDim.new(0, 6), Parent = GUI.CopyButton })
+    pcall(CreateInstance, "UIStroke", { Color = Color3.fromRGB(80, 80, 80), Thickness = 1, Parent = GUI.CopyButton })
+    
+    
     local consoleBtn = CreateInstance("TextButton", {
         Name = "ViewConsoleButton",
         Size = UDim2.new(1, -40, 0, 35),
@@ -221,61 +260,41 @@ function GUI:UpdateScore(passed, total)
 end
 
 function GUI:ShowFinalLink(url)
-    if not GUI.MainFrame then return end
+    if not GUI.MainFrame or not GUI.LinkBox or not GUI.CopyButton then 
+        Log("Error", "GUI:ShowFinalLink failed: UI elements not found.")
+        return 
+    end
     
     pcall(function()
         local truncatedUrl = url
         if #url > 45 then
              truncatedUrl = string.sub(url, 1, 42) .. "..."
         end
-
-        local linkBox = CreateInstance("TextBox", {
-            Name = "LinkBox",
-            Size = UDim2.new(1, -130, 0, 40),
-            Position = UDim2.fromOffset(20, 135),
-            BackgroundColor3 = Color3.fromRGB(10, 10, 10),
-            ClearTextOnFocus = false,
-            Text = truncatedUrl,
-            Font = Enum.Font.Code,
-            TextColor3 = Color3.fromRGB(167, 243, 208),
-            TextSize = 14,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            Parent = GUI.MainFrame
-        })
-        pcall(CreateInstance, "UICorner", { CornerRadius = UDim.new(0, 6), Parent = linkBox })
-        pcall(CreateInstance, "UIStroke", { Color = Color3.fromRGB(80, 80, 80), Thickness = 1, Parent = linkBox })
-
-        local copyBtn = CreateInstance("TextButton", {
-            Name = "CopyButton",
-            Size = UDim2.fromOffset(90, 40),
-            Position = UDim2.new(1, -20, 0, 135),
-            AnchorPoint = Vector2.new(1, 0),
-            BackgroundColor3 = Color3.fromRGB(60, 60, 60),
-            Font = Enum.Font.Code,
-            Text = "Copy",
-            TextColor3 = Color3.fromRGB(220, 220, 220),
-            TextSize = 14,
-            Parent = GUI.MainFrame
-        })
-        pcall(CreateInstance, "UICorner", { CornerRadius = UDim.new(0, 6), Parent = copyBtn })
-        pcall(CreateInstance, "UIStroke", { Color = Color3.fromRGB(80, 80, 80), Thickness = 1, Parent = copyBtn })
         
-        pcall(function()
-            copyBtn.MouseButton1Click:Connect(function()
-                if setclipboard then
-                    pcall(setclipboard, url)
-                    copyBtn.Text = "Copied!"
-                    wait(2)
-                    copyBtn.Text = "Copy"
-                else
-                    GUI:UpdateStatus("setclipboard not found. Copy manually.")
-                end
-            end)
+        -- Set text and make visible
+        GUI.LinkBox.Text = truncatedUrl
+        GUI.LinkBox.Visible = true
+        
+        GUI.CopyButton.Visible = true
+        GUI.CopyButton.Active = true
+
+        -- Set the click event for the button
+        GUI.CopyButton.MouseButton1Click:ClearAllConnections() -- Clear any old connections
+        GUI.CopyButton.MouseButton1Click:Connect(function()
+            if setclipboard then
+                pcall(setclipboard, url) -- Use the full URL
+                GUI.CopyButton.Text = "Copied!"
+                wait(2)
+                GUI.CopyButton.Text = "Copy"
+            else
+                GUI:UpdateStatus("setclipboard not found. Copy manually.")
+            end
         end)
     end)
 end
 
 function GUI:ViewInConsole()
+-- ... (This function is unchanged) ...
     Log("Info", "================ WBT TEST LOGS ================")
     Log("Info", ("Executor: %s (Version: %s, Level: %s)"):format(WBT.Info.Executor, WBT.Info.Version, WBT.Info.Level))
     Log("Info", ("Final Score: %d/%d (%d%%)"):format(WBT.Stats.Passed, WBT.Stats.Total, (WBT.Stats.Total > 0 and math.floor((WBT.Stats.Passed / WBT.Stats.Total) * 100) or 0)))
@@ -293,15 +312,11 @@ function GUI:ViewInConsole()
     GUI:UpdateStatus("Logs printed to console.")
 end
 
--- This function is no longer needed as the server will generate the ID
--- local function GenerateRandomId(length)
---     ...
--- end
-
 
 WBT.Test = {}
 
 local AllTestsOrdered = {
+-- ... (This table is unchanged) ...
     "getgenv", "getrenv", "getreg", "getgc", "getinstances", "getnilinstances", "getscripts", "getloadedmodules", "getconnections", "getthreadidentity", "setthreadidentity", "setthreadidentity (behavior)", "firesignal", "fireclickdetector", "firetouchinterest", "is_executor_closure", "is_syn_closure", "checkcaller", "loadstring (behavior)",
     "getchildren", "getdescendants", "findfirstchild", "findfirstchildofclass", "findfirstancestor",
     "require (existence)", "require (behavior)",
@@ -334,6 +349,7 @@ local AllTestsOrdered = {
 }
 
 function WBT.Test:Run(category, name, testFunc)
+-- ... (This function is unchanged) ...
     if not WBT.Results[category] then
         WBT.Results[category] = {}
     end
@@ -362,6 +378,7 @@ function WBT.Test:Run(category, name, testFunc)
 end
 
 function WBT:GetExecutorInfo()
+-- ... (This function is unchanged) ...
     local s, name = pcall(identifyexecutor)
     if s and type(name) == "string" then
         WBT.Info.Executor = name
@@ -386,6 +403,7 @@ end
 
 function WBT:RunAllTests()
     Log("Info", "Starting World Benchmark Test...")
+-- ... (All test T:Run calls are unchanged, but fixed wait() times) ...
     pcall(GUI.UpdateStatus, GUI, "Running tests...")
     
     WBT:GetExecutorInfo()
@@ -942,12 +960,17 @@ function WBT:RunAllTests()
         if not hookfunction or not os or not os.clock then return "unsupported" end
         local func = function() return 1 end
         local start = os.clock()
-        for i = 1, 10000 do func() end
+        for i = 1, 10000 do
+            func()
+            if i % 1000 == 0 then wait() end -- YIELD to prevent freezing
+        end
         local base_time = os.clock() - start
         
         local old_func = hookfunction(func, function() end)
         start = os.clock()
-        for i = 1, 10000 do func()
+        for i = 1, 10000 do
+            func()
+            if i % 1000 == 0 then wait() end -- YIELD to prevent freezing
         end
         local hook_time = os.clock() - start
         hookfunction(func, old_func)
@@ -971,6 +994,7 @@ function WBT:RunAllTests()
         local start = os.clock()
         for i = 1, 5000 do
             Instance.new("Part")
+            if i % 100 == 0 then wait() end -- YIELD to prevent freezing
         end
         local time_taken = os.clock() - start
         WBT.Info.InstanceSpeed = ("%.4fms for 5k instances"):format(time_taken * 1000)
@@ -981,12 +1005,8 @@ function WBT:RunAllTests()
     pcall(GUI.UpdateStatus, GUI, "All tests completed.")
 end
 
--- This function is no longer needed
--- function WBT:Base64Encode(data)
---     ...
--- end
-
 function WBT:SerializeJSON(tbl)
+-- ... (This function is unchanged) ...
     local function escape_str(s)
         local replacements = {
             ["\\"] = "\\\\", ["\""] = "\\\"", ["\b"] = "\\b",
@@ -1044,6 +1064,7 @@ function WBT:SerializeJSON(tbl)
 end
 
 function WBT:GetTestResult(testName)
+-- ... (This function is unchanged) ...
     for _, category in pairs(WBT.Results) do
         if category[testName] then
             return category[testName]
@@ -1053,6 +1074,7 @@ function WBT:GetTestResult(testName)
 end
 
 function WBT:GenerateCompressedResults()
+-- ... (This function is unchanged) ...
     local results_string = ""
     local status_map = {
         pass = "p",
@@ -1067,11 +1089,6 @@ function WBT:GenerateCompressedResults()
     
     return results_string
 end
-
--- This is no longer needed
--- local function SanitizeForUrl(str)
---    ...
--- end
 
 function WBT:Main()
     print("[WBT] Main function started.")
@@ -1092,87 +1109,129 @@ function WBT:Main()
     
     pcall(GUI.UpdateStatus, GUI, "Submitting results to database...")
     
-    local payload = {
-        info = WBT.Info,
-        results = WBT:GenerateCompressedResults(),
-        timestamp = os.time()
-    }
     
-    local json_data
-    local s, res = pcall(game:GetService("HttpService").JSONEncode, game:GetService("HttpService"), payload)
-    if s and res then
-        json_data = res
-        Log("Info", "Using HttpService for JSON encoding.")
-    else
-        Log("Warn", "HttpService JSONEncode failed. Using fallback serializer.", tostring(res))
-        json_data = WBT:SerializeJSON(payload)
-    end
-    
-    -- Submit data to Netlify Function
-    local http_func = request or http_request or (http and http.post)
-    if not http_func then
-        Log("Error", "No HTTP request function found (request, http_request, http.post). Cannot submit results.")
-        pcall(GUI.UpdateStatus, GUI, "Error: No HTTP function found.")
-        return
-    end
-    
-    local s_req, res_req = pcall(http_func, {
-        Url = WBT_SETTINGS.SubmitApiUrl,
-        Method = "POST",
-        Headers = {
-            ["Content-Type"] = "application/json"
-        },
-        Body = json_data
-    })
-    
-    if not s_req then
-        Log("Error", "Failed to submit results:", tostring(res_req))
-        pcall(GUI.UpdateStatus, GUI, "Error: Submission failed.")
-        return
-    end
+    -- Spawn a new thread for payload creation, JSON serialization, and HTTP request to prevent freezing
+    spawn(function()
+        Log("Info", "Starting background submission thread.")
+        
+        -- 1. Create Payload (This was the heavy task freezing the UI)
+        local payload
+        local s_payload, e_payload = pcall(function()
+            payload = {
+                info = WBT.Info,
+                results = WBT:GenerateCompressedResults(), -- This now runs in the background
+                timestamp = os.time()
+            }
+        end)
 
-    -- Handle different possible response formats
-    local response_body
-    if type(res_req) == "table" then
-        response_body = res_req.Body
-    elseif type(res_req) == "string" then
-        response_body = res_req
-    else
-        Log("Error", "Unknown HTTP response format:", type(res_req))
-        pcall(GUI.UpdateStatus, GUI, "Error: Unknown response.")
-        return
-    end
-
-    -- Decode the JSON response from the server
-    local s_json, res_json = pcall(game:GetService("HttpService").JSONDecode, game:GetService("HttpService"), response_body)
-    
-    if not s_json or not res_json or not res_json.id then
-        Log("Error", "Failed to parse server response:", response_body)
-        pcall(GUI.UpdateStatus, GUI, "Error: Invalid server response.")
-        return
-    end
-    
-    local scan_id = res_json.id
-    local url = ("%s/#scan-%s"):format(WBT_SETTINGS.WebsiteBaseUrl, scanId)
-    
-    Log("Info", "Test Complete!")
-    Log("Info", "Your unique results URL is:")
-    Log("Info", url)
-    
-    if WBT_SETTINGS.AutoCopyLink then
-        if setclipboard then
-            pcall(setclipboard, url)
-            pcall(GUI.UpdateStatus, GUI, "Test Complete! Result link copied.")
-        else
-            Log("Warn", "setclipboard is not available. Please copy the link manually.")
-            pcall(GUI.UpdateStatus, GUI, "Test Complete! Copy link below.")
+        if not s_payload then
+            Log("Error", "Failed to create payload:", tostring(e_payload))
+            -- Update UI back on main thread
+            task.defer(pcall, GUI.UpdateStatus, GUI, "Error: Failed to create payload.")
+            return
         end
-    else
-        pcall(GUI.UpdateStatus, GUI, "Test Complete! Copy link below.")
-    end
+        
+        local json_data
+
+        -- 2. Serialize JSON
+        local s_json_enc, json_data_or_err = pcall(function()
+            local s, res = pcall(game:GetService("HttpService").JSONEncode, game:GetService("HttpService"), payload)
+            if s and res then
+                Log("Info", "Using HttpService for JSON encoding.")
+                return res
+            else
+                Log("Warn", "HttpService JSONEncode failed. Using fallback serializer.", tostring(res))
+                return WBT:SerializeJSON(payload) -- This will run in the new thread
+            end
+        end)
+        
+        if not s_json_enc then
+            Log("Error", "Failed to serialize JSON:", tostring(json_data_or_err))
+            -- Update UI back on main thread
+            task.defer(pcall, GUI.UpdateStatus, GUI, "Error: JSON serialization failed.")
+            return
+        end
+        
+        json_data = json_data_or_err
+        
+        -- 3. Submit data to Netlify Function
+        local http_func = request or http_request or (http and http.post)
+        if not http_func then
+            Log("Error", "No HTTP request function found (request, http_request, http.post). Cannot submit results.")
+            task.defer(pcall, GUI.UpdateStatus, GUI, "Error: No HTTP function found.")
+            return
+        end
+        
+        local s_req, res_req = pcall(http_func, {
+            Url = WBT_SETTINGS.SubmitApiUrl,
+            Method = "POST",
+            Headers = {
+                ["Content-Type"] = "application/json"
+            },
+            Body = json_data
+        })
+        
+        if not s_req then
+            Log("Error", "Failed to submit results:", tostring(res_req))
+            task.defer(pcall, GUI.UpdateStatus, GUI, "Error: Submission failed.")
+            return
+        end
+
+        -- 4. Handle response
+        local response_body
+        if type(res_req) == "table" then
+            response_body = res_req.Body
+        elseif type(res_req) == "string" then
+            response_body = res_req
+        else
+            Log("Error", "Unknown HTTP response format:", type(res_req))
+            task.defer(pcall, GUI.UpdateStatus, GUI, "Error: Unknown response.")
+            return
+        end
+
+        -- 5. Decode the JSON response from the server
+        local s_json_dec, res_json = pcall(game:GetService("HttpService").JSONDecode, game:GetService("HttpService"), response_body)
+        
+        if not s_json_dec or not res_json or not res_json.id then
+            Log("Error", "Failed to parse server response:", response_body)
+            task.defer(pcall, GUI.UpdateStatus, GUI, "Error: Invalid server response.")
+            return
+        end
+        
+        local scan_id = res_json.id
+        local url = ("%s/#scan-%s"):format(WBT_SETTINGS.WebsiteBaseUrl, scan_id)
+        
+        Log("Info", "Test Complete!")
+        Log("Info", "Your unique results URL is:")
+        Log("Info", url)
+        
+        -- 6. Update UI (back on the main thread using task.defer)
+        -- task.defer is the correct way to schedule work back on the main thread
+        task.defer(function()
+            Log("Info", "Scheduling UI update on main thread.")
+            if WBT_SETTINGS.AutoCopyLink then
+                if setclipboard then
+                    pcall(setclipboard, url)
+                    pcall(GUI.UpdateStatus, GUI, "Test Complete! Result link copied.")
+                else
+                    Log("Warn", "setclipboard is not available. Please copy the link manually.")
+                    pcall(GUI.UpdateStatus, GUI, "Test Complete! Copy link below.")
+                end
+            else
+                pcall(GUI.UpdateStatus, GUI, "Test Complete! Copy link below.")
+            end
+            
+            local s_gui, e_gui = pcall(GUI.ShowFinalLink, GUI, url)
+            if not s_gui then
+                Log("Error", "GUI:ShowFinalLink failed:", tostring(e_gui))
+            else
+                Log("Info", "GUI:ShowFinalLink called successfully.")
+            end
+            print("[WBT] Background submission thread finished.")
+        end)
+    end)
     
-    pcall(GUI.ShowFinalLink, GUI, url)
-    print("[WBT] Main function finished.")
+    print("[WBT] Main function finished. Background thread is submitting.")
 end
 
 print("[WBT] Spawning Main thread...")
