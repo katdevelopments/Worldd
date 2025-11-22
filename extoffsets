@@ -1,9 +1,9 @@
-// Roblox Version: version-fdda949d95e447e3 (LIVE)
+// Roblox Version: version-e380c8edc8f6477c (LIVE)
 // Byfron Version(s): [hyperion-secured] [yara-secured]
 #include <cstdint>
 #include <string>
 namespace Offsets {
-    inline std::string ClientVersion = "version-fdda949d95e447e3";
+    inline std::string ClientVersion = "version-e380c8edc8f6477c";
 
     namespace AnimationTrack {
          inline constexpr uintptr_t Animation = 0xd0;
@@ -27,16 +27,6 @@ namespace Offsets {
          inline constexpr uintptr_t Size = 0x1b0;
          inline constexpr uintptr_t Transparency = 0xf0;
          inline constexpr uintptr_t ValidatePrimitive = 0x6;
-    }
-
-    namespace BaseScript {
-         inline constexpr uintptr_t IsCoreScript = 0x188;
-         inline constexpr uintptr_t ModuleFlags = 0x184;
-    }
-
-    namespace ByteCode {
-         inline constexpr uintptr_t Pointer = 0x10;
-         inline constexpr uintptr_t Size = 0x20;
     }
 
     namespace Camera {
@@ -69,19 +59,19 @@ namespace Offsets {
          inline constexpr uintptr_t DebugDisableTimeoutDisconnect = 0x662f8a8;
          inline constexpr uintptr_t EnableLoadModule = 0x661eb88;
          inline constexpr uintptr_t PartyPlayerInactivityTimeoutInSeconds = 0x65e3da4;
-         inline constexpr uintptr_t TaskSchedulerTargetFps = 0x6f49e20;
+         inline constexpr uintptr_t TaskSchedulerTargetFps = 0x6f49f28;
          inline constexpr uintptr_t WebSocketServiceEnableClientCreation = 0x663c738;
     }
 
     namespace FakeDataModel {
-         inline constexpr uintptr_t Pointer = 0x77a01c8;
+         inline constexpr uintptr_t Pointer = 0x77a03a8;
          inline constexpr uintptr_t RealDataModel = 0x1c0;
     }
 
     namespace GuiObject {
          inline constexpr uintptr_t BackgroundColor3 = 0x550;
          inline constexpr uintptr_t BorderColor3 = 0x55c;
-         inline constexpr uintptr_t Image = 0xa48;
+         inline constexpr uintptr_t Image = 0xa20;
          inline constexpr uintptr_t LayoutOrder = 0x58c;
          inline constexpr uintptr_t Position = 0x520;
          inline constexpr uintptr_t RichText = 0xae0;
@@ -138,11 +128,6 @@ namespace Offsets {
          inline constexpr uintptr_t OutdoorAmbient = 0x108;
     }
 
-    namespace LocalScript {
-         inline constexpr uintptr_t ByteCode = 0x1a8;
-         inline constexpr uintptr_t Hash = 0x1b8;
-    }
-
     namespace MeshPart {
          inline constexpr uintptr_t MeshId = 0x2e0;
          inline constexpr uintptr_t Texture = 0x310;
@@ -161,15 +146,10 @@ namespace Offsets {
          inline constexpr uintptr_t Scale = 0x154;
     }
 
-    namespace ModuleScript {
-         inline constexpr uintptr_t ByteCode = 0x150;
-         inline constexpr uintptr_t Hash = 0x168;
-    }
-
     namespace MouseService {
          inline constexpr uintptr_t InputObject = 0x100;
          inline constexpr uintptr_t MousePosition = 0xec;
-         inline constexpr uintptr_t SensitivityPointer = 0x787a4e0;
+         inline constexpr uintptr_t SensitivityPointer = 0x787a6c0;
     }
 
     namespace Player {
@@ -188,7 +168,7 @@ namespace Offsets {
 
     namespace PlayerConfigurer {
          inline constexpr uintptr_t OverrideDuration = 0x1f8;
-         inline constexpr uintptr_t Pointer = 0x777c770;
+         inline constexpr uintptr_t Pointer = 0x777c870;
     }
 
     namespace PlayerMouse {
@@ -253,7 +233,7 @@ namespace Offsets {
          inline constexpr uintptr_t JobName = 0x18;
          inline constexpr uintptr_t JobStart = 0x1d0;
          inline constexpr uintptr_t MaxFPS = 0x1b0;
-         inline constexpr uintptr_t Pointer = 0x78e2e28;
+         inline constexpr uintptr_t Pointer = 0x78e3008;
          inline constexpr uintptr_t RenderJobToFakeDataModel = 0x38;
          inline constexpr uintptr_t RenderJobToRenderView = 0x218;
     }
@@ -269,7 +249,7 @@ namespace Offsets {
 
     namespace VisualEngine {
          inline constexpr uintptr_t Dimensions = 0x720;
-         inline constexpr uintptr_t Pointer = 0x75277c0;
+         inline constexpr uintptr_t Pointer = 0x75278c0;
          inline constexpr uintptr_t ToDataModel1 = 0x700;
          inline constexpr uintptr_t ToDataModel2 = 0x1c0;
          inline constexpr uintptr_t ViewMatrix = 0x4b0;
