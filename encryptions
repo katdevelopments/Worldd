@@ -1,24 +1,21 @@
-// Roblox Version: version-fdda949d95e447e3 (LIVE)
+// Roblox Version: version-e380c8edc8f6477c (LIVE)
 // Byfron Version(s): [hyperion-secured] [yara-secured]
-#define L_GLOBAL_ENC     v_v[0]
-#define CL_FUNC_ENC      v_v[0]
-#define TB_MEMBER_ENC    v_v[0]
-#define TB_META_ENC      v_v[0]
-#define TS_LEN_ENC       v_v[0]
-#define PT_MEMBER1_ENC   v_v[0]
-#define GS_TTNAME_ENC    v_v[0]
-#define GS_TMNAME_ENC    v_v[0]
-#define PT_LINE_ENC      v_v[3]
-#define PT_ABSLINE_ENC   v_v[1]
-#define PT_LOCVARS_ENC   v_v[1]
-#define PT_UPVALS_ENC    v_v[3]
-#define PT_SRC_ENC       v_v[4]
-#define PT_DBGINSN_ENC   v_v[3]
-#define PT_DBGNAME_ENC   v_v[3]
-#define PT_TYPE_ENC      v_v[2]
-#define PT_USERDATA_ENC  v_v[2]
-#define L_STACK_ENC      v_v[2]
-#define CL_CONT_ENC      v_v[4]
-#define CL_DBGNAME_ENC   v_v[2]
-#define UD_META_ENC      v_v[2]
-#define TS_HASH_ENC      v_v[4]
+#define PROTO_LINEINFO_ENC VMValue3
+#define PROTO_ABSLINEINFO_ENC VMValue1
+#define PROTO_LOCVARS_ENC VMValue1
+#define PROTO_UPVALUES_ENC VMValue3
+#define PROTO_SOURCE_ENC VMValue4
+
+#define PROTO_DEBUGINSN_ENC VMValue3
+#define PROTO_DEBUGNAME_ENC VMValue3
+#define PROTO_TYPEINFO_ENC VMValue2
+#define PROTO_USERDATA_ENC VMValue1 // Propably wrong
+
+#define LSTATE_STACKSIZE_ENC VMValue2
+
+#define CLOSURE_CONT_ENC VMValue4
+#define CLOSURE_DEBUGNAME_ENC VMValue2
+
+#define UDATA_META_ENC VMValue2
+
+#define TSTRING_HASH_ENC VMValue4
