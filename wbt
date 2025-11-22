@@ -64,83 +64,6 @@ local function CreateInstance(type, properties)
     return obj
 end
 
-function GUI:ShowWarning(callback)
-    local parent = gethui and gethui() or game:GetService("CoreGui")
-    
-    local warningGui = CreateInstance("ScreenGui", {
-        Name = "WBT_Warning_Gui_" .. math.random(100000, 1000000),
-        ResetOnSpawn = false,
-        Parent = parent,
-        ZIndexBehavior = Enum.ZIndexBehavior.Global
-    })
-    
-    local warningFrame = CreateInstance("Frame", {
-        Name = "WarningFrame",
-        Size = UDim2.fromOffset(400, 200),
-        Position = UDim2.fromScale(0.5, 0.5),
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        BackgroundColor3 = Color3.fromRGB(30, 30, 30),
-        BorderSizePixel = 0,
-        ZIndex = 2,
-        Parent = warningGui
-    })
-    pcall(CreateInstance, "UICorner", { CornerRadius = UDim.new(0, 8), Parent = warningFrame })
-
-    local title = CreateInstance("TextLabel", {
-        Name = "Title",
-        Size = UDim2.new(1, -40, 0, 40),
-        Position = UDim2.fromOffset(20, 10),
-        BackgroundTransparency = 1,
-        Text = "Warning",
-        Font = Enum.Font.Code,
-        TextColor3 = Color3.fromRGB(248, 113, 113),
-        TextSize = 24,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        ZIndex = 3,
-        Parent = warningFrame
-    })
-    
-    local message = CreateInstance("TextLabel", {
-        Name = "Message",
-        Size = UDim2.new(1, -40, 0, 100),
-        Position = UDim2.fromOffset(20, 50),
-        BackgroundTransparency = 1,
-        Text = "This test is complex and will freeze or stop interaction with executing new lua code and using roblox console. \n\nPlease make sure your console is closed before this test runs.",
-        Font = Enum.Font.Code,
-        TextColor3 = Color3.fromRGB(200, 200, 200),
-        TextSize = 14,
-        TextWrapped = true,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        TextYAlignment = Enum.TextYAlignment.Top,
-        ZIndex = 3,
-        Parent = warningFrame
-    })
-    
-    local okButton = CreateInstance("TextButton", {
-        Name = "OkButton",
-        Size = UDim2.new(1, -40, 0, 40),
-        Position = UDim2.new(0.5, 0, 1, -20), -- CORRECTED
-        AnchorPoint = Vector2.new(0.5, 1),
-        BackgroundColor3 = Color3.fromRGB(74, 222, 128),
-        Font = Enum.Font.Code,
-        Text = "OK",
-        TextColor3 = Color3.fromRGB(20, 20, 20),
-        TextSize = 16,
-        ZIndex = 3,
-        Parent = warningFrame
-    })
-    pcall(CreateInstance, "UICorner", { CornerRadius = UDim.new(0, 6), Parent = okButton })
-    
-    pcall(function()
-        okButton.MouseButton1Click:Connect(function()
-            warningGui:Destroy()
-            if callback then
-                callback()
-            end
-        end)
-    end)
-end
-
 function GUI:Create()
     if not WBT_SETTINGS.UseGui then return end
     
@@ -232,6 +155,7 @@ function GUI:Create()
         TextSize = 50,
         Text = "0%",
         TextXAlignment = Enum.TextXAlignment.Left,
+        Visible = false,
         Parent = GUI.MainFrame
     })
     
@@ -243,15 +167,16 @@ function GUI:Create()
         Font = Enum.Font.Code,
         TextColor3 = Color3.fromRGB(180, 180, 180),
         TextSize = 14,
-        Text = "Initializing...",
+        Text = "Waiting for user...",
         TextXAlignment = Enum.TextXAlignment.Left,
+        Visible = false,
         Parent = GUI.MainFrame
     })
     
     GUI.LinkBox = CreateInstance("TextBox", {
         Name = "LinkBox",
         Size = UDim2.new(1, -40, 0, 40),
-        Position = UDim2.new(0, 20, 0, 135),
+        Position = UDim2.fromOffset(20, 135),
         BackgroundColor3 = Color3.fromRGB(10, 10, 10),
         ClearTextOnFocus = false,
         Text = "",
@@ -259,24 +184,93 @@ function GUI:Create()
         TextColor3 = Color3.fromRGB(167, 243, 208),
         TextSize = 14,
         TextXAlignment = Enum.TextXAlignment.Left,
+        TextEditable = false,
         Visible = false,
-        Parent = GUI.MainFrame,
-        MultiLine = true,
-        TextWrapped = true
+        Parent = GUI.MainFrame
     })
     pcall(CreateInstance, "UICorner", { CornerRadius = UDim.new(0, 6), Parent = GUI.LinkBox })
     pcall(CreateInstance, "UIStroke", { Color = Color3.fromRGB(80, 80, 80), Thickness = 1, Parent = GUI.LinkBox })
-
-    pcall(CreateInstance, "UICorner", { CornerRadius = UDim.new(0, 6), Parent = consoleBtn })
-    pcall(CreateInstance, "UIStroke", { Color = Color3.fromRGB(80, 80, 80), Thickness = 1, Parent = consoleBtn })
-
-    pcall(function()
-        consoleBtn.MouseButton1Click:Connect(function()
-            GUI:ViewInConsole()
-        end)
-    end)
     
     Log("Info", "GUI Created successfully.")
+end
+
+function GUI:ShowWarning(callback)
+    if not GUI.MainFrame then return end
+    
+    local warningFrame = CreateInstance("Frame", {
+        Name = "WarningFrame",
+        Size = UDim2.new(1, 0, 1, -40),
+        Position = UDim2.fromOffset(0, 40),
+        BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+        BorderSizePixel = 0,
+        Parent = GUI.MainFrame
+    })
+    
+    pcall(CreateInstance, "UIGradient", {
+        Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(35, 35, 35)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(25, 25, 25))
+        }),
+        Rotation = 90,
+        Parent = warningFrame
+    })
+    
+    local warningTitle = CreateInstance("TextLabel", {
+        Name = "WarningTitle",
+        Size = UDim2.new(1, -40, 0, 30),
+        Position = UDim2.fromOffset(20, 20),
+        BackgroundTransparency = 1,
+        Font = Enum.Font.Code,
+        TextColor3 = Color3.fromRGB(248, 113, 113),
+        TextSize = 20,
+        Text = "WARNING: TEST WILL FREEZE",
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Parent = warningFrame
+    })
+    
+    local warningText = CreateInstance("TextLabel", {
+        Name = "WarningText",
+        Size = UDim2.new(1, -40, 0, 100),
+        Position = UDim2.fromOffset(20, 60),
+        BackgroundTransparency = 1,
+        Font = Enum.Font.Code,
+        TextColor3 = Color3.fromRGB(200, 200, 200),
+        TextSize = 14,
+        Text = "This test is complex and will freeze or stop interaction with executing new code and using the Roblox console.\n\nPlease make sure your console is closed before this test runs.",
+        TextWrapped = true,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextYAlignment = Enum.TextYAlignment.Top,
+        Parent = warningFrame
+    })
+    
+    local okButton = CreateInstance("TextButton", {
+        Name = "OKButton",
+        Size = UDim2.new(1, -40, 0, 40),
+        Position = UDim2.new(0.5, 0, 1, -20), -- FIXED: Replaced UDim2.fromAnchorPoint
+        AnchorPoint = Vector2.new(0.5, 1),
+        BackgroundColor3 = Color3.fromRGB(40, 40, 40),
+        Font = Enum.Font.Code,
+        Text = "OK, Start Test",
+        TextColor3 = Color3.fromRGB(220, 220, 220),
+        TextSize = 16,
+        Parent = warningFrame
+    })
+    pcall(CreateInstance, "UICorner", { CornerRadius = UDim.new(0, 6), Parent = okButton })
+    pcall(CreateInstance, "UIStroke", { Color = Color3.fromRGB(80, 80, 80), Thickness = 1, Parent = okButton })
+    
+    pcall(function()
+        okButton.MouseButton1Click:Connect(function()
+            pcall(callback)
+            warningFrame:Destroy()
+        end)
+    end)
+end
+
+function GUI:StartTestUI()
+    if GUI.ScoreLabel then GUI.ScoreLabel.Visible = true end
+    if GUI.StatusLabel then GUI.StatusLabel.Visible = true end
+    if GUI.ConsoleButton then GUI.ConsoleButton.Visible = true end
+    pcall(GUI.UpdateStatus, GUI, "Initializing...")
 end
 
 function GUI:UpdateStatus(text)
@@ -314,22 +308,6 @@ function GUI:ShowFinalLink(url)
     pcall(function()
         GUI.LinkBox.Text = url
         GUI.LinkBox.Visible = true
-        
-        local consoleBtn = GUI.MainFrame:FindFirstChild("ViewConsoleButton")
-        if consoleBtn then
-            local headerHeight = 40
-            local scoreLabelHeight = 50
-            local statusLabelHeight = 20
-            local paddingTop = 20
-            local paddingBottom = 20
-            local spaceBetween = 10
-
-            local totalFixedElementsHeight = headerHeight + scoreLabelHeight + statusLabelHeight + consoleBtn.Size.Y.Offset
-            local availableHeight = GUI.MainFrame.Size.Y.Offset - totalFixedElementsHeight - paddingTop - paddingBottom - (spaceBetween * 3)
-
-            GUI.LinkBox.Size = UDim2.new(1, -40, 0, availableHeight)
-            GUI.LinkBox.Position = UDim2.fromOffset(20, statusLabelHeight + scoreLabelHeight + headerHeight + paddingTop + (spaceBetween * 2))
-        end
     end)
 end
 
@@ -396,17 +374,13 @@ function WBT.Test:Run(category, name, testFunc)
     local testStatus
     
     if not status then
-        Log("Warn", ("Test for '%s' failed to run: %s"):format(name, tostring(result)))
         testStatus = "fail"
     elseif result == "unsupported" then
-        Log("Info", ("Function '%s' is not supported."):format(name))
         testStatus = "unsupported"
     elseif result == true then
-        Log("Info", ("Test for '%s' PASSED."):format(name))
         testStatus = "pass"
         WBT.Stats.Passed = WBT.Stats.Passed + 1
     else
-        Log("Warn", ("Test for '%s' FAILED. (Result: %s)"):format(name, tostring(result)))
         testStatus = "fail"
     end
     
@@ -415,12 +389,16 @@ function WBT.Test:Run(category, name, testFunc)
 end
 
 function WBT:GetExecutorInfo()
-    local s, name = pcall(identifyexecutor)
+    local s, name, ver = pcall(identifyexecutor)
     if s and type(name) == "string" then
         WBT.Info.Executor = name
-        local s_ver, ver = pcall(getexecutorversion)
-        if s_ver and ver then
+        if ver then
             WBT.Info.Version = tostring(ver)
+        else
+            local s_ver, ver_alt = pcall(getexecutorversion)
+            if s_ver and ver_alt then
+                WBT.Info.Version = tostring(ver_alt)
+            end
         end
     else
         s, name = pcall(getexecutorname)
@@ -1122,25 +1100,14 @@ function WBT:GenerateCompressedResults()
     return results_string
 end
 
-function WBT:Main()
-    print("[WBT] Main function started.")
-    
-    if WBT_SETTINGS.UseGui then
-        print("[WBT] Attempting to create GUI...")
-        local s, e = pcall(GUI.Create, GUI)
-        if not s then
-            print("[WBT] GUI:Create() FAILED:", e)
-        else
-            print("[WBT] GUI creation complete.")
-        end
-    end
+function WBT:StartTests()
+    pcall(GUI.StartTestUI)
     
     print("[WBT] Attempting to run all tests...")
     WBT:RunAllTests()
     print("[WBT] All tests completed. Submitting results...")
     
     pcall(GUI.UpdateStatus, GUI, "Submitting results to database...")
-    
     
     spawn(function()
         Log("Info", "Starting background submission thread.")
@@ -1165,10 +1132,8 @@ function WBT:Main()
         local s_json_enc, json_data_or_err = pcall(function()
             local s, res = pcall(game:GetService("HttpService").JSONEncode, game:GetService("HttpService"), payload)
             if s and res then
-                Log("Info", "Using HttpService for JSON encoding.")
                 return res
             else
-                Log("Warn", "HttpService JSONEncode failed. Using fallback serializer.", tostring(res))
                 return WBT:SerializeJSON(payload)
             end
         end)
@@ -1183,7 +1148,7 @@ function WBT:Main()
         
         local http_func = request or http_request or (http and http.post)
         if not http_func then
-            Log("Error", "No HTTP request function found (request, http_request, http.post). Cannot submit results.")
+            Log("Error", "No HTTP request function found. Cannot submit results.")
             task.defer(pcall, GUI.UpdateStatus, GUI, "Error: No HTTP function found.")
             return
         end
@@ -1231,8 +1196,16 @@ function WBT:Main()
         
         task.defer(function()
             Log("Info", "Scheduling UI update on main thread.")
-            
-            pcall(GUI.UpdateStatus, GUI, "Test Complete! Copy link from box.")
+            if WBT_SETTINGS.AutoCopyLink then
+                if setclipboard then
+                    pcall(setclipboard, url)
+                    pcall(GUI.UpdateStatus, GUI, "Test Complete! Result link copied.")
+                else
+                    pcall(GUI.UpdateStatus, GUI, "Test Complete! Copy link below.")
+                end
+            else
+                pcall(GUI.UpdateStatus, GUI, "Test Complete! Copy link below.")
+            end
             
             local s_gui, e_gui = pcall(GUI.ShowFinalLink, GUI, url)
             if not s_gui then
@@ -1247,23 +1220,31 @@ function WBT:Main()
     print("[WBT] Main function finished. Background thread is submitting.")
 end
 
-function WBT:Start()
-    print("[WBT] Showing warning...")
+function WBT:Main()
+    print("[WBT] Main function started.")
     
-    local s, e = pcall(GUI.ShowWarning, GUI, function()
-        print("[WBT] Warning acknowledged. Spawning Main thread...")
-        spawn(function()
-            local s_main, e_main = pcall(WBT.Main, WBT)
-            if not s_main then
-                print("[WBT] MAIN SCRIPT ERROR:", e_main)
-            end
+    if WBT_SETTINGS.UseGui then
+        print("[WBT] Attempting to create GUI...")
+        local s, e = pcall(GUI.Create, GUI)
+        if not s then
+            print("[WBT] GUI:Create() FAILED:", e)
+            return
+        else
+            print("[WBT] GUI creation complete.")
+        end
+        
+        pcall(GUI.ShowWarning, GUI, function()
+            WBT:StartTests()
         end)
-    end)
-    
-    if not s then
-        print("[WBT] FAILED TO SHOW WARNING:", e)
+    else
+        WBT:StartTests()
     end
 end
 
-print("[WBT] Spawning Start function...")
-spawn(WBT.Start, WBT)
+print("[WBT] Spawning Main thread...")
+spawn(function()
+    local s, e = pcall(WBT.Main, WBT)
+    if not s then
+        print("[WBT] MAIN SCRIPT ERROR:", e)
+    end
+end)
