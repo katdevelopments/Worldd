@@ -1,21 +1,174 @@
-// Roblox Version: version-e380c8edc8f6477c (OUTDATED)
+// Roblox Version: version-1849ecbff0824113 (LIVE)
 // Byfron Version(s): [hyperion-secured] [yara-secured]
-#define PROTO_LINEINFO_ENC VMValue3
-#define PROTO_ABSLINEINFO_ENC VMValue1
-#define PROTO_LOCVARS_ENC VMValue1
-#define PROTO_UPVALUES_ENC VMValue3
-#define PROTO_SOURCE_ENC VMValue4
+typedef struct stringtable
+{
 
-#define PROTO_DEBUGINSN_ENC VMValue3
-#define PROTO_DEBUGNAME_ENC VMValue3
-#define PROTO_TYPEINFO_ENC VMValue2
-#define PROTO_USERDATA_ENC VMValue1 // Propably wrong
+    TString** hash; // 0
+    int size; // 8
+    uint32_t nuse; // 12
+} stringtable;
 
-#define LSTATE_STACKSIZE_ENC VMValue2
+struct lua_State
+{
+    CommonHeader
 
-#define CLOSURE_CONT_ENC VMValue4
-#define CLOSURE_DEBUGNAME_ENC VMValue2
+    uint8_t status; // 3
+    uint8_t activememcat; // 4
+    bool isactive; // 5
+    bool singlestep; // 6 
+    LSTATE_STACKSIZE_ENC<int> stacksize; // 8
+    int size_ci; // 12
+    CallInfo* end_ci; // 16
+    CallInfo* base_ci; // 24
+    unsigned short nCcalls; // 32
+    unsigned short baseCcalls; // 34
+    int cachedslot; // 36
+    StkId base; // 40
+    CallInfo* ci; // 48
+    StkId stack_last; // 56
+    LSTATE_GLOBAL_ENC<global_State*> global;  // 64
+    StkId stack; // 72
+    StkId top;    // 80
+    TString* namecall; // 88
+    GCObject* gclist; // 96
+    RBXExtraSpace* userdata; // 104
+    LuaTable* gt; // 112
+    UpVal* openupval; // 120 
+};
 
-#define UDATA_META_ENC VMValue2
 
-#define TSTRING_HASH_ENC VMValue4
+typedef struct CallInfo
+{
+    StkId top;     // 0
+    StkId func;    // 8
+    const Instruction* savedpc; // 16
+    StkId base;    // 24
+    int nresults;       // 32
+    unsigned int flags; // 36
+    //version - 1849ecbff0824113
+} CallInfo;
+
+
+typedef struct TString
+{
+    CommonHeader;
+    int16_t atom; // 4
+    TString* next; // 8
+    TSTRING_HASH_ENC<unsigned int> hash; // 16
+    TSTRING_LEN_ENC<unsigned int> len; // 20
+    char data[1]; // 24
+    // version-1849ecbff0824113
+
+} TString;
+
+
+typedef struct Proto
+{
+    CommonHeader;
+    uint8_t nups; // i guess its 3
+    uint8_t numparams; // 4
+    uint8_t maxstacksize; // 5
+    uint8_t flags; // i guess its 6
+    uint8_t is_vararg; // 7
+    PROTO_SOURCE_ENC<TString*> source; // 8
+    struct Proto** p; // 16
+    PROTO_LINEINFO_ENC < uint8_t*> lineinfo; // 24
+    PROTO_USERDATA_ENC<void*> userdata; // 32
+    PROTO_DEBUGNAME_ENC<TString*> debugname; // 40
+    PROTO_TYPEINFO_ENC<uint8_t*> typeinfo; // 48
+    GCObject* gclist; // i guess its 56
+    TValue* k; // 64
+    Instruction* code; // 72
+    PROTO_UPVALUES_ENC < TString**> upvalues; // 80
+    const Instruction* codeentry; // 88
+    PROTO_DEBUGINSN_ENC<uint8_t*> debuginsn; // 96
+    PROTO_ABSLINEINFO_ENC < int*> abslineinfo; // 104
+    void* execdata; // 112
+    uintptr_t exectarget; // 120
+    PROTO_LOCVARS_ENC < struct LocVar*> locvars; // 128
+    int bytecodeid; // i guess its 136
+    int linegaplog2; // i guess its 140
+    int sizetypeinfo; // 144
+    int sizeupvalues; // 148
+    int sizelineinfo; // 152
+    int linedefined; // 156
+    int sizek; // 160
+    int sizep; // 164
+    int sizelocvars; // 168
+    int sizecode; // 172
+   
+
+    // version-1849ecbff0824113
+
+    
+    
+} Proto;
+
+
+
+typedef struct Closure
+{
+    CommonHeader;
+
+    uint8_t isC; // 3
+
+    uint8_t stacksize; // 4
+
+    uint8_t nupvalues; // 5
+
+
+    uint8_t preload; // 6
+    
+    GCObject* gclist; // 
+
+    struct LuaTable* env; // 16
+
+
+
+    union
+    {
+        struct
+        {
+            CLOSURE_DEBUGNAME_ENC<const char*> debugname; // 4
+            CLOSURE_FUNC_ENC<lua_CFunction> f; // lazy to get it i think it should be here
+            CLOSURE_CONT_ENC<lua_Continuation> cont; // lazy to get it i think it should be here
+            TValue upvals[1]; // 48
+        } c;
+
+
+        struct
+        {
+            CLOSURE_FUNC_ENC<struct Proto*> p; // 24
+            TValue uprefs[1]; // 32
+        } l;
+
+    };
+
+} Closure;
+
+
+
+
+typedef struct LuaTable
+{
+    CommonHeader;
+    uint8_t nodemask8; // 3 
+    uint8_t safeenv;  // 4
+    uint8_t readonly;   // 5
+    uint8_t lsizenode;  // 6
+    uint8_t tmcache;   // 7
+    int sizearray; // 8
+    union
+    {
+        int aboundary;
+        int lastfree; // 12
+    };
+    TABLE_MEMBER_ENC<LuaNode*> node; // 16
+    GCObject* gclist; // 24
+    TABLE_META_ENC<struct LuaTable*> metatable; // 32 
+    TABLE_MEMBER_ENC<TValue*> array;  // 40
+    //version - 1849ecbff0824113
+} LuaTable;
+
+#define CommonHeader \
+     LUAU_SHUFFLE3(LUAU_SEMICOLON_SEP,  uint8_t tt, uint8_t marked, uint8_t memcat);
