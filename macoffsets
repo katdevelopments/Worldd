@@ -1,0 +1,13 @@
+const uint64_t gettop_address       = 0x1034F6223; // lua_gettop
+const uint64_t checkstack_address  = 0x1034F5F97; // lua_checkstack
+const uint64_t pushvalue_address    = 0x1034F6471; // lua_pushvalue
+const uint64_t pushlstring_address  = 0x1034F70D6; // lua_pushlstring
+const uint64_t pushcclosure_address = 0x1034F72D3; // lua_pushcclosure
+const uint64_t getfield_address    = 0x1034F74D7; // lua_getfield
+// getglobal is the same as getfield, it just fetches it from globalsindex instead of wtv index u specify 
+const uint64_t setfield_address     = 0x1034F7B3C; // lua_setfield
+const uint64_t call_address         = 0x1034F8042; // lua_call
+const uint64_t pcally_address        = 0x1034F9F93; // lua_pcally 
+// lua_pcall does not exist
+const uint64_t tolstring_address    = 0x1034F6A60; // lua_tolstring
+const uint64_t settop_address       = 0x1034F6235; // lua_settop
