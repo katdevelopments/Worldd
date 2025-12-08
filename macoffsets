@@ -1,3 +1,5 @@
+// Roblox Version: version-138c1a7864754c2a (LIVE)
+// Byfron Version(s): [hyperion-secured] [yara-secured]
 const uint64_t gettop_address       = 0x1034F6223; // lua_gettop
 const uint64_t checkstack_address  = 0x1034F5F97; // lua_checkstack
 const uint64_t pushvalue_address    = 0x1034F6471; // lua_pushvalue
