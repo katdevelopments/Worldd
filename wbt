@@ -11,6 +11,7 @@ local WBT_SETTINGS = {
     LogLevel = "Info",
     UseGui = true,
     AutoCopyLink = false,
+    TestTimeout = 0.5 -- Seconds to wait before failing a test (prevents freezing)
 }
 
 local WBT = {}
@@ -427,21 +428,43 @@ local AllTestsOrdered = {
     "Hook Speed", "GC Speed", "Instance Creation Speed"
 }
 
+-- UPDATED: TIMEOUT WRAPPER to prevent freezing
 function WBT.Test:Run(category, name, testFunc)
     if not WBT.Results[category] then WBT.Results[category] = {} end
     WBT.Stats.Total = WBT.Stats.Total + 1
     
     pcall(GUI.UpdateProgress, GUI, WBT.Stats.Passed, WBT.Stats.Total, name)
-    local status, result = pcall(testFunc)
-    local testStatus
-    if not status then testStatus = "fail"
-    elseif result == "unsupported" then testStatus = "unsupported"
-    elseif result == true then testStatus = "pass"; WBT.Stats.Passed = WBT.Stats.Passed + 1
-    else testStatus = "fail" end
     
-    pcall(GUI.AddLogEntry, GUI, name, testStatus)
-    WBT.Results[category][name] = testStatus
-    task.wait(0.01) -- Prevent freezing
+    local resultStatus = "fail"
+    local finished = false
+    
+    -- Run test in isolated thread
+    task.spawn(function()
+        local success, res = pcall(testFunc)
+        if success then
+            if res == "unsupported" then resultStatus = "unsupported"
+            elseif res == true then resultStatus = "pass"
+            else resultStatus = "fail" end
+        else
+            resultStatus = "fail" -- Error occurred
+        end
+        finished = true
+    end)
+    
+    -- Wait loop with Timeout
+    local start = os.clock()
+    while not finished do
+        if os.clock() - start > WBT_SETTINGS.TestTimeout then
+            resultStatus = "fail" -- Timeout! Test froze or took too long
+            break
+        end
+        task.wait()
+    end
+    
+    if resultStatus == "pass" then WBT.Stats.Passed = WBT.Stats.Passed + 1 end
+    
+    pcall(GUI.AddLogEntry, GUI, name, resultStatus)
+    WBT.Results[category][name] = resultStatus
 end
 
 function WBT:GetExecutorInfo()
