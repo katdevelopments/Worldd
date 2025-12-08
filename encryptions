@@ -18,6 +18,12 @@ p_typeinfo_enc = vmvalue3
 closure_cont_enc = vmvalue3
 udata_metatable_enc = vmvalue3
 
+#define PROTO_LINEINFO_ENC  VMValue1 // luaF_freeproto
+#define PROTO_DEBUGINSN_ENC VMValue1 // luaF_freeproto
+#define PROTO_LOCVARS_ENC   VMValue3 // luaF_freeproto
+#define PROTO_TYPEINFO_ENC  VMValue1 // luaF_freeproto
+#define PROTO_UPVALUES_ENC  VMValue4 // luaF_freeproto
+
 #define CommonHeader \
     uint8_t tt; uint8_t memcat; uint8_t marked
     
@@ -210,3 +216,4 @@ struct lua_State {
     LuaTable* gt;
     UpVal* openupval;
 };
+
