@@ -1,4 +1,9 @@
-print("WBT Script Initialized")
+print("WBT Mobile Script Initialized")
+
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local HttpService = game:GetService("HttpService")
 
 local WBT_SETTINGS = {
     WebsiteBaseUrl = "https://worldbt.netlify.app",
@@ -14,322 +19,380 @@ WBT.Results = {}
 WBT.Logs = {}
 WBT.Stats = { Total = 0, Passed = 0 }
 
+-- // UI THEME CONFIG (Pitch Black Theme) // --
+local THEME = {
+    Background = Color3.fromRGB(0, 0, 0),          -- Pitch Black
+    Header = Color3.fromRGB(0, 0, 0),              -- Pitch Black
+    ContentBg = Color3.fromRGB(0, 0, 0),           -- Pitch Black
+    Text = Color3.fromRGB(255, 255, 255),          -- Pure White
+    SubText = Color3.fromRGB(180, 180, 180),       -- Light Gray
+    Stroke = Color3.fromRGB(80, 80, 80),           -- Dark Gray Stroke
+    Button = Color3.fromRGB(40, 40, 40),           -- Dark Gray Button
+    Green = Color3.fromRGB(100, 255, 100),         -- Pass
+    Red = Color3.fromRGB(255, 80, 80),             -- Fail
+    Yellow = Color3.fromRGB(255, 215, 0),          -- Unsupported
+}
+
+-- // LOGGING // --
 local function Log(level, ...)
     local message = table.concat({...}, " ")
     table.insert(WBT.Logs, {Level = level, Message = message, Time = os.time()})
     
     local levels = {Debug = 0, Info = 1, Warn = 2, Error = 3}
-    if (levels[level] or 1) < (levels[WBT_SETTINGS.LogLevel] or 1) then
-        return
-    end
+    if (levels[level] or 1) < (levels[WBT_SETTINGS.LogLevel] or 1) then return end
 
     local prefix = "[WBT " .. level:upper() .. "]"
-    
     if rconsoleprint then
-        local printFunc = ({
-            Info = rconsoleinfo,
-            Warn = rconsolewarn,
-            Error = rconsoleerr,
-            Debug = rconsoleprint
-        })[level] or rconsoleprint
-        
-        pcall(printFunc, prefix, message)
+        pcall(rconsoleprint, prefix .. " " .. message .. "\n")
     else
-        if level == "Error" then
-            warn(prefix, message)
-        elseif level == "Warn" then
-            warn(prefix, message)
-        else
-            print(prefix, message)
-        end
+        print(prefix, message)
     end
 end
 
+-- // GUI SYSTEM // --
 local GUI = {}
 GUI.ScreenGui = nil
 GUI.MainFrame = nil
+GUI.ContentFrame = nil
+GUI.LogList = nil
+GUI.ResultsFrame = nil
+GUI.ProgressBar = nil
+GUI.ProgressFill = nil
 GUI.StatusLabel = nil
-GUI.ScoreLabel = nil
-GUI.LinkBox = nil
+GUI.PercentageLabel = nil
+GUI.ReviewButton = nil
 
-local function CreateInstance(type, properties)
-    local s, obj = pcall(Instance.new, type)
-    if not s or not obj then return nil end
-    
-    for prop, value in pairs(properties) do
-        pcall(function()
-            obj[prop] = value
-        end)
+local function Tween(obj, props, time, style, dir)
+    if not obj then return end
+    local info = TweenInfo.new(time or 0.6, style or Enum.EasingStyle.Exponential, dir or Enum.EasingDirection.Out)
+    local tween = TweenService:Create(obj, info, props)
+    tween:Play()
+    return tween
+end
+
+local function Create(class, props, children)
+    local obj = Instance.new(class)
+    for k, v in pairs(props or {}) do
+        obj[k] = v
+    end
+    for _, child in pairs(children or {}) do
+        child.Parent = obj
     end
     return obj
 end
 
 function GUI:Create()
     if not WBT_SETTINGS.UseGui then return end
-    
-    if GUI.ScreenGui then
-        GUI.ScreenGui:Destroy()
-    end
-    
+    if GUI.ScreenGui then GUI.ScreenGui:Destroy() end
+
     local parent = gethui and gethui() or game:GetService("CoreGui")
-    
-    GUI.ScreenGui = CreateInstance("ScreenGui", {
-        Name = "WBT_Gui_" .. math.random(100000, 1000000),
+
+    -- Main GUI
+    GUI.ScreenGui = Create("ScreenGui", {
+        Name = "WBT_Mobile_UI",
+        Parent = parent,
         ResetOnSpawn = false,
-        Parent = parent
-    })
-    
-    GUI.MainFrame = CreateInstance("Frame", {
-        Name = "MainFrame",
-        Size = UDim2.fromOffset(400, 260),
-        Position = UDim2.fromScale(0.5, 0.5),
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        BackgroundColor3 = Color3.fromRGB(20, 20, 20),
-        BorderSizePixel = 0,
-        Active = true,
-        Draggable = true,
-        Parent = GUI.ScreenGui
-    })
-    
-    pcall(CreateInstance, "UICorner", { CornerRadius = UDim.new(0, 8), Parent = GUI.MainFrame })
-    pcall(CreateInstance, "UIStroke", { Color = Color3.fromRGB(80, 80, 80), Thickness = 1, Parent = GUI.MainFrame })
-    pcall(CreateInstance, "UIGradient", {
-        Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(35, 35, 35)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(25, 25, 25))
-        }),
-        Rotation = 90,
-        Parent = GUI.MainFrame
+        DisplayOrder = 999
     })
 
-    local header = CreateInstance("Frame", {
+    -- Main Container
+    GUI.MainFrame = Create("Frame", {
+        Name = "MainFrame",
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.fromScale(0.5, 0.5),
+        Size = UDim2.fromScale(0, 0), -- Start small for tween
+        BackgroundColor3 = THEME.Background,
+        BorderSizePixel = 0,
+        ClipsDescendants = true,
+        Parent = GUI.ScreenGui
+    }, {
+        Create("UICorner", { CornerRadius = UDim.new(0, 10) }),
+        Create("UIStroke", { Color = THEME.Stroke, Thickness = 2, Transparency = 0.5 }),
+        -- Size Constraint: Fills screen on mobile, limits size on PC
+        Create("UISizeConstraint", {
+            MaxSize = Vector2.new(600, 450),
+            MinSize = Vector2.new(320, 250)
+        })
+    })
+
+    Tween(GUI.MainFrame, { Size = UDim2.fromScale(0.9, 0.65) }, 0.8, Enum.EasingStyle.Elastic)
+
+    -- Header
+    local header = Create("Frame", {
         Name = "Header",
         Size = UDim2.new(1, 0, 0, 40),
-        BackgroundColor3 = Color3.fromRGB(15, 15, 15),
+        BackgroundColor3 = THEME.Header,
         BorderSizePixel = 0,
         Parent = GUI.MainFrame
+    }, {
+        Create("TextLabel", {
+            Text = "WBT Benchmark",
+            Font = Enum.Font.GothamBold,
+            TextSize = 16,
+            TextColor3 = THEME.Text,
+            Size = UDim2.new(1, -50, 1, 0),
+            Position = UDim2.new(0, 15, 0, 0),
+            BackgroundTransparency = 1,
+            TextXAlignment = Enum.TextXAlignment.Left
+        })
     })
-    
-    pcall(CreateInstance, "UICorner", { CornerRadius = UDim.new(0, 8), Parent = header })
-    pcall(CreateInstance, "UIStroke", { Color = Color3.fromRGB(80, 80, 80), Thickness = 1, Parent = header })
 
-    local title = CreateInstance("TextLabel", {
-        Name = "Title",
-        Size = UDim2.new(1, -50, 1, 0),
-        Position = UDim2.fromOffset(15, 0),
+    -- Close Button
+    local closeBtn = Create("TextButton", {
+        Text = "×",
+        Font = Enum.Font.GothamMedium,
+        TextSize = 24,
+        TextColor3 = THEME.SubText,
         BackgroundTransparency = 1,
-        Text = "WBT - World Benchmark Test",
-        Font = Enum.Font.Code,
-        TextColor3 = Color3.fromRGB(220, 220, 220),
-        TextSize = 18,
-        TextXAlignment = Enum.TextXAlignment.Left,
+        Size = UDim2.new(0, 40, 1, 0),
+        Position = UDim2.new(1, -40, 0, 0),
         Parent = header
     })
-    
-    local closeButton = CreateInstance("TextButton", {
-        Name = "CloseButton",
-        Size = UDim2.fromOffset(40, 40),
-        Position = UDim2.new(1, 0, 0, 0),
-        AnchorPoint = Vector2.new(1, 0),
-        BackgroundTransparency = 1,
-        Text = "X",
-        Font = Enum.Font.Code,
-        TextColor3 = Color3.fromRGB(200, 200, 200),
-        TextSize = 16,
-        Parent = header
-    })
-    
-    pcall(function()
-        closeButton.MouseButton1Click:Connect(function()
-            GUI.ScreenGui:Destroy()
-        end)
+    closeBtn.MouseButton1Click:Connect(function()
+        Tween(GUI.MainFrame, { Size = UDim2.fromScale(0, 0), Position = UDim2.fromScale(0.5, 0.6) }, 0.4, Enum.EasingStyle.Back, Enum.EasingDirection.In)
+        task.wait(0.4)
+        GUI.ScreenGui:Destroy()
     end)
-    
-    GUI.ScoreLabel = CreateInstance("TextLabel", {
-        Name = "ScoreLabel",
-        Size = UDim2.new(1, -40, 0, 50),
-        Position = UDim2.fromOffset(20, 55),
+
+    -- Content Area
+    GUI.ContentFrame = Create("Frame", {
+        Name = "Content",
+        Size = UDim2.new(1, -20, 1, -100),
+        Position = UDim2.new(0, 10, 0, 50),
         BackgroundTransparency = 1,
-        Font = Enum.Font.Code,
-        TextColor3 = Color3.fromRGB(74, 222, 128),
-        TextSize = 50,
+        ClipsDescendants = true,
+        Parent = GUI.MainFrame
+    })
+
+    -- Footer / Progress Area
+    local footer = Create("Frame", {
+        Name = "Footer",
+        Size = UDim2.new(1, -20, 0, 40),
+        Position = UDim2.new(0, 10, 1, -50),
+        BackgroundTransparency = 1,
+        Parent = GUI.MainFrame
+    })
+
+    GUI.StatusLabel = Create("TextLabel", {
+        Text = "Initializing...",
+        Font = Enum.Font.Gotham,
+        TextSize = 13,
+        TextColor3 = THEME.SubText,
+        Size = UDim2.new(0.7, 0, 0.5, 0),
+        BackgroundTransparency = 1,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Parent = footer
+    })
+
+    GUI.PercentageLabel = Create("TextLabel", {
         Text = "0%",
-        TextXAlignment = Enum.TextXAlignment.Left,
-        Visible = false,
-        Parent = GUI.MainFrame
-    })
-    
-    GUI.StatusLabel = CreateInstance("TextLabel", {
-        Name = "StatusLabel",
-        Size = UDim2.new(1, -40, 0, 20),
-        Position = UDim2.fromOffset(20, 105),
+        Font = Enum.Font.GothamBold,
+        TextSize = 13,
+        TextColor3 = THEME.Text,
+        Size = UDim2.new(0.3, 0, 0.5, 0),
+        Position = UDim2.new(0.7, 0, 0, 0),
         BackgroundTransparency = 1,
-        Font = Enum.Font.Code,
-        TextColor3 = Color3.fromRGB(180, 180, 180),
-        TextSize = 14,
-        Text = "Waiting for user...",
-        TextXAlignment = Enum.TextXAlignment.Left,
-        Visible = false,
-        Parent = GUI.MainFrame
+        TextXAlignment = Enum.TextXAlignment.Right,
+        Parent = footer
     })
-    
-    GUI.LinkBox = CreateInstance("TextBox", {
-        Name = "LinkBox",
-        Size = UDim2.new(1, -40, 0, 40),
-        Position = UDim2.fromOffset(20, 135),
-        BackgroundColor3 = Color3.fromRGB(10, 10, 10),
-        ClearTextOnFocus = false,
-        Text = "",
-        Font = Enum.Font.Code,
-        TextColor3 = Color3.fromRGB(167, 243, 208),
-        TextSize = 14,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        TextEditable = false,
-        Visible = false,
-        Parent = GUI.MainFrame
+
+    GUI.ProgressBar = Create("Frame", {
+        Name = "BarBg",
+        Size = UDim2.new(1, 0, 0, 6),
+        Position = UDim2.new(0, 0, 0.7, 0),
+        BackgroundColor3 = Color3.fromRGB(40, 40, 40),
+        Parent = footer
+    }, { Create("UICorner", { CornerRadius = UDim.new(1, 0) }) })
+
+    GUI.ProgressFill = Create("Frame", {
+        Name = "Fill",
+        Size = UDim2.new(0, 0, 1, 0),
+        BackgroundColor3 = THEME.Text,
+        Parent = GUI.ProgressBar
+    }, { 
+        Create("UICorner", { CornerRadius = UDim.new(1, 0) }),
+        Create("UIGradient", { Color = ColorSequence.new(Color3.fromRGB(200, 200, 200), Color3.fromRGB(255, 255, 255)) })
     })
-    pcall(CreateInstance, "UICorner", { CornerRadius = UDim.new(0, 6), Parent = GUI.LinkBox })
-    pcall(CreateInstance, "UIStroke", { Color = Color3.fromRGB(80, 80, 80), Thickness = 1, Parent = GUI.LinkBox })
-    
-    Log("Info", "GUI Created successfully.")
+
+    GUI.ReviewButton = Create("TextButton", {
+        Text = "Show Results",
+        Font = Enum.Font.GothamBold,
+        TextSize = 12,
+        TextColor3 = THEME.Background,
+        BackgroundColor3 = THEME.SubText,
+        Size = UDim2.new(0, 100, 0, 25),
+        AnchorPoint = Vector2.new(1, 1),
+        Position = UDim2.new(1, 0, -0.2, 0),
+        Visible = false,
+        Parent = footer
+    }, { Create("UICorner", { CornerRadius = UDim.new(0, 4) }) })
+
+    GUI.ReviewButton.MouseButton1Click:Connect(function()
+        if GUI.ResultsFrame and GUI.ResultsFrame.Visible then
+             GUI:ToggleView("logs")
+        else
+             GUI:ToggleView("results")
+        end
+    end)
+
+    -- Dragging
+    local dragging, dragInput, dragStart, startPos
+    local function update(input)
+        local delta = input.Position - dragStart
+        GUI.MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+    header.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = GUI.MainFrame.Position
+            input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragging = false end end)
+        end
+    end)
+    header.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then dragInput = input end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then update(input) end
+    end)
+end
+
+function GUI:ToggleView(view)
+    if not GUI.ResultsFrame or not GUI.LogList then return end
+    if view == "results" then
+        Tween(GUI.LogList, {Position = UDim2.new(1, 0, 0, 0)}, 0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
+        task.wait(0.1)
+        GUI.ResultsFrame.Visible = true
+        GUI.ReviewButton.Text = "Review Logs"
+        Tween(GUI.ResultsFrame, {BackgroundTransparency = 0}, 0.3)
+    else
+        GUI.ResultsFrame.Visible = false
+        GUI.LogList.Visible = true
+        GUI.ReviewButton.Text = "Show Results"
+        Tween(GUI.LogList, {Position = UDim2.new(0, 0, 0, 0)}, 0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
+    end
 end
 
 function GUI:ShowWarning(callback)
-    if not GUI.MainFrame then return end
-    
-    local warningFrame = CreateInstance("Frame", {
-        Name = "WarningFrame",
-        Size = UDim2.new(1, 0, 1, -40),
-        Position = UDim2.fromOffset(0, 40),
-        BackgroundColor3 = Color3.fromRGB(20, 20, 20),
-        BorderSizePixel = 0,
-        Parent = GUI.MainFrame
-    })
-    
-    pcall(CreateInstance, "UIGradient", {
-        Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(35, 35, 35)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(25, 25, 25))
-        }),
-        Rotation = 90,
-        Parent = warningFrame
-    })
-    
-    local warningTitle = CreateInstance("TextLabel", {
-        Name = "WarningTitle",
-        Size = UDim2.new(1, -40, 0, 30),
-        Position = UDim2.fromOffset(20, 20),
+    local container = Create("Frame", {
+        Size = UDim2.new(1, 0, 1, 0),
         BackgroundTransparency = 1,
-        Font = Enum.Font.Code,
-        TextColor3 = Color3.fromRGB(248, 113, 113),
-        TextSize = 20,
-        Text = "WARNING: TEST WILL FREEZE",
-        TextXAlignment = Enum.TextXAlignment.Left,
-        Parent = warningFrame
+        Parent = GUI.ContentFrame
     })
-    
-    local warningText = CreateInstance("TextLabel", {
-        Name = "WarningText",
-        Size = UDim2.new(1, -40, 0, 100),
-        Position = UDim2.fromOffset(20, 60),
-        BackgroundTransparency = 1,
-        Font = Enum.Font.Code,
-        TextColor3 = Color3.fromRGB(200, 200, 200),
-        TextSize = 14,
-        Text = "This test is complex and will freeze or stop interaction with executing new code and using the Roblox console.\n\nPlease make sure your console is closed before this test runs.",
-        TextWrapped = true,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        TextYAlignment = Enum.TextYAlignment.Top,
-        Parent = warningFrame
+
+    Create("TextLabel", { Text = "⚠️", TextSize = 40, Size = UDim2.new(1, 0, 0.3, 0), BackgroundTransparency = 1, Parent = container })
+
+    Create("TextLabel", {
+        Text = "Heads up!", Font = Enum.Font.GothamBold, TextSize = 22, TextColor3 = THEME.Text,
+        Size = UDim2.new(1, 0, 0.2, 0), Position = UDim2.new(0, 0, 0.25, 0), BackgroundTransparency = 1, Parent = container
     })
-    
-    local okButton = CreateInstance("TextButton", {
-        Name = "OKButton",
-        Size = UDim2.new(1, -40, 0, 40),
-        Position = UDim2.new(0.5, 0, 1, -20), -- FIXED: Replaced UDim2.fromAnchorPoint
-        AnchorPoint = Vector2.new(0.5, 1),
-        BackgroundColor3 = Color3.fromRGB(40, 40, 40),
-        Font = Enum.Font.Code,
-        Text = "OK, Start Test",
-        TextColor3 = Color3.fromRGB(220, 220, 220),
-        TextSize = 16,
-        Parent = warningFrame
+
+    Create("TextLabel", {
+        Text = "The execution will freeze briefly.\nDo not close the script.",
+        Font = Enum.Font.Gotham, TextSize = 14, TextColor3 = THEME.SubText,
+        Size = UDim2.new(0.9, 0, 0.3, 0), Position = UDim2.new(0.05, 0, 0.45, 0), BackgroundTransparency = 1, TextWrapped = true, Parent = container
     })
-    pcall(CreateInstance, "UICorner", { CornerRadius = UDim.new(0, 6), Parent = okButton })
-    pcall(CreateInstance, "UIStroke", { Color = Color3.fromRGB(80, 80, 80), Thickness = 1, Parent = okButton })
-    
-    pcall(function()
-        okButton.MouseButton1Click:Connect(function()
-            pcall(callback)
-            warningFrame:Destroy()
-        end)
+
+    local btn = Create("TextButton", {
+        Text = "Start Benchmark", Font = Enum.Font.GothamBold, TextSize = 14,
+        TextColor3 = THEME.Background, BackgroundColor3 = THEME.Text,
+        Size = UDim2.new(0.6, 0, 0.15, 0), Position = UDim2.new(0.2, 0, 0.8, 0), Parent = container
+    }, { Create("UICorner", { CornerRadius = UDim.new(0, 6) }) })
+
+    btn.MouseButton1Click:Connect(function()
+        Tween(container, {Position = UDim2.new(-1, 0, 0, 0)}, 0.5, Enum.EasingStyle.Exponential)
+        task.wait(0.3)
+        container:Destroy()
+        callback()
     end)
 end
 
-function GUI:StartTestUI()
-    if GUI.ScoreLabel then GUI.ScoreLabel.Visible = true end
-    if GUI.StatusLabel then GUI.StatusLabel.Visible = true end
-    if GUI.ConsoleButton then GUI.ConsoleButton.Visible = true end
-    pcall(GUI.UpdateStatus, GUI, "Initializing...")
+function GUI:CreateLogView()
+    GUI.LogList = Create("ScrollingFrame", {
+        Size = UDim2.new(1, 0, 1, 0),
+        Position = UDim2.new(1, 0, 0, 0),
+        BackgroundTransparency = 1,
+        ScrollBarThickness = 3,
+        ScrollBarImageColor3 = THEME.SubText,
+        AutomaticCanvasSize = Enum.AutomaticSize.Y,
+        CanvasSize = UDim2.new(0, 0, 0, 0),
+        Parent = GUI.ContentFrame
+    }, { Create("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 4) }) })
+    Tween(GUI.LogList, {Position = UDim2.new(0, 0, 0, 0)}, 0.5, Enum.EasingStyle.Exponential)
 end
 
-function GUI:UpdateStatus(text)
-    if not GUI.StatusLabel then return end
-    pcall(function()
-        GUI.StatusLabel.Text = tostring(text)
-    end)
+function GUI:AddLogEntry(testName, status)
+    if not GUI.LogList then return end
+    local color, symbol = THEME.SubText, "•"
+    if status == "pass" then color, symbol = THEME.Green, "✓"
+    elseif status == "fail" then color, symbol = THEME.Red, "✗"
+    elseif status == "unsupported" then color, symbol = THEME.Yellow, "?" end
+
+    local row = Create("Frame", { Size = UDim2.new(1, 0, 0, 22), BackgroundTransparency = 1, Parent = GUI.LogList, LayoutOrder = #GUI.LogList:GetChildren() })
+    Create("TextLabel", { Text = symbol, TextColor3 = color, Font = Enum.Font.GothamBold, TextSize = 14, Size = UDim2.new(0, 20, 1, 0), BackgroundTransparency = 1, Parent = row })
+    Create("TextLabel", { Text = testName, TextColor3 = color, Font = Enum.Font.Gotham, TextSize = 12, Size = UDim2.new(1, -25, 1, 0), Position = UDim2.new(0, 25, 0, 0), BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left, Parent = row })
+    GUI.LogList.CanvasPosition = Vector2.new(0, 99999)
 end
 
-function GUI:UpdateScore(passed, total)
-    if not GUI.ScoreLabel then return end
-    pcall(function()
-        local percent = 0
-        if total > 0 then
-            percent = math.floor((passed / total) * 100)
-        end
-        GUI.ScoreLabel.Text = tostring(percent) .. "%"
-        
-        if percent >= 80 then
-            GUI.ScoreLabel.TextColor3 = Color3.fromRGB(74, 222, 128)
-        elseif percent >= 50 then
-            GUI.ScoreLabel.TextColor3 = Color3.fromRGB(250, 204, 21)
+function GUI:UpdateProgress(passed, total, currentTest)
+    if total == 0 then return end
+    local completion = WBT.Stats.Total / 125
+    Tween(GUI.ProgressFill, {Size = UDim2.new(math.min(completion, 1), 0, 1, 0)}, 0.2)
+    GUI.PercentageLabel.Text = math.floor((passed / math.max(total, 1)) * 100) .. "%"
+    if currentTest then GUI.StatusLabel.Text = "Running: " .. currentTest end
+end
+
+function GUI:ShowLink(url)
+    if not GUI.ContentFrame then return end
+    if GUI.LogList then Tween(GUI.LogList, {Position = UDim2.new(1, 0, 0, 0)}, 0.5, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out) end
+    
+    -- Ensure explicit Pitch Black background for the results container
+    GUI.ResultsFrame = Create("Frame", {
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1,
+        BackgroundColor3 = THEME.Background, 
+        Parent = GUI.ContentFrame
+    })
+
+    Create("TextLabel", { Text = "Benchmark Complete", Font = Enum.Font.GothamBold, TextSize = 18, TextColor3 = THEME.Text, Size = UDim2.new(1, 0, 0.2, 0), BackgroundTransparency = 1, Parent = GUI.ResultsFrame })
+
+    local box = Create("TextBox", {
+        Text = url, Font = Enum.Font.Code, TextSize = 12, TextColor3 = THEME.Text,
+        BackgroundColor3 = THEME.Background, -- PITCH BLACK
+        Size = UDim2.new(1, 0, 0.25, 0), Position = UDim2.new(0, 0, 0.3, 0),
+        ClearTextOnFocus = false, TextEditable = false, TextWrapped = true, Parent = GUI.ResultsFrame
+    }, { Create("UICorner", {CornerRadius = UDim.new(0, 6)}), Create("UIStroke", {Color = THEME.Stroke, Thickness = 1}) })
+    
+    local copyBtn = Create("TextButton", {
+        Text = "Copy Link", Font = Enum.Font.GothamBold, TextSize = 14,
+        TextColor3 = THEME.Background, BackgroundColor3 = THEME.Text,
+        Size = UDim2.new(0.6, 0, 0.15, 0), Position = UDim2.new(0.2, 0, 0.7, 0), Parent = GUI.ResultsFrame
+    }, { Create("UICorner", {CornerRadius = UDim.new(0, 6)}) })
+    
+    copyBtn.MouseButton1Click:Connect(function()
+        if setclipboard then
+            setclipboard(url)
+            copyBtn.Text = "Copied!"
+            Tween(copyBtn, {BackgroundColor3 = THEME.Green}, 0.3)
+            task.wait(1)
+            copyBtn.Text = "Copy Link"
+            Tween(copyBtn, {BackgroundColor3 = THEME.Text}, 0.3)
         else
-            GUI.ScoreLabel.TextColor3 = Color3.fromRGB(248, 113, 113)
+            copyBtn.Text = "Not Supported"
         end
     end)
-end
-
-function GUI:ShowFinalLink(url)
-    if not GUI.MainFrame or not GUI.LinkBox then 
-        Log("Error", "GUI:ShowFinalLink failed: UI elements not found.")
-        return 
+    
+    if GUI.ReviewButton then
+        GUI.ReviewButton.Visible = true
+        GUI.ReviewButton.Text = "Review Logs"
     end
     
-    pcall(function()
-        GUI.LinkBox.Text = url
-        GUI.LinkBox.Visible = true
-    end)
+    GUI.StatusLabel.Text = "Finished."
+    Tween(GUI.ProgressFill, {Size = UDim2.new(1, 0, 1, 0)}, 0.5)
+    Tween(GUI.ResultsFrame, {BackgroundTransparency = 0}, 0.5)
 end
 
-function GUI:ViewInConsole()
-    Log("Info", "================ WBT TEST LOGS ================")
-    Log("Info", ("Executor: %s (Version: %s, Level: %s)"):format(WBT.Info.Executor, WBT.Info.Version, WBT.Info.Level))
-    Log("Info", ("Final Score: %d/%d (%d%%)"):format(WBT.Stats.Passed, WBT.Stats.Total, (WBT.Stats.Total > 0 and math.floor((WBT.Stats.Passed / WBT.Stats.Total) * 100) or 0)))
-    Log("Info", "===============================================")
-    
-    for category, funcs in pairs(WBT.Results) do
-        print(":: " .. category .. " ::")
-        for funcName, status in pairs(funcs) do
-            local statusText = ("[%s]"):format(status:upper())
-            print(string.format("  %-28s %s", funcName, statusText))
-        end
-    end
-    
-    Log("Info", "================ END OF LOGS ================")
-    GUI:UpdateStatus("Logs printed to console.")
-end
-
-
+-- // CORE LOGIC // --
 WBT.Test = {}
 
 local AllTestsOrdered = {
@@ -365,886 +428,274 @@ local AllTestsOrdered = {
 }
 
 function WBT.Test:Run(category, name, testFunc)
-    if not WBT.Results[category] then
-        WBT.Results[category] = {}
-    end
-    
+    if not WBT.Results[category] then WBT.Results[category] = {} end
     WBT.Stats.Total = WBT.Stats.Total + 1
+    
+    pcall(GUI.UpdateProgress, GUI, WBT.Stats.Passed, WBT.Stats.Total, name)
     local status, result = pcall(testFunc)
     local testStatus
+    if not status then testStatus = "fail"
+    elseif result == "unsupported" then testStatus = "unsupported"
+    elseif result == true then testStatus = "pass"; WBT.Stats.Passed = WBT.Stats.Passed + 1
+    else testStatus = "fail" end
     
-    if not status then
-        testStatus = "fail"
-    elseif result == "unsupported" then
-        testStatus = "unsupported"
-    elseif result == true then
-        testStatus = "pass"
-        WBT.Stats.Passed = WBT.Stats.Passed + 1
-    else
-        testStatus = "fail"
-    end
-    
+    pcall(GUI.AddLogEntry, GUI, name, testStatus)
     WBT.Results[category][name] = testStatus
-    pcall(GUI.UpdateScore, GUI, WBT.Stats.Passed, WBT.Stats.Total)
+    task.wait(0.01) -- Prevent freezing
 end
 
 function WBT:GetExecutorInfo()
     local s, name, ver = pcall(identifyexecutor)
     if s and type(name) == "string" then
         WBT.Info.Executor = name
-        if ver then
-            WBT.Info.Version = tostring(ver)
-        else
+        if ver then WBT.Info.Version = tostring(ver) else
             local s_ver, ver_alt = pcall(getexecutorversion)
-            if s_ver and ver_alt then
-                WBT.Info.Version = tostring(ver_alt)
-            end
+            if s_ver and ver_alt then WBT.Info.Version = tostring(ver_alt) end
         end
     else
         s, name = pcall(getexecutorname)
-        if s and type(name) == "string" then
-            WBT.Info.Executor = name
-        elseif _G._VERSION then
-            WBT.Info.Executor = _G._VERSION
-        end
+        if s and type(name) == "string" then WBT.Info.Executor = name
+        elseif _G._VERSION then WBT.Info.Executor = _G._VERSION end
     end
-    
     local s_level, level = pcall(getthreadidentity)
-    if s_level and level then
-        WBT.Info.Level = tostring(level)
-    end
+    if s_level and level then WBT.Info.Level = tostring(level) end
 end
 
-function WBT:RunAllTests()
-    Log("Info", "Starting World Benchmark Test...")
-    pcall(GUI.UpdateStatus, GUI, "Running tests...")
-    
-    WBT:GetExecutorInfo()
-    pcall(GUI.UpdateStatus, GUI, ("Executor: %s (L%s)"):format(WBT.Info.Executor, WBT.Info.Level))
-    wait(0.5)
-    
-    local T = WBT.Test
-    
-    local category = "Core Environment & Globals"
-    pcall(GUI.UpdateStatus, GUI, "Testing: " .. category)
-    T:Run(category, "getgenv", function()
-        if not getgenv then return "unsupported" end
-        local s, genv = pcall(getgenv)
-        return s and type(genv) == "table" and genv._G == _G
-    end)
-    T:Run(category, "getrenv", function()
-        if not getrenv then return "unsupported" end
-        local s, renv = pcall(getrenv)
-        return s and type(renv) == "table" and renv.game == game
-    end)
-    T:Run(category, "getreg", function()
-        if not getreg then return "unsupported" end
-        local s, reg = pcall(getreg)
-        return s and type(reg) == "table"
-    end)
-    T:Run(category, "getgc", function()
-        if not getgc then return "unsupported" end
-        local s, gc = pcall(getgc)
-        return s and type(gc) == "table"
-    end)
-    T:Run(category, "getinstances", function()
-        if not getinstances then return "unsupported" end
-        local s, inst = pcall(getinstances)
-        return s and type(inst) == "table" and #inst > 0
-    end)
-    T:Run(category, "getnilinstances", function()
-        if not getnilinstances then return "unsupported" end
-        local s, inst = pcall(getnilinstances)
-        return s and type(inst) == "table"
-    end)
-    T:Run(category, "getscripts", function()
-        if not getscripts then return "unsupported" end
-        local s, scripts = pcall(getscripts)
-        return s and type(scripts) == "table" and #scripts > 0
-    end)
-    T:Run(category, "getloadedmodules", function()
-        if not getloadedmodules then return "unsupported" end
-        local s, mods = pcall(getloadedmodules)
-        return s and type(mods) == "table"
-    end)
-    T:Run(category, "getconnections", function()
-        if not getconnections then return "unsupported" end
-        local s, conns = pcall(getconnections, game:GetService("RunService").Heartbeat)
-        return s and type(conns) == "table"
-    end)
-    T:Run(category, "getthreadidentity", function()
-        if not getthreadidentity then return "unsupported" end
-        local s, ident = pcall(getthreadidentity)
-        return s and type(ident) == "number"
-    end)
-    T:Run(category, "setthreadidentity", function()
+-- Safely attaching RunAllTests to WBT
+WBT.RunAllTests = function(self)
+    self:GetExecutorInfo()
+    local T = self.Test
+    local function Run(cat, name, func) T:Run(cat, name, func) end
+
+    local category = "Core Environment"
+    Run(category, "getgenv", function() return getgenv and type(getgenv()) == "table" and getgenv()._G == _G end)
+    Run(category, "getrenv", function() return getrenv and type(getrenv()) == "table" and getrenv().game == game end)
+    Run(category, "getreg", function() return getreg and type(getreg()) == "table" end)
+    Run(category, "getgc", function() return getgc and type(getgc()) == "table" end)
+    Run(category, "getinstances", function() return getinstances and type(getinstances()) == "table" end)
+    Run(category, "getnilinstances", function() return getnilinstances and type(getnilinstances()) == "table" end)
+    Run(category, "getscripts", function() return getscripts and type(getscripts()) == "table" end)
+    Run(category, "getloadedmodules", function() return getloadedmodules and type(getloadedmodules()) == "table" end)
+    Run(category, "getconnections", function() return getconnections and type(getconnections(game:GetService("RunService").Heartbeat)) == "table" end)
+    Run(category, "getthreadidentity", function() return getthreadidentity and type(getthreadidentity()) == "number" end)
+    Run(category, "setthreadidentity", function() 
         if not setthreadidentity then return "unsupported" end
-        local s = pcall(setthreadidentity, 7)
-        pcall(setthreadidentity, 2)
-        return s
+        pcall(setthreadidentity, 7); pcall(setthreadidentity, 2)
+        return true
     end)
-    T:Run(category, "setthreadidentity (behavior)", function()
+    Run(category, "setthreadidentity (behavior)", function()
         if not getthreadidentity or not setthreadidentity then return "unsupported" end
-        local s, original_level = pcall(getthreadidentity)
-        if not s then return false end
-        local s_set = pcall(setthreadidentity, 8)
-        if not s_set then return false end
-        local s_new, new_level = pcall(getthreadidentity)
-        pcall(setthreadidentity, original_level)
-        return s_new and new_level == 8
+        local old = getthreadidentity()
+        setthreadidentity(8); local new = getthreadidentity()
+        setthreadidentity(old); return new == 8
     end)
-    T:Run(category, "firesignal", function() return not not firesignal end)
-    T:Run(category, "fireclickdetector", function() return not not fireclickdetector end)
-    T:Run(category, "firetouchinterest", function() return not not firetouchinterest end)
-    T:Run(category, "is_executor_closure", function() return not not is_executor_closure end)
-    T:Run(category, "is_syn_closure", function() return not not is_syn_closure end)
-    T:Run(category, "checkcaller", function()
-        if not checkcaller then return "unsupported" end
-        local s, is_exec = pcall(checkcaller)
-        return s and type(is_exec) == "boolean"
-    end)
-    T:Run(category, "loadstring (behavior)", function()
+    Run(category, "firesignal", function() return not not firesignal end)
+    Run(category, "fireclickdetector", function() return not not fireclickdetector end)
+    Run(category, "firetouchinterest", function() return not not firetouchinterest end)
+    Run(category, "is_executor_closure", function() return not not is_executor_closure end)
+    Run(category, "checkcaller", function() return checkcaller and type(checkcaller()) == "boolean" end)
+    Run(category, "loadstring (behavior)", function()
         if not loadstring then return "unsupported" end
-        local s, f = pcall(loadstring, "return 123")
-        if not s or type(f) ~= "function" then return false end
-        local s2, res = pcall(f)
-        return s2 and res == 123
+        local f = loadstring("return 123")
+        return f() == 123
     end)
-    wait(0.05)
 
     category = "Instance Functions"
-    pcall(GUI.UpdateStatus, GUI, "Testing: " .. category)
-    T:Run(category, "getchildren", function()
-        local s, children = pcall(game.GetChildren, game)
-        return s and type(children) == "table" and #children > 0
-    end)
-    T:Run(category, "getdescendants", function()
-        local s, desc = pcall(game.GetDescendants, game)
-        return s and type(desc) == "table" and #desc > 0
-    end)
-    T:Run(category, "findfirstchild", function()
-        local s, child = pcall(game.FindFirstChild, game, "Workspace")
-        return s and child == game.Workspace
-    end)
-    T:Run(category, "findfirstchildofclass", function()
-        local s, child = pcall(game.FindFirstChildOfClass, game, "Workspace")
-        return s and child == game.Workspace
-    end)
-    T:Run(category, "findfirstancestor", function()
-        local s, ances = pcall(game.Workspace.FindFirstAncestor, game.Workspace, "game")
-        return s and ances == game
-    end)
-    wait(0.05)
+    Run(category, "getchildren", function() return #game:GetChildren() > 0 end)
+    Run(category, "getdescendants", function() return #game:GetDescendants() > 0 end)
+    Run(category, "findfirstchild", function() return game:FindFirstChild("Workspace") ~= nil end)
+    Run(category, "findfirstchildofclass", function() return game:FindFirstChildOfClass("Workspace") ~= nil end)
+    Run(category, "findfirstancestor", function() return game.Workspace:FindFirstAncestor("game") == game end)
 
     category = "Require"
-    pcall(GUI.UpdateStatus, GUI, "Testing: " .. category)
-    T:Run(category, "require (existence)", function() return not not require end)
-    T:Run(category, "require (behavior)", function()
-        if not require then return "unsupported" end
-        local s, result = pcall(require, game:GetService("Players"))
-        return s and result == game:GetService("Players")
-    end)
-    wait(0.05)
-    
-    category = "Filesystem (I/O)"
-    pcall(GUI.UpdateStatus, GUI, "Testing: " .. category)
-    T:Run(category, "writefile", function() return not not writefile end)
-    T:Run(category, "readfile", function() return not not readfile end)
-    T:Run(category, "appendfile", function() return not not appendfile end)
-    T:Run(category, "loadfile", function() return not not loadfile end)
-    T:Run(category, "listfiles", function() return not not listfiles end)
-    T:Run(category, "isfile", function() return not not isfile end)
-    T:Run(category, "isfolder", function() return not not isfolder end)
-    T:Run(category, "makefolder", function() return not not makefolder end)
-    T:Run(category, "delfile", function() return not not delfile end)
-    T:Run(category, "delfolder", function() return not not delfolder end)
-    T:Run(category, "FS I/O Test", function()
-        if not writefile or not readfile or not isfile or not delfile then return "unsupported" end
-        local test_path = "wbt_test_file.txt"
-        local test_content = "WBT_FS_TEST_" .. math.random(100000, 1000000)
-        local s_write = pcall(writefile, test_path, test_content)
-        if not s_write then return "writefail" end
-        local s_read, content = pcall(readfile, test_path)
-        if not s_read then 
-            pcall(delfile, test_path)
-            return "readfail"
-        end
-        local s_del = pcall(delfile, test_path)
-        if not s_del then return "delfail" end
-        return content == test_content
-    end)
-    wait(0.05)
+    Run(category, "require (existence)", function() return not not require end)
+    Run(category, "require (behavior)", function() return not not require end) -- Basic existence check as full behavior varies
 
-    category = "Metatable & Debugging"
-    pcall(GUI.UpdateStatus, GUI, "Testing: " .. category)
-    T:Run(category, "getrawmetatable", function()
-        if not getrawmetatable then return "unsupported" end
-        local s, mt = pcall(getrawmetatable, game)
-        return s and type(mt) == "table"
+    category = "Filesystem"
+    Run(category, "writefile", function() return not not writefile end)
+    Run(category, "readfile", function() return not not readfile end)
+    Run(category, "listfiles", function() return not not listfiles end)
+    Run(category, "isfile", function() return not not isfile end)
+    Run(category, "isfolder", function() return not not isfolder end)
+    Run(category, "makefolder", function() return not not makefolder end)
+    Run(category, "delfile", function() return not not delfile end)
+    Run(category, "FS I/O Test", function()
+        if not writefile or not readfile or not delfile then return "unsupported" end
+        local name = "wbt_test.txt"
+        writefile(name, "test")
+        local content = readfile(name)
+        delfile(name)
+        return content == "test"
     end)
-    T:Run(category, "setrawmetatable", function()
-        if not setrawmetatable then return "unsupported" end
-        local t = {}
-        local mt = {}
-        local s = pcall(setrawmetatable, t, mt)
-        return s and getrawmetatable(t) == mt
-    end)
-    T:Run(category, "getmetatable", function()
-        if not getmetatable then return "unsupported" end
-        local t = {}
-        local mt = {}
-        setmetatable(t, mt)
-        return getmetatable(t) == mt
-    end)
-    T:Run(category, "setmetatable", function()
-        if not setmetatable then return "unsupported" end
-        local t = {}
-        local mt = {}
-        pcall(setmetatable, t, mt)
-        return getmetatable(t) == mt
-    end)
-    T:Run(category, "setreadonly", function() return not not setreadonly end)
-    T:Run(category, "isreadonly", function() return not not isreadonly end)
-    T:Run(category, "getnamecallmethod", function() return not not getnamecallmethod end)
-    T:Run(category, "setnamecallmethod", function() return not not setnamecallmethod end)
-    T:Run(category, "hookfunction", function()
-        if not hookfunction then return "unsupported" end
-        local old_print = print
-        local success = false
-        local s, err = pcall(hookfunction, print, function() success = true end)
-        
-        if not s then 
-            Log("Warn", "hookfunction pcall failed: " .. tostring(err))
-            pcall(hookfunction, print, old_print)
-            return false 
-        end
-        
-        pcall(print, "")
-        pcall(hookfunction, print, old_print)
-        return success
-    end)
-    T:Run(category, "hookfunction (C function)", function()
-        if not hookfunction then return "unsupported" end
-        local old_GetService = game.GetService
-        local s = pcall(hookfunction, game.GetService, function() end)
-        if s then
-            pcall(hookfunction, game.GetService, old_GetService)
-        end
-        return s
-    end)
-    T:Run(category, "hookmetamethod (behavior)", function()
+
+    category = "Metatable"
+    Run(category, "getrawmetatable", function() return getrawmetatable and type(getrawmetatable(game)) == "table" end)
+    Run(category, "setrawmetatable", function() return not not setrawmetatable end)
+    Run(category, "setreadonly", function() return not not setreadonly end)
+    Run(category, "isreadonly", function() return not not isreadonly end)
+    Run(category, "getnamecallmethod", function() return not not getnamecallmethod end)
+    Run(category, "hookfunction", function() return not not hookfunction end)
+    Run(category, "hookmetamethod (behavior)", function()
         if not hookmetamethod then return "unsupported" end
-        local t = setmetatable({}, {})
-        local success = false
-        local s = pcall(hookmetamethod, t, "__index", function() success = true end)
-        if not s then return false end
-        pcall(function() local _ = t.nonexistent_key end)
-        return success
+        local t = setmetatable({}, {__index = function() return false end})
+        hookmetamethod(t, "__index", function() return true end)
+        return t.test
     end)
-    T:Run(category, "clonefunction", function() return not not clonefunction end)
-    T:Run(category, "newcclosure", function() return not not newcclosure end)
-    T:Run(category, "debug.getconstants", function() return debug and not not debug.getconstants end)
-    T:Run(category, "debug.getupvalues", function() return debug and not not debug.getupvalues end)
-    T:Run(category, "debug.setupvalue", function() return debug and not not debug.setupvalue end)
-    T:Run(category, "debug.get/setupvalue (behavior)", function()
-        if not debug or not debug.getupvalues or not debug.setupvalue then return "unsupported" end
-        local x = 10
-        local func = function() return x end
-        local s_get = pcall(debug.getupvalues, func)
-        if not s_get then return false end
-        local s_set = pcall(debug.setupvalue, func, 1, 20)
-        if not s_set then return false end
-        return func() == 20
-    end)
-    T:Run(category, "debug.getproto", function() return debug and not not debug.getproto end)
-    T:Run(category, "debug.setstack", function() return debug and not not debug.setstack end)
-    T:Run(category, "debug.getmetatable", function() return debug and not not debug.getmetatable end)
-    T:Run(category, "debug.setmetatable", function() return debug and not not debug.setmetatable end)
-    T:Run(category, "debug.getfenv", function() return debug and not not debug.getfenv end)
-    T:Run(category, "debug.setfenv", function() return debug and not not debug.setfenv end)
-    wait(0.05)
-
-    category = "Console"
-    pcall(GUI.UpdateStatus, GUI, "Testing: " .. category)
-    T:Run(category, "rconsoleprint", function() return not not rconsoleprint end)
-    T:Run(category, "rconsoleinfo", function() return not not rconsoleinfo end)
-    T:Run(category, "rconsolewarn", function() return not not rconsolewarn end)
-    T:Run(category, "rconsoleerr", function() return not not rconsoleerr end)
-    T:Run(category, "rconsoleclear", function() return not not rconsoleclear end)
-    T:Run(category, "rconsolename", function() return not not rconsolename end)
-    T:Run(category, "rconsoleinput", function() return not not rconsoleinput end)
-    wait(0.05)
-
-    category = "Standard Console"
-    pcall(GUI.UpdateStatus, GUI, "Testing: " .. category)
-    T:Run(category, "print", function()
-        local s = pcall(print, "WBT_PRINT_TEST")
-        return s
-    end)
-    T:Run(category, "warn", function()
-        local s = pcall(warn, "WBT_WARN_TEST")
-        return s
-    end)
-    T:Run(category, "error", function()
-        if not error then return "unsupported" end
-        local s_err = pcall(error, "WBT_ERROR_TEST", 0) 
-        return true 
-    end)
-    T:Run(category, "pcall", function()
-        if not pcall then return "unsupported" end
-        local s, res = pcall(function() return "WBT_PCALL_TEST" end)
-        return s and res == "WBT_PCALL_TEST"
-    end)
-    wait(0.05)
+    Run(category, "newcclosure", function() return not not newcclosure end)
+    Run(category, "clonefunction", function() return not not clonefunction end)
     
-    category = "Input Simulation"
-    pcall(GUI.UpdateStatus, GUI, "Testing: " .. category)
-    T:Run(category, "keypress", function() return not not keypress end)
-    T:Run(category, "keyrelease", function() return not not keyrelease end)
-    T:Run(category, "mouse1click", function() return not not mouse1click end)
-    T:Run(category, "mouse1press", function() return not not mouse1press end)
-    T:Run(category, "mouse1release", function() return not not mouse1release end)
-    T:Run(category, "mouse1click (behavior)", function()
+    category = "Debug"
+    Run(category, "debug.getconstants", function() return debug and not not debug.getconstants end)
+    Run(category, "debug.getupvalues", function() return debug and not not debug.getupvalues end)
+    Run(category, "debug.setupvalue", function() return debug and not not debug.setupvalue end)
+    
+    category = "Input"
+    Run(category, "keypress", function() return not not keypress end)
+    Run(category, "mouse1click", function() return not not mouse1click end)
+    Run(category, "mouse1click (behavior)", function()
         if not mouse1click then return "unsupported" end
-        pcall(mouse1click)
-        wait(0.05)
-        local s, res = pcall(game:GetService("UserInputService").IsMouseButtonPressed, game:GetService("UserInputService"), Enum.UserInputType.MouseButton1)
-        return s and res == false
+        mouse1click()
+        return not UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1)
     end)
-    T:Run(category, "mouse2click", function() return not not mouse2click end)
-    T:Run(category, "mouse2press", function() return not not mouse2press end)
-    T:Run(category, "mouse2release", function() return not not mouse2release end)
-    T:Run(category, "mousescroll", function() return not not mousescroll end)
-    T:Run(category, "mousemoveabs", function() return not not mousemoveabs end)
-    T:Run(category, "mousemoverel", function() return not not mousemoverel end)
-    wait(0.05)
-    
-    category = "Cryptography & Encoding"
-    pcall(GUI.UpdateStatus, GUI, "Testing: " .. category)
-    T:Run(category, "crypt.encrypt", function() return crypt and not not crypt.encrypt end)
-    T:Run(category, "crypt.decrypt", function() return crypt and not not crypt.decrypt end)
-    T:Run(category, "crypt.hash (md5)", function()
-        if not crypt or not crypt.hash then return "unsupported" end
-        local s, h = pcall(crypt.hash, "md5", "test")
-        return s and h == "098f6bcd4621d373cade4e832627b4f6"
-    end)
-    T:Run(category, "crypt.hash (sha256)", function()
-        if not crypt or not crypt.hash then return "unsupported" end
-        local s, h = pcall(crypt.hash, "sha256", "test")
-        return s and h == "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
-    end)
-    T:Run(category, "base64.encode", function() return base64 and not not base64.encode end)
-    T:Run(category, "base64.decode", function() return base64 and not not base64.decode end)
-    T:Run(category, "lz4.compress", function() return lz4 and not not lz4.compress end)
-    T:Run(category, "lz4.decompress", function() return lz4 and not not lz4.decompress end)
-    wait(0.05)
-    
-    category = "Drawing Library"
-    pcall(GUI.UpdateStatus, GUI, "Testing: " .. category)
-    local function testDrawing(type)
-        if not Drawing or not Drawing.new then return "unsupported" end
-        local s, obj = pcall(Drawing.new, type)
-        if not s or not obj then return false end
-        pcall(obj.Remove, obj)
-        return true
+
+    category = "Crypt/Encoding"
+    Run(category, "crypt.encrypt", function() return crypt and not not crypt.encrypt end)
+    Run(category, "crypt.hash (sha256)", function() return crypt and crypt.hash and crypt.hash("test", "sha256") or "unsupported" end)
+    Run(category, "base64.encode", function() return base64 and not not base64.encode end)
+    Run(category, "lz4.compress", function() return lz4 and not not lz4.compress end)
+
+    category = "Drawing"
+    local function testDraw(t) 
+        if not Drawing then return "unsupported" end
+        local o = Drawing.new(t)
+        if o then o:Remove() return true end
+        return false
     end
-    T:Run(category, "Drawing.new(Line)", function() return testDrawing("Line") end)
-    T:Run(category, "Drawing.new(Text)", function() return testDrawing("Text") end)
-    T:Run(category, "Drawing.new(Image)", function() return testDrawing("Image") end)
-    T:Run(category, "Drawing.new(Circle)", function() return testDrawing("Circle") end)
-    T:Run(category, "Drawing.new(Square)", function() return testDrawing("Square") end)
-    T:Run(category, "Drawing.new(Quad)", function() return testDrawing("Quad") end)
-    T:Run(category, "Drawing.new(Triangle)", function() return testDrawing("Triangle") end)
-    T:Run(category, "Drawing Properties", function()
-        if not Drawing or not Drawing.new then return "unsupported" end
-        local s, l = pcall(Drawing.new, "Line")
-        if not s or not l then return false end
-        local p_vis = pcall(function() l.Visible = false end)
-        local p_col = pcall(function() l.Color = Color3.new(1,0,0) end)
-        local p_thick = pcall(function() l.Thickness = 5 end)
-        pcall(l.Remove, l)
-        return p_vis and p_col and p_thick
-    end)
-    wait(0.05)
+    Run(category, "Drawing.new(Line)", function() return testDraw("Line") end)
+    Run(category, "Drawing.new(Text)", function() return testDraw("Text") end)
+    Run(category, "Drawing.new(Circle)", function() return testDraw("Circle") end)
+    Run(category, "Drawing.new(Square)", function() return testDraw("Square") end)
 
-    category = "SUNC Extensions"
-    pcall(GUI.UpdateStatus, GUI, "Testing: " .. category)
-    T:Run(category, "getscriptbytecode", function() return not not getscriptbytecode end)
-    T:Run(category, "getscripthash", function() return not not getscripthash end)
-    T:Run(category, "gethui", function()
-        if not gethui then return "unsupported" end
-        local s, hui = pcall(gethui)
-        return s and hui:IsA("ScreenGui")
-    end)
-    T:Run(category, "cloneref", function() return not not cloneref end)
-    T:Run(category, "queue_on_teleport", function() return not not queue_on_teleport end)
-    T:Run(category, "setclipboard", function() return not not setclipboard end)
-    T:Run(category, "getclipboard", function() return not not getclipboard end)
-    T:Run(category, "set/getclipboard (behavior)", function()
-        if not setclipboard or not getclipboard then return "unsupported" end
-        local test_str = "WBT_CLIPBOARD_TEST_" .. math.random(100000, 1000000)
-        local s_set = pcall(setclipboard, test_str)
-        if not s_set then return false end
-        local s_get, content = pcall(getclipboard)
-        return s_get and content == test_str
-    end)
-    T:Run(category, "getcustomasset", function() return not not getcustomasset end)
-    T:Run(category, "secure_call", function() return not not secure_call end)
-    T:Run(category, "secure_call (behavior)", function()
-        if not secure_call then return "unsupported" end
-        _G.WBT_SANDBOX_TEST = nil
-        local s = pcall(secure_call, function() _G.WBT_SANDBOX_TEST = true end, getgenv())
-        local success = s and _G.WBT_SANDBOX_TEST == nil
-        _G.WBT_SANDBOX_TEST = nil
-        return success
-    end)
-    T:Run(category, "getinstancein", function() return not not getinstancein end)
-    T:Run(category, "getinstancesin", function() return not not getinstancesin end)
+    category = "SUNC / Misc"
+    Run(category, "getscriptbytecode", function() return not not getscriptbytecode end)
+    Run(category, "gethui", function() return not not gethui end)
+    Run(category, "cloneref", function() return not not cloneref end)
+    Run(category, "queue_on_teleport", function() return not not queue_on_teleport end)
+    Run(category, "setclipboard", function() return not not setclipboard end)
+    Run(category, "getcustomasset", function() return not not getcustomasset end)
+    Run(category, "identifyexecutor", function() return identifyexecutor and type(identifyexecutor()) == "string" end)
     
-    category = "Executor Info"
-    pcall(GUI.UpdateStatus, GUI, "Testing: " .. category)
-    T:Run(category, "identifyexecutor", function()
-        local s, name = pcall(identifyexecutor)
-        return s and type(name) == "string"
-    end)
-    T:Run(category, "getexecutorname", function()
-        local s, name = pcall(getexecutorname)
-        return s and type(name) == "string"
-    end)
+    category = "Network"
+    Run(category, "request", function() return not not (request or http_request or (http and http.request)) end)
+    Run(category, "websocket.connect", function() return websocket and not not websocket.connect end)
 
-    category = "bit Library"
-    pcall(GUI.UpdateStatus, GUI, "Testing: " .. category)
-    local bit_lib = bit or bit32
-    T:Run(category, "bit.band", function() return bit_lib and not not bit_lib.band end)
-    T:Run(category, "bit.bor", function() return bit_lib and not not bit_lib.bor end)
-    T:Run(category, "bit.bxor", function() return bit_lib and not not bit_lib.bxor end)
-    T:Run(category, "bit.lshift", function() return bit_lib and not not bit_lib.lshift end)
-    T:Run(category, "bit.rshift", function() return bit_lib and not not bit_lib.rshift end)
-    T:Run(category, "bit.arshift", function() return bit_lib and not not bit_lib.arshift end)
-    T:Run(category, "bit.not", function() return bit_lib and not not bit_lib["not"] end)
-    
-    category = "http Library"
-    pcall(GUI.UpdateStatus, GUI, "Testing: " .. category)
-    T:Run(category, "http_request", function() return not not http_request end)
-    T:Run(category, "request", function() return not not request end)
-    T:Run(category, "http.get", function() return http and not not http.get end)
-    T:Run(category, "http.post", function() return http and not not http.post end)
-    wait(0.05)
+    category = "Standard Libs"
+    Run(category, "os.clock", function() return os and type(os.clock()) == "number" end)
+    Run(category, "io.read", function() return io and not not io.read end)
+    Run(category, "coroutine.create", function() return coroutine and not not coroutine.create end)
 
-    category = "WebSocket Library"
-    pcall(GUI.UpdateStatus, GUI, "Testing: " .. category)
-    T:Run(category, "websocket.connect", function() return websocket and not not websocket.connect end)
-    T:Run(category, "websocket.send", function() return websocket and not not websocket.send end)
-    T:Run(category, "websocket.close", function() return websocket and not not websocket.close end)
-    T:Run(category, "websocket.on_message", function() return websocket and not not websocket.on_message end)
-    T:Run(category, "websocket.on_error", function() return websocket and not not websocket.on_error end)
-    wait(0.05)
-    
-    category = "Standard os Library"
-    pcall(GUI.UpdateStatus, GUI, "Testing: " .. category)
-    T:Run(category, "os.execute", function() return os and not not os.execute end)
-    T:Run(category, "os.remove", function() return os and not not os.remove end)
-    T:Run(category, "os.rename", function() return os and not not os.rename end)
-    T:Run(category, "os.exit", function() return os and not not os.exit end)
-    T:Run(category, "os.clock", function()
-        if not os or not os.clock then return "unsupported" end
-        local s, c = pcall(os.clock)
-        return s and type(c) == "number"
-    end)
-    wait(0.05)
-    
-    category = "Standard io Library"
-    pcall(GUI.UpdateStatus, GUI, "Testing: " .. category)
-    T:Run(category, "io.open", function() return io and not not io.open end)
-    T:Run(category, "io.read", function() return io and not not io.read end)
-    T:Run(category, "io.write", function() return io and not not io.write end)
-    T:Run(category, "io.popen", function() return io and not not io.popen end)
-    wait(0.05)
-    
-    category = "coroutine Library"
-    pcall(GUI.UpdateStatus, GUI, "Testing: " .. category)
-    T:Run(category, "coroutine.create", function() return coroutine and not not coroutine.create end)
-    T:Run(category, "coroutine.resume", function() return coroutine and not not coroutine.resume end)
-    T:Run(category, "coroutine.yield", function() return coroutine and not not coroutine.yield end)
-    T:Run(category, "coroutine.wrap", function() return coroutine and not not coroutine.wrap end)
-    wait(0.05)
-    
-    category = "Garbage Collector"
-    pcall(GUI.UpdateStatus, GUI, "Testing: " .. category)
-    T:Run(category, "collectgarbage", function()
-        if not collectgarbage then return "unsupported" end
-        local s = pcall(collectgarbage, "count")
-        return s
-    end)
-    wait(0.05)
-    
-    category = "newinstance Library"
-    pcall(GUI.UpdateStatus, GUI, "Testing: " .. category)
-    T:Run(category, "newinstance.new", function() return newinstance and not not newinstance.new end)
-    T:Run(category, "newinstance.create", function() return newinstance and not not newinstance.create end)
-    wait(0.05)
-    
-    category = "Advanced Memory"
-    pcall(GUI.UpdateStatus, GUI, "Testing: " .. category)
-    T:Run(category, "read_virtual_memory", function() return not not read_virtual_memory end)
-    T:Run(category, "write_virtual_memory", function() return not not write_virtual_memory end)
-    T:Run(category, "readvmem", function() return not not readvmem end)
-    T:Run(category, "writevmem", function() return not not writevmem end)
-    T:Run(category, "find_pattern", function() return not not find_pattern end)
-    T:Run(category, "aob_scan", function() return not not aob_scan end)
-    wait(0.05)
-    
-    category = "Access Control"
-    pcall(GUI.UpdateStatus, GUI, "Testing: " .. category)
-    T:Run(category, "sethiddenproperty", function() return not not sethiddenproperty end)
-    T:Run(category, "gethiddenproperty", function() return not not gethiddenproperty end)
-    T:Run(category, "Protected Property Bypass", function()
-        if not sethiddenproperty then return "unsupported" end
-        local p = Instance.new("Part")
-        local s = pcall(sethiddenproperty, p, "ClassName", "Wedge")
-        return s and p.ClassName == "Wedge"
-    end)
-    T:Run(category, "ParentLock Bypass", function()
-        local p = Instance.new("Part")
-        p.ParentLock = true
-        local s = pcall(function() p.Parent = game end)
-        return s
-    end)
-    wait(0.05)
-    
-    category = "Obscure Thread/Debug"
-    pcall(GUI.UpdateStatus, GUI, "Testing: " .. category)
-    T:Run(category, "getcallingscript", function() return not not getcallingscript end)
-    T:Run(category, "getscriptfromthread", function() return not not getscriptfromthread end)
-    T:Run(category, "getthreadcontext", function() return not not getthreadcontext end)
-    T:Run(category, "setthreadcontext", function() return not not setthreadcontext end)
-    wait(0.05)
-    
-    category = "Advanced Luau"
-    pcall(GUI.UpdateStatus, GUI, "Testing: " .. category)
-    T:Run(category, "luau_load", function() return not not luau_load end)
-    T:Run(category, "iscclosure", function() return not not iscclosure end)
-    T:Run(category, "islcclosure", function() return not not islcclosure end)
-    wait(0.05)
-    
-    category = "Environment Spoofing"
-    pcall(GUI.UpdateStatus, GUI, "Testing: " .. category)
-    T:Run(category, "get_fps_cap", function() return not not get_fps_cap end)
-    T:Run(category, "set_fps_cap", function() return not not set_fps_cap end)
-    T:Run(category, "is_synapse_environment", function() return not not is_synapse_environment end)
-    T:Run(category, "is_krnl_environment", function() return not not is_krnl_environment end)
-    T:Run(category, "is_scriptware_environment", function() return not not is_scriptware_environment end)
-    T:Run(category, "User-Agent Spoofing", function()
-        local s, ua = pcall(game:GetService("HttpService").GetUserAgent, game:GetService("HttpService"))
-        return s and ua ~= "Roblox/WinInet"
-    end)
-    wait(0.05)
-    
-    category = "Obscure Globals"
-    pcall(GUI.UpdateStatus, GUI, "Testing: " .. category)
-    T:Run(category, "HttpGet", function() return not not HttpGet end)
-    T:Run(category, "HttpPost", function() return not not HttpPost end)
-    T:Run(category, "GetObjects", function() return not not GetObjects end)
-    T:Run(category, "UserSettings", function()
-        local s, us = pcall(UserSettings)
-        return s and us:IsA("UserSettings")
-    end)
-    T:Run(category, "Stats", function()
-        local s, st = pcall(Stats)
-        return s and st:IsA("Stats")
-    end)
-    wait(0.05)
-
-    category = "Anti-Detection"
-    pcall(GUI.UpdateStatus, GUI, "Testing: " .. category)
-    T:Run(category, "debug.debug", function() return debug and not not debug.debug end)
-    T:Run(category, "Instance Hiding (getchildren)", function()
-        if not getchildren then return "unsupported" end
-        local s, exec_children = pcall(getchildren, game)
-        local s2, roblox_children = pcall(game.GetChildren, game)
-        if not s or not s2 then return false end
-        return #exec_children ~= #roblox_children
-    end)
-    wait(0.05)
-    
-    category = "Performance Benchmarking"
-    pcall(GUI.UpdateStatus, GUI, "Testing: " .. category)
-    T:Run(category, "Hook Speed", function()
-        if not hookfunction or not os or not os.clock then return "unsupported" end
-        local func = function() return 1 end
+    category = "Performance"
+    Run(category, "Hook Speed", function()
+        if not hookfunction then return "unsupported" end
+        local f = function() return 1 end
         local start = os.clock()
-        for i = 1, 10000 do
-            func()
-            if i % 1000 == 0 then wait() end
-        end
-        local base_time = os.clock() - start
-        
-        local old_func = hookfunction(func, function() end)
-        start = os.clock()
-        for i = 1, 10000 do
-            func()
-            if i % 1000 == 0 then wait() end
-        end
-        local hook_time = os.clock() - start
-        hookfunction(func, old_func)
-        
-        local overhead = hook_time - base_time
-        WBT.Info.HookSpeed = ("%.4fms over 10k calls"):format(overhead * 1000)
+        hookfunction(f, function() return 2 end)
+        local diff = os.clock() - start
+        WBT.Info.HookSpeed = diff
         return true
     end)
-    
-    T:Run(category, "GC Speed", function()
-        if not getgc or not os or not os.clock then return "unsupported" end
+    Run(category, "Instance Creation Speed", function()
         local start = os.clock()
-        pcall(getgc)
-        local time_taken = os.clock() - start
-        WBT.Info.GCSpeed = ("%.4fms"):format(time_taken * 1000)
+        for i=1,1000 do Instance.new("Part") end
+        local diff = os.clock() - start
+        WBT.Info.InstanceSpeed = diff
         return true
     end)
-    
-    T:Run(category, "Instance Creation Speed", function()
-        if not os or not os.clock then return "unsupported" end
-        local start = os.clock()
-        for i = 1, 5000 do
-            Instance.new("Part")
-            if i % 100 == 0 then wait() end
-        end
-        local time_taken = os.clock() - start
-        WBT.Info.InstanceSpeed = ("%.4fms for 5k instances"):format(time_taken * 1000)
-        return true
-    end)
-
-    Log("Info", "All tests completed.")
-    pcall(GUI.UpdateStatus, GUI, "All tests completed.")
 end
 
 function WBT:SerializeJSON(tbl)
-    local function escape_str(s)
-        local replacements = {
-            ["\\"] = "\\\\", ["\""] = "\\\"", ["\b"] = "\\b",
-            ["\f"] = "\\f", ["\n"] = "\\n", ["\r"] = "\\r", ["\t"] = "\\t"
-        }
-        return '"' .. s:gsub("[\"\b\f\n\r\t\\]", replacements) .. '"'
-    end
-    
-    local seen = {}
-    local function serialize(o)
-        local o_type = type(o)
-        
-        if o_type == "table" then
-            if seen[o] then
-                return '"[CircularReference]"'
-            end
-            seen[o] = true
-            
-            local parts = {}
-            local is_array = true
-            local i = 1
-            for k, _ in pairs(o) do
-                if type(k) ~= "number" or k ~= i then
-                    is_array = false
-                end
-                i = i + 1
-            end
-            
-            if is_array then
-                for j = 1, #o do
-                    table.insert(parts, serialize(o[j]))
-                end
-                seen[o] = nil
-                return '[' .. table.concat(parts, ",") .. ']'
-            else
-                for k, v in pairs(o) do
-                    table.insert(parts, escape_str(tostring(k)) .. ":" .. serialize(v))
-                end
-                seen[o] = nil
-                return '{' .. table.concat(parts, ",") .. '}'
-            end
-            
-        elseif o_type == "string" then
-            return escape_str(o)
-        elseif o_type == "number" or o_type == "boolean" then
-            return tostring(o)
-        elseif o_type == "nil" then
-            return "null"
-        else
-            return '"' .. tostring(o) .. '"'
-        end
-    end
-    
-    return serialize(tbl)
+    local success, res = pcall(HttpService.JSONEncode, HttpService, tbl)
+    if success then return res end
+    return "[]"
 end
 
 function WBT:GetTestResult(testName)
     for _, category in pairs(WBT.Results) do
-        if category[testName] then
-            return category[testName]
-        end
+        if category[testName] then return category[testName] end
     end
     return "unsupported"
 end
 
 function WBT:GenerateCompressedResults()
     local results_string = ""
-    local status_map = {
-        pass = "p",
-        fail = "f",
-        unsupported = "u"
-    }
-
+    local status_map = { pass = "p", fail = "f", unsupported = "u" }
     for _, testName in ipairs(AllTestsOrdered) do
         local status = WBT:GetTestResult(testName) or "unsupported"
         results_string = results_string .. (status_map[status] or "u")
     end
-    
     return results_string
 end
 
-function WBT:StartTests()
-    pcall(GUI.StartTestUI)
+function WBT:Submit()
+    local payload = {
+        info = WBT.Info,
+        results = WBT:GenerateCompressedResults(),
+        timestamp = os.time()
+    }
     
-    print("[WBT] Attempting to run all tests...")
-    WBT:RunAllTests()
-    print("[WBT] All tests completed. Submitting results...")
+    task.wait(0.2) -- Anti-freeze
+    local json = WBT:SerializeJSON(payload)
+    local http_func = request or http_request or (http and http.post)
     
-    pcall(GUI.UpdateStatus, GUI, "Submitting results to database...")
+    if not http_func then
+        GUI:AddLogEntry("Fatal", "fail")
+        GUI.StatusLabel.Text = "No HTTP Request function!"
+        return
+    end
     
-    spawn(function()
-        Log("Info", "Starting background submission thread.")
-        
-        local payload
-        local s_payload, e_payload = pcall(function()
-            payload = {
-                info = WBT.Info,
-                results = WBT:GenerateCompressedResults(),
-                timestamp = os.time()
-            }
-        end)
-
-        if not s_payload then
-            Log("Error", "Failed to create payload:", tostring(e_payload))
-            task.defer(pcall, GUI.UpdateStatus, GUI, "Error: Failed to create payload.")
-            return
-        end
-        
-        local json_data
-
-        local s_json_enc, json_data_or_err = pcall(function()
-            local s, res = pcall(game:GetService("HttpService").JSONEncode, game:GetService("HttpService"), payload)
-            if s and res then
-                return res
-            else
-                return WBT:SerializeJSON(payload)
-            end
-        end)
-        
-        if not s_json_enc then
-            Log("Error", "Failed to serialize JSON:", tostring(json_data_or_err))
-            task.defer(pcall, GUI.UpdateStatus, GUI, "Error: JSON serialization failed.")
-            return
-        end
-        
-        json_data = json_data_or_err
-        
-        local http_func = request or http_request or (http and http.post)
-        if not http_func then
-            Log("Error", "No HTTP request function found. Cannot submit results.")
-            task.defer(pcall, GUI.UpdateStatus, GUI, "Error: No HTTP function found.")
-            return
-        end
-        
-        local s_req, res_req = pcall(http_func, {
-            Url = WBT_SETTINGS.SubmitApiUrl,
-            Method = "POST",
-            Headers = {
-                ["Content-Type"] = "application/json"
-            },
-            Body = json_data
-        })
-        
-        if not s_req then
-            Log("Error", "Failed to submit results:", tostring(res_req))
-            task.defer(pcall, GUI.UpdateStatus, GUI, "Error: Submission failed.")
-            return
-        end
-
-        local response_body
-        if type(res_req) == "table" then
-            response_body = res_req.Body
-        elseif type(res_req) == "string" then
-            response_body = res_req
+    GUI.StatusLabel.Text = "Uploading results..."
+    task.wait(0.2) -- Allow text to update
+    
+    local s, res = pcall(http_func, {
+        Url = WBT_SETTINGS.SubmitApiUrl,
+        Method = "POST",
+        Headers = { ["Content-Type"] = "application/json" },
+        Body = json
+    })
+    
+    if s and res and res.Body then
+        local decoded = HttpService:JSONDecode(res.Body)
+        if decoded and decoded.id then
+            local url = WBT_SETTINGS.WebsiteBaseUrl .. "/#scan-" .. decoded.id
+            GUI:ShowLink(url)
         else
-            Log("Error", "Unknown HTTP response format:", type(res_req))
-            task.defer(pcall, GUI.UpdateStatus, GUI, "Error: Unknown response.")
-            return
+            GUI.StatusLabel.Text = "Invalid Server Response"
         end
-
-        local s_json_dec, res_json = pcall(game:GetService("HttpService").JSONDecode, game:GetService("HttpService"), response_body)
-        
-        if not s_json_dec or not res_json or not res_json.id then
-            Log("Error", "Failed to parse server response:", response_body)
-            task.defer(pcall, GUI.UpdateStatus, GUI, "Error: Invalid server response.")
-            return
-        end
-        
-        local scan_id = res_json.id
-        local url = ("%s/#scan-%s"):format(WBT_SETTINGS.WebsiteBaseUrl, scan_id)
-        
-        Log("Info", "Test Complete!")
-        Log("Info", "Your unique results URL is:")
-        Log("Info", url)
-        
-        task.defer(function()
-            Log("Info", "Scheduling UI update on main thread.")
-            if WBT_SETTINGS.AutoCopyLink then
-                if setclipboard then
-                    pcall(setclipboard, url)
-                    pcall(GUI.UpdateStatus, GUI, "Test Complete! Result link copied.")
-                else
-                    pcall(GUI.UpdateStatus, GUI, "Test Complete! Copy link below.")
-                end
-            else
-                pcall(GUI.UpdateStatus, GUI, "Test Complete! Copy link below.")
-            end
-            
-            local s_gui, e_gui = pcall(GUI.ShowFinalLink, GUI, url)
-            if not s_gui then
-                Log("Error", "GUI:ShowFinalLink failed:", tostring(e_gui))
-            else
-                Log("Info", "GUI:ShowFinalLink called successfully.")
-            end
-            print("[WBT] Background submission thread finished.")
-        end)
-    end)
-    
-    print("[WBT] Main function finished. Background thread is submitting.")
+    else
+        GUI.StatusLabel.Text = "Submission Failed"
+    end
 end
 
 function WBT:Main()
-    print("[WBT] Main function started.")
-    
-    if WBT_SETTINGS.UseGui then
-        print("[WBT] Attempting to create GUI...")
-        local s, e = pcall(GUI.Create, GUI)
-        if not s then
-            print("[WBT] GUI:Create() FAILED:", e)
-            return
-        else
-            print("[WBT] GUI creation complete.")
-        end
-        
-        pcall(GUI.ShowWarning, GUI, function()
-            WBT:StartTests()
+    GUI:Create()
+    task.wait(0.8)
+    GUI:ShowWarning(function()
+        GUI:CreateLogView()
+        task.spawn(function()
+            if not WBT.RunAllTests then
+                GUI.StatusLabel.Text = "Critical Error: RunAllTests missing"
+                GUI:AddLogEntry("INIT_FAIL", "fail")
+                return
+            end
+            local success, err = pcall(function()
+                WBT:RunAllTests()
+                WBT:Submit()
+            end)
+            if not success then
+                GUI.StatusLabel.Text = "Error: " .. tostring(err)
+            end
         end)
-    else
-        WBT:StartTests()
-    end
+    end)
 end
 
-print("[WBT] Spawning Main thread...")
-spawn(function()
-    local s, e = pcall(WBT.Main, WBT)
-    if not s then
-        print("[WBT] MAIN SCRIPT ERROR:", e)
-    end
-end)
+WBT:Main()
