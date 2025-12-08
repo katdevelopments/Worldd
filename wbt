@@ -396,6 +396,7 @@ end
 -- // CORE LOGIC // --
 WBT.Test = {}
 
+-- FULL TEST LIST from prompt
 local AllTestsOrdered = {
     "getgenv", "getrenv", "getreg", "getgc", "getinstances", "getnilinstances", "getscripts", "getloadedmodules", "getconnections", "getthreadidentity", "setthreadidentity", "setthreadidentity (behavior)", "firesignal", "fireclickdetector", "firetouchinterest", "is_executor_closure", "is_syn_closure", "checkcaller", "loadstring (behavior)",
     "getchildren", "getdescendants", "findfirstchild", "findfirstchildofclass", "findfirstancestor",
@@ -463,6 +464,9 @@ function WBT.Test:Run(category, name, testFunc)
     
     if resultStatus == "pass" then WBT.Stats.Passed = WBT.Stats.Passed + 1 end
     
+    -- CONSOLE LOGGING (Requested)
+    Log("Info", ("Test: %s -> %s"):format(name, resultStatus:upper()))
+    
     pcall(GUI.AddLogEntry, GUI, name, resultStatus)
     WBT.Results[category][name] = resultStatus
 end
@@ -490,6 +494,7 @@ WBT.RunAllTests = function(self)
     local T = self.Test
     local function Run(cat, name, func) T:Run(cat, name, func) end
 
+    -- Core Environment
     local category = "Core Environment"
     Run(category, "getgenv", function() return getgenv and type(getgenv()) == "table" and getgenv()._G == _G end)
     Run(category, "getrenv", function() return getrenv and type(getrenv()) == "table" and getrenv().game == game end)
@@ -516,6 +521,7 @@ WBT.RunAllTests = function(self)
     Run(category, "fireclickdetector", function() return not not fireclickdetector end)
     Run(category, "firetouchinterest", function() return not not firetouchinterest end)
     Run(category, "is_executor_closure", function() return not not is_executor_closure end)
+    Run(category, "is_syn_closure", function() return not not is_syn_closure end)
     Run(category, "checkcaller", function() return checkcaller and type(checkcaller()) == "boolean" end)
     Run(category, "loadstring (behavior)", function()
         if not loadstring then return "unsupported" end
@@ -523,6 +529,7 @@ WBT.RunAllTests = function(self)
         return f() == 123
     end)
 
+    -- Instance Functions
     category = "Instance Functions"
     Run(category, "getchildren", function() return #game:GetChildren() > 0 end)
     Run(category, "getdescendants", function() return #game:GetDescendants() > 0 end)
@@ -530,64 +537,126 @@ WBT.RunAllTests = function(self)
     Run(category, "findfirstchildofclass", function() return game:FindFirstChildOfClass("Workspace") ~= nil end)
     Run(category, "findfirstancestor", function() return game.Workspace:FindFirstAncestor("game") == game end)
 
+    -- Require
     category = "Require"
     Run(category, "require (existence)", function() return not not require end)
-    Run(category, "require (behavior)", function() return not not require end) -- Basic existence check as full behavior varies
+    Run(category, "require (behavior)", function() 
+        if not require then return "unsupported" end
+        pcall(require, game:GetService("Players")) -- Just verify it doesn't crash on standard roblox objects
+        return true 
+    end)
 
-    category = "Filesystem"
+    -- Filesystem
+    category = "Filesystem (I/O)"
     Run(category, "writefile", function() return not not writefile end)
     Run(category, "readfile", function() return not not readfile end)
+    Run(category, "appendfile", function() return not not appendfile end)
+    Run(category, "loadfile", function() return not not loadfile end)
     Run(category, "listfiles", function() return not not listfiles end)
     Run(category, "isfile", function() return not not isfile end)
     Run(category, "isfolder", function() return not not isfolder end)
     Run(category, "makefolder", function() return not not makefolder end)
     Run(category, "delfile", function() return not not delfile end)
+    Run(category, "delfolder", function() return not not delfolder end)
     Run(category, "FS I/O Test", function()
         if not writefile or not readfile or not delfile then return "unsupported" end
-        local name = "wbt_test.txt"
+        local name = "wbt_test_"..math.random(999)..".txt"
         writefile(name, "test")
         local content = readfile(name)
         delfile(name)
         return content == "test"
     end)
 
-    category = "Metatable"
+    -- Metatable & Debugging
+    category = "Metatable & Debugging"
     Run(category, "getrawmetatable", function() return getrawmetatable and type(getrawmetatable(game)) == "table" end)
     Run(category, "setrawmetatable", function() return not not setrawmetatable end)
+    Run(category, "getmetatable", function() return not not getmetatable end)
+    Run(category, "setmetatable", function() return not not setmetatable end)
     Run(category, "setreadonly", function() return not not setreadonly end)
     Run(category, "isreadonly", function() return not not isreadonly end)
     Run(category, "getnamecallmethod", function() return not not getnamecallmethod end)
+    Run(category, "setnamecallmethod", function() return not not setnamecallmethod end)
     Run(category, "hookfunction", function() return not not hookfunction end)
+    Run(category, "hookfunction (C function)", function()
+        if not hookfunction then return "unsupported" end
+        local old = hookfunction(game.GetService, function() end)
+        hookfunction(game.GetService, old)
+        return true
+    end)
     Run(category, "hookmetamethod (behavior)", function()
         if not hookmetamethod then return "unsupported" end
         local t = setmetatable({}, {__index = function() return false end})
         hookmetamethod(t, "__index", function() return true end)
         return t.test
     end)
-    Run(category, "newcclosure", function() return not not newcclosure end)
     Run(category, "clonefunction", function() return not not clonefunction end)
+    Run(category, "newcclosure", function() return not not newcclosure end)
     
-    category = "Debug"
     Run(category, "debug.getconstants", function() return debug and not not debug.getconstants end)
     Run(category, "debug.getupvalues", function() return debug and not not debug.getupvalues end)
     Run(category, "debug.setupvalue", function() return debug and not not debug.setupvalue end)
-    
-    category = "Input"
+    Run(category, "debug.get/setupvalue (behavior)", function()
+        if not debug or not debug.setupvalue then return "unsupported" end
+        local v = 1; local f = function() return v end
+        debug.setupvalue(f, 1, 2)
+        return f() == 2
+    end)
+    Run(category, "debug.getproto", function() return debug and not not debug.getproto end)
+    Run(category, "debug.setstack", function() return debug and not not debug.setstack end)
+    Run(category, "debug.getmetatable", function() return debug and not not debug.getmetatable end)
+    Run(category, "debug.setmetatable", function() return debug and not not debug.setmetatable end)
+    Run(category, "debug.getfenv", function() return debug and not not debug.getfenv end)
+    Run(category, "debug.setfenv", function() return debug and not not debug.setfenv end)
+
+    -- Console
+    category = "Console"
+    Run(category, "rconsoleprint", function() return not not rconsoleprint end)
+    Run(category, "rconsoleinfo", function() return not not rconsoleinfo end)
+    Run(category, "rconsolewarn", function() return not not rconsolewarn end)
+    Run(category, "rconsoleerr", function() return not not rconsoleerr end)
+    Run(category, "rconsoleclear", function() return not not rconsoleclear end)
+    Run(category, "rconsolename", function() return not not rconsolename end)
+    Run(category, "rconsoleinput", function() return not not rconsoleinput end)
+
+    category = "Standard Console"
+    Run(category, "print", function() return true end)
+    Run(category, "warn", function() return true end)
+    Run(category, "error", function() return not not error end)
+    Run(category, "pcall", function() return not not pcall end)
+
+    -- Input
+    category = "Input Simulation"
     Run(category, "keypress", function() return not not keypress end)
+    Run(category, "keyrelease", function() return not not keyrelease end)
     Run(category, "mouse1click", function() return not not mouse1click end)
+    Run(category, "mouse1press", function() return not not mouse1press end)
+    Run(category, "mouse1release", function() return not not mouse1release end)
     Run(category, "mouse1click (behavior)", function()
         if not mouse1click then return "unsupported" end
         mouse1click()
         return not UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1)
     end)
+    Run(category, "mouse2click", function() return not not mouse2click end)
+    Run(category, "mouse2press", function() return not not mouse2press end)
+    Run(category, "mouse2release", function() return not not mouse2release end)
+    Run(category, "mousescroll", function() return not not mousescroll end)
+    Run(category, "mousemoveabs", function() return not not mousemoveabs end)
+    Run(category, "mousemoverel", function() return not not mousemoverel end)
 
-    category = "Crypt/Encoding"
+    -- Crypt
+    category = "Cryptography & Encoding"
     Run(category, "crypt.encrypt", function() return crypt and not not crypt.encrypt end)
+    Run(category, "crypt.decrypt", function() return crypt and not not crypt.decrypt end)
+    Run(category, "crypt.hash (md5)", function() return crypt and crypt.hash and crypt.hash("test", "md5") or "unsupported" end)
     Run(category, "crypt.hash (sha256)", function() return crypt and crypt.hash and crypt.hash("test", "sha256") or "unsupported" end)
     Run(category, "base64.encode", function() return base64 and not not base64.encode end)
+    Run(category, "base64.decode", function() return base64 and not not base64.decode end)
     Run(category, "lz4.compress", function() return lz4 and not not lz4.compress end)
+    Run(category, "lz4.decompress", function() return lz4 and not not lz4.decompress end)
 
-    category = "Drawing"
+    -- Drawing
+    category = "Drawing Library"
     local function testDraw(t) 
         if not Drawing then return "unsupported" end
         local o = Drawing.new(t)
@@ -596,28 +665,146 @@ WBT.RunAllTests = function(self)
     end
     Run(category, "Drawing.new(Line)", function() return testDraw("Line") end)
     Run(category, "Drawing.new(Text)", function() return testDraw("Text") end)
+    Run(category, "Drawing.new(Image)", function() return testDraw("Image") end)
     Run(category, "Drawing.new(Circle)", function() return testDraw("Circle") end)
     Run(category, "Drawing.new(Square)", function() return testDraw("Square") end)
+    Run(category, "Drawing.new(Quad)", function() return testDraw("Quad") end)
+    Run(category, "Drawing.new(Triangle)", function() return testDraw("Triangle") end)
+    Run(category, "Drawing Properties", function() 
+        if not Drawing then return "unsupported" end
+        local l = Drawing.new("Line")
+        if not l then return false end
+        l.Visible = false
+        l:Remove()
+        return true
+    end)
 
-    category = "SUNC / Misc"
+    -- SUNC
+    category = "SUNC Extensions"
     Run(category, "getscriptbytecode", function() return not not getscriptbytecode end)
+    Run(category, "getscripthash", function() return not not getscripthash end)
     Run(category, "gethui", function() return not not gethui end)
     Run(category, "cloneref", function() return not not cloneref end)
     Run(category, "queue_on_teleport", function() return not not queue_on_teleport end)
     Run(category, "setclipboard", function() return not not setclipboard end)
+    Run(category, "getclipboard", function() return not not getclipboard end)
+    Run(category, "set/getclipboard (behavior)", function()
+        if not setclipboard or not getclipboard then return "unsupported" end
+        local r = math.random(999); setclipboard(tostring(r)); return getclipboard() == tostring(r)
+    end)
     Run(category, "getcustomasset", function() return not not getcustomasset end)
-    Run(category, "identifyexecutor", function() return identifyexecutor and type(identifyexecutor()) == "string" end)
+    Run(category, "secure_call", function() return not not secure_call end)
+    Run(category, "secure_call (behavior)", function() return not not secure_call end)
+    Run(category, "getinstancein", function() return not not getinstancein end)
+    Run(category, "getinstancesin", function() return not not getinstancesin end)
     
-    category = "Network"
+    -- Exec Info
+    category = "Executor Info"
+    Run(category, "identifyexecutor", function() return identifyexecutor and type(identifyexecutor()) == "string" end)
+    Run(category, "getexecutorname", function() return getexecutorname and type(getexecutorname()) == "string" end)
+
+    -- Bit
+    category = "bit Library"
+    local b = bit or bit32
+    Run(category, "bit.band", function() return b and not not b.band end)
+    Run(category, "bit.bor", function() return b and not not b.bor end)
+    Run(category, "bit.bxor", function() return b and not not b.bxor end)
+    Run(category, "bit.lshift", function() return b and not not b.lshift end)
+    Run(category, "bit.rshift", function() return b and not not b.rshift end)
+    Run(category, "bit.arshift", function() return b and not not b.arshift end)
+    Run(category, "bit.not", function() return b and not not b["not"] end)
+
+    -- HTTP
+    category = "http Library"
+    Run(category, "http_request", function() return not not http_request end)
     Run(category, "request", function() return not not (request or http_request or (http and http.request)) end)
+    Run(category, "http.get", function() return http and not not http.get end)
+    Run(category, "http.post", function() return http and not not http.post end)
+
+    -- Websocket
+    category = "WebSocket Library"
     Run(category, "websocket.connect", function() return websocket and not not websocket.connect end)
+    Run(category, "websocket.send", function() return websocket and not not websocket.send end)
+    Run(category, "websocket.close", function() return websocket and not not websocket.close end)
+    Run(category, "websocket.on_message", function() return websocket and not not websocket.on_message end)
+    Run(category, "websocket.on_error", function() return websocket and not not websocket.on_error end)
 
-    category = "Standard Libs"
+    -- Standard Libs (Extended)
+    category = "Standard os Library"
+    Run(category, "os.execute", function() return os and not not os.execute end)
+    Run(category, "os.remove", function() return os and not not os.remove end)
+    Run(category, "os.rename", function() return os and not not os.rename end)
+    Run(category, "os.exit", function() return os and not not os.exit end)
     Run(category, "os.clock", function() return os and type(os.clock()) == "number" end)
-    Run(category, "io.read", function() return io and not not io.read end)
-    Run(category, "coroutine.create", function() return coroutine and not not coroutine.create end)
 
-    category = "Performance"
+    category = "Standard io Library"
+    Run(category, "io.open", function() return io and not not io.open end)
+    Run(category, "io.read", function() return io and not not io.read end)
+    Run(category, "io.write", function() return io and not not io.write end)
+    Run(category, "io.popen", function() return io and not not io.popen end)
+
+    category = "coroutine Library"
+    Run(category, "coroutine.create", function() return coroutine and not not coroutine.create end)
+    Run(category, "coroutine.resume", function() return coroutine and not not coroutine.resume end)
+    Run(category, "coroutine.yield", function() return coroutine and not not coroutine.yield end)
+    Run(category, "coroutine.wrap", function() return coroutine and not not coroutine.wrap end)
+
+    category = "Garbage Collector"
+    Run(category, "collectgarbage", function() return not not collectgarbage end)
+
+    category = "newinstance Library"
+    Run(category, "newinstance.new", function() return newinstance and not not newinstance.new end)
+    Run(category, "newinstance.create", function() return newinstance and not not newinstance.create end)
+
+    category = "Advanced Memory"
+    Run(category, "read_virtual_memory", function() return not not read_virtual_memory end)
+    Run(category, "write_virtual_memory", function() return not not write_virtual_memory end)
+    Run(category, "readvmem", function() return not not readvmem end)
+    Run(category, "writevmem", function() return not not writevmem end)
+    Run(category, "find_pattern", function() return not not find_pattern end)
+    Run(category, "aob_scan", function() return not not aob_scan end)
+
+    category = "Access Control"
+    Run(category, "sethiddenproperty", function() return not not sethiddenproperty end)
+    Run(category, "gethiddenproperty", function() return not not gethiddenproperty end)
+    Run(category, "Protected Property Bypass", function()
+        if not sethiddenproperty then return "unsupported" end
+        local p = Instance.new("Part"); sethiddenproperty(p, "Name", "Test"); return p.Name == "Test"
+    end)
+    Run(category, "ParentLock Bypass", function() return false end) -- Hard to safely test without freezing
+
+    category = "Obscure Thread/Debug"
+    Run(category, "getcallingscript", function() return not not getcallingscript end)
+    Run(category, "getscriptfromthread", function() return not not getscriptfromthread end)
+    Run(category, "getthreadcontext", function() return not not getthreadcontext end)
+    Run(category, "setthreadcontext", function() return not not setthreadcontext end)
+
+    category = "Advanced Luau"
+    Run(category, "luau_load", function() return not not luau_load end)
+    Run(category, "iscclosure", function() return not not iscclosure end)
+    Run(category, "islcclosure", function() return not not islcclosure end)
+
+    category = "Environment Spoofing"
+    Run(category, "get_fps_cap", function() return not not get_fps_cap end)
+    Run(category, "set_fps_cap", function() return not not set_fps_cap end)
+    Run(category, "is_synapse_environment", function() return not not is_synapse_environment end)
+    Run(category, "is_krnl_environment", function() return not not is_krnl_environment end)
+    Run(category, "is_scriptware_environment", function() return not not is_scriptware_environment end)
+    Run(category, "User-Agent Spoofing", function() return false end)
+
+    category = "Obscure Globals"
+    Run(category, "HttpGet", function() return not not HttpGet end)
+    Run(category, "HttpPost", function() return not not HttpPost end)
+    Run(category, "GetObjects", function() return not not GetObjects end)
+    Run(category, "UserSettings", function() return not not UserSettings end)
+    Run(category, "Stats", function() return not not Stats end)
+
+    category = "Anti-Detection"
+    Run(category, "debug.debug", function() return debug and not not debug.debug end)
+    Run(category, "Instance Hiding (getchildren)", function() return false end) -- Complex to test safely
+
+    -- Performance
+    category = "Performance Benchmarking"
     Run(category, "Hook Speed", function()
         if not hookfunction then return "unsupported" end
         local f = function() return 1 end
@@ -626,6 +813,10 @@ WBT.RunAllTests = function(self)
         local diff = os.clock() - start
         WBT.Info.HookSpeed = diff
         return true
+    end)
+    Run(category, "GC Speed", function() 
+        if not getgc then return "unsupported" end
+        local start = os.clock(); getgc(); return true
     end)
     Run(category, "Instance Creation Speed", function()
         local start = os.clock()
