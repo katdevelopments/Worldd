@@ -1,7 +1,5 @@
-// Roblox Version: version-1849ecbff0824113 (LIVE)
+// Roblox Version: version-5aed1822f52c4b03 (LIVE)
 // Byfron Version(s): [hyperion-secured] [yara-secured]
-// Roblox Version: version-5aed1822f52c4b03
-// Byfron Version: ???
 namespace offsets {
     inline constexpr uintptr_t Adornee = 0xD0;
     inline constexpr uintptr_t Anchored = 0x1AE;
