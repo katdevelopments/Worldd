@@ -1,4 +1,4 @@
-print("WBT Mobile Script Initialized")
+print("WBT Script Initialized")
 
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -90,7 +90,7 @@ function GUI:Create()
 
     -- Main GUI
     GUI.ScreenGui = Create("ScreenGui", {
-        Name = "WBT_Mobile_UI",
+        Name = "WBT_UI",
         Parent = parent,
         ResetOnSpawn = false,
         DisplayOrder = 999
