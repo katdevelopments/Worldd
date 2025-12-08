@@ -1,15 +1,15 @@
-// Roblox Version: version-138c1a7864754c2a (LIVE)
+// Roblox Version: version-2063d5e630ec4e98 (LIVE)
 // Byfron Version(s): [hyperion-secured] [yara-secured]
-const uint64_t gettop_address       = 0x1034F6223; // lua_gettop
-const uint64_t checkstack_address  = 0x1034F5F97; // lua_checkstack
-const uint64_t pushvalue_address    = 0x1034F6471; // lua_pushvalue
-const uint64_t pushlstring_address  = 0x1034F70D6; // lua_pushlstring
-const uint64_t pushcclosure_address = 0x1034F72D3; // lua_pushcclosure
-const uint64_t getfield_address    = 0x1034F74D7; // lua_getfield
-// getglobal is the same as getfield, it just fetches it from globalsindex instead of wtv index u specify 
-const uint64_t setfield_address     = 0x1034F7B3C; // lua_setfield
-const uint64_t call_address         = 0x1034F8042; // lua_call
-const uint64_t pcally_address        = 0x1034F9F93; // lua_pcally 
-// lua_pcall does not exist
-const uint64_t tolstring_address    = 0x1034F6A60; // lua_tolstring
-const uint64_t settop_address       = 0x1034F6235; // lua_settop
+const uintptr_t Print = 0x1001A27C8; // found in 'Current Identity is %d'
+const uintptr_t EnableLoadModule = 0x1057CB110; // found in 'EnableLoadModule'
+const uintptr_t TaskSpawn = 0x100DA9BDE; // found in 'Spawn function requires 1 argument' or 'spawn is not available for AuroraScripts'
+const uintptr_t LuaVMLoad = 0x100E06722; // found in 'oldResualt, moduleref  = ...\n'
+const uintptr_t RawScheduler = 0x1060EC350 // found in 'FrameTime' the function above it
+//
+const uintptr_t lua_GetTop = 0x1034F6223 // found in 'Max lua stack size reached' the function in if
+const uintptr_t lua_SetTop = 0x1034F6235 // found in 'Expected table argument, got %s' 3 functions above the last if
+const uintptr_t lua_CheckStack = 0x1034F5F97 // found in 'cannot %s non-suspended coroutine with arguments' function in the last if
+//
+const uintptr_t JobName = 0x18;  // found in 'TaskScheduler::Job:'
+const uintptr_t JobStart = 0x1F0; // found in 'TaskScheduler::Job:'
+const uintptr_t JobEnd = 0x1F8; // found in 'TaskScheduler::Job:'
