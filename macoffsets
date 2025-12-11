@@ -1,3 +1,6 @@
+// Roblox Version: version-ae027c932bf54833 (LIVE)
+// Byfron Version(s): [hyperion-secured] [yara-secured]
+
 const uintptr_t TaskScheduler      = 0x106A3BE80; // qword_106A3BE80
 const uintptr_t JobToScriptContext = 0x210; 
 const uintptr_t jobStart           = 0x1F0; 
