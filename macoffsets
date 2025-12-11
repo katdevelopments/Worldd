@@ -1,21 +1,23 @@
-const uintptr_t TaskScheduler      = 0x106A3BD80; // qword_106A3BD80
+const uintptr_t TaskScheduler      = 0x106A3BE80; // qword_106A3BE80
 const uintptr_t JobToScriptContext = 0x210; 
 const uintptr_t jobStart           = 0x1F0; 
 const uintptr_t jobEnd             = 0x1F8; 
 const uintptr_t jobName            = 0x28; 
 
-const uintptr_t Print              = 0x1001B0C8C; 
-const uintptr_t LuaVMLoad          = 0x100E21E82; 
-const uintptr_t NewThread          = 0x10352CA93; 
-const uintptr_t GetState           = 0x100E6E04E; 
-const uintptr_t Spawn              = 0x100DC50B2; // not task.spawn()
+const uintptr_t Print              = 0x1001B02CC; 
+const uintptr_t LuaVMLoad          = 0x100E21E16; 
+const uintptr_t NewThread          = 0x10352C8DB; 
+const uintptr_t GetState           = 0x100E6DF2E;
+const uintptr_t Spawn              = 0x100DC4F92; 
+const uintptr_t TaskWait           = 0x100DC8B14; 
+const uintptr_t TaskSynchronise       = 0x100DC8308; 
 
-const uintptr_t GetTop               = 0x10352CB3F; // lua_gettop
+const uintptr_t GetTop               = 0x10352C987; // tostring
 const uintptr_t top                  = 0x28;
 const uintptr_t base                 = 0x38;
-const uintptr_t SetTop               = 0x10352CB91; // lua_settop
-const uintptr_t PushValue            = 0x10352CD8D; // first 
-const uintptr_t SetField             = 0x10352E450; // second
-const uintptr_t GetField             = 0x10352DDEB; // decomp third, 1 below "_LOADED"
-const uintptr_t PushlString          = 0x10352D9F2; // fourth
-const uintptr_t PushcClosure         = 0x10352DBEF; // eighth / tenth
+const uintptr_t SetTop               = 0x10352C9D9; // decomp third, lua_settop(rl, -2) / lua_settop(a1, 4294967294LL)
+const uintptr_t PushValue            = 0x10352CBD5; // first 
+const uintptr_t SetField             = 0x10352E298; // second
+const uintptr_t GetField             = 0x10352DC33; // decomp third, 1 below "_LOADED"
+const uintptr_t PushlString          = 0x10352D83A; // fourth
+const uintptr_t PushcClosure         = 0x10352DA37; // 7th / 9th
