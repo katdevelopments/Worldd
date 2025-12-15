@@ -1,7 +1,6 @@
 // Roblox Version: version-ae027c932bf54833 (LIVE)
 // Byfron Version(s): [hyperion-secured] [yara-secured]
 
-
 // ============================================
 //      Sigma Dumper (developed by savage)     
 // ============================================
@@ -149,3 +148,4 @@ inline uintptr_t cl_l_p = 0x18; // took: 2.166ms
 inline uintptr_t cl_l_uprefs = 0x20; // took: 3.421ms
 inline uintptr_t ci_flags = 0x24; // took: 14.832ms
 inline uintptr_t ci_func = 0x10; // took: 2.438ms
+
