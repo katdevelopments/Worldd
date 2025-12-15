@@ -2,6 +2,7 @@
 // Byfron Version(s): [hyperion-secured] [yara-secured]
 
 // DLL OFFSET
+// ❌ DLLOFFSET not found
 
 // LUA STATE
 inline uintptr_t GetGlobalState(uintptr_t ScriptContext, uintptr_t& a2, uintptr_t& a3) {
@@ -35,10 +36,13 @@ uintptr_t get_lua_state()
 }
 
 // DECRYPT LUA STATE
+// ❌ DECRYPTLUASTATE not found
 
 // FUNCTIONS (yub)
+// ❌ FUNCTIONSYUB not found
 
 // CLIENT OFFSETS (yub)
+// ❌ CLIENTOFFSETSYUB not found
 
 // CLIENT OFFSETS (rbxoffsets)
 
@@ -197,3 +201,4 @@ namespace offsets {
         constexpr uintptr_t ControlFlowGuard         = RB_DLL(0xDF7D50);
     }
 }
+
