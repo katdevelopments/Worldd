@@ -1,20 +1,20 @@
-// Roblox Version: version-eaebe135b3ec446b (LIVE)
+// Roblox Version: version-5b077c09380f4fe6 (LIVE)
 // Byfron Version(s): [hyperion-secured] [yara-secured]
 /*
 Dumper version: c7a9678
-Dumped at: 16:37 12/12/2025
-Total offsets: 177
+Dumped at: 21:19 17/12/2025
+Total offsets: 175
 */
 
 #include <cstdint>
 #include <string>
 namespace Offsets {
-    inline std::string ClientVersion = "version-eaebe135b3ec446b";
+    inline std::string ClientVersion = "version-5b077c09380f4fe6";
 
     namespace AnimationTrack {
          inline constexpr uintptr_t Animation = 0xd0;
          inline constexpr uintptr_t Animator = 0x118;
-         inline constexpr uintptr_t IsPlaying = 0x518;
+         inline constexpr uintptr_t IsPlaying = 0x2bd;
          inline constexpr uintptr_t Looped = 0xf5;
          inline constexpr uintptr_t Speed = 0xe4;
     }
@@ -33,11 +33,6 @@ namespace Offsets {
          inline constexpr uintptr_t Size = 0x1b0;
          inline constexpr uintptr_t Transparency = 0xf0;
          inline constexpr uintptr_t ValidatePrimitive = 0x6;
-    }
-
-    namespace BaseScript {
-         inline constexpr uintptr_t IsCoreScript = 0x0;
-         inline constexpr uintptr_t ModuleFlags = 0x0;
     }
 
     namespace ByteCode {
@@ -72,22 +67,22 @@ namespace Offsets {
     }
 
     namespace FFlags {
-         inline constexpr uintptr_t DebugDisableTimeoutDisconnect = 0x67ad7a0;
-         inline constexpr uintptr_t EnableLoadModule = 0x679c8f8;
-         inline constexpr uintptr_t PartyPlayerInactivityTimeoutInSeconds = 0x676ba70;
-         inline constexpr uintptr_t TaskSchedulerTargetFps = 0x74bfee4;
-         inline constexpr uintptr_t WebSocketServiceEnableClientCreation = 0x67ba738;
+         inline constexpr uintptr_t DebugDisableTimeoutDisconnect = 0x67ae7a0;
+         inline constexpr uintptr_t EnableLoadModule = 0x679d8f8;
+         inline constexpr uintptr_t PartyPlayerInactivityTimeoutInSeconds = 0x676ca70;
+         inline constexpr uintptr_t TaskSchedulerTargetFps = 0x74c0e6c;
+         inline constexpr uintptr_t WebSocketServiceEnableClientCreation = 0x67bb778;
     }
 
     namespace FakeDataModel {
-         inline constexpr uintptr_t Pointer = 0x7d02728;
+         inline constexpr uintptr_t Pointer = 0x7d03628;
          inline constexpr uintptr_t RealDataModel = 0x1c0;
     }
 
     namespace GuiObject {
          inline constexpr uintptr_t BackgroundColor3 = 0x550;
          inline constexpr uintptr_t BorderColor3 = 0x55c;
-         inline constexpr uintptr_t Image = 0xa20;
+         inline constexpr uintptr_t Image = 0xa48;
          inline constexpr uintptr_t LayoutOrder = 0x58c;
          inline constexpr uintptr_t Position = 0x520;
          inline constexpr uintptr_t RichText = 0xae0;
@@ -172,9 +167,9 @@ namespace Offsets {
     }
 
     namespace MouseService {
-         inline constexpr uintptr_t InputObject = 0xa0;
-         inline constexpr uintptr_t MousePosition = 0xa0;
-         inline constexpr uintptr_t SensitivityPointer = 0x7dae210;
+         inline constexpr uintptr_t InputObject = 0x0;
+         inline constexpr uintptr_t MousePosition = 0x0;
+         inline constexpr uintptr_t SensitivityPointer = 0x7daf110;
     }
 
     namespace Player {
@@ -192,8 +187,8 @@ namespace Offsets {
     }
 
     namespace PlayerConfigurer {
-         inline constexpr uintptr_t OverrideDuration = 0x1f8;
-         inline constexpr uintptr_t Pointer = 0x7ce0268;
+         inline constexpr uintptr_t OverrideDuration = 0x5894805;
+         inline constexpr uintptr_t Pointer = 0x7ce11e8;
     }
 
     namespace PlayerMouse {
@@ -212,7 +207,7 @@ namespace Offsets {
          inline constexpr uintptr_t Enabled = 0x156;
          inline constexpr uintptr_t GamepadKeyCode = 0x13c;
          inline constexpr uintptr_t HoldDuration = 0x140;
-         inline constexpr uintptr_t KeyCode = 0x144;
+         inline constexpr uintptr_t KeyCode = 0x9f;
          inline constexpr uintptr_t MaxActivationDistance = 0x148;
          inline constexpr uintptr_t ObjectText = 0xf0;
          inline constexpr uintptr_t RequiresLineOfSight = 0x157;
@@ -258,7 +253,7 @@ namespace Offsets {
          inline constexpr uintptr_t JobName = 0x18;
          inline constexpr uintptr_t JobStart = 0x1d0;
          inline constexpr uintptr_t MaxFPS = 0x1b0;
-         inline constexpr uintptr_t Pointer = 0x7e1bc88;
+         inline constexpr uintptr_t Pointer = 0x7e1cb88;
          inline constexpr uintptr_t RenderJobToFakeDataModel = 0x38;
          inline constexpr uintptr_t RenderJobToRenderView = 0x218;
     }
@@ -274,7 +269,7 @@ namespace Offsets {
 
     namespace VisualEngine {
          inline constexpr uintptr_t Dimensions = 0x720;
-         inline constexpr uintptr_t Pointer = 0x7a684f0;
+         inline constexpr uintptr_t Pointer = 0x7a69470;
          inline constexpr uintptr_t ToDataModel1 = 0x700;
          inline constexpr uintptr_t ToDataModel2 = 0x1c0;
          inline constexpr uintptr_t ViewMatrix = 0x4b0;
@@ -283,8 +278,8 @@ namespace Offsets {
     namespace Workspace {
          inline constexpr uintptr_t CurrentCamera = 0x450;
          inline constexpr uintptr_t DistributedGameTime = 0x470;
-         inline constexpr uintptr_t Gravity = 0x26d;
-         inline constexpr uintptr_t GravityContainer = 0x70;
+         inline constexpr uintptr_t Gravity = 0x1d0;
+         inline constexpr uintptr_t GravityContainer = 0x3c8;
          inline constexpr uintptr_t PrimitivesPointer1 = 0x3c8;
          inline constexpr uintptr_t PrimitivesPointer2 = 0x240;
          inline constexpr uintptr_t ReadOnlyGravity = 0x9b0;
