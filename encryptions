@@ -5,3 +5,190 @@
 #define PROTO_DEBUGINSN_ENC VMValue1
 #define PROTO_DEBUGNAME_ENC VMValue4
 #define PROTO_TYPEINFO_ENC VMValue1
+
+#pragma once
+
+#define CommonHeader \
+    uint8_t tt; \ // 0
+    uint8_t memcat; \ // 1
+    uint8_t marked;  // 2
+
+typedef struct stringtable 
+{
+    int size; // 56
+    uint32_t nuse; // 60
+    TString** hash; // 64
+} stringtable;
+
+typedef struct CallInfo
+{
+    StkId base; // 0
+    const Instruction* savedpc; // 8
+    StkId func; // 16
+    StkId top; // 24
+    int nresults; // 32
+    unsigned int flags; // 36
+} CallInfo;
+
+typedef struct TString
+{
+    int16_t atom; // 4
+    TString* next; // 8
+    tstring_hash<unsigned int> hash; // 16
+    tstring_len<unsigned int> len; // 20
+    char data[1]; // 24
+} TString;
+
+typedef struct Table
+{
+    CommonHeader ; // 0
+    uint8_t tmcache; // 3
+    uint8_t safeenv; // 4
+    uint8_t lsizenode; // 5
+    uint8_t nodemask8; // 6
+    uint8_t readonly; // 7
+    int sizearray; // 8
+    union
+    {
+        int aboundary;
+        int lastfree; // 12
+    };
+    table_node<LuaNode*> node; // 16
+    GCObject* gclist; // 24
+    table_metatable<struct Table*> metatable; // 32
+    table_array<TValue*> array; // 40
+} Table;
+
+struct lua_State
+{
+    CommonHeader ; // 0
+    uint8_t status; // 3
+    uint8_t activememcat; // 4
+    bool singlestep; // 5
+    bool isactive; // 6
+    RBXExtraSpace* userdata; // 8
+    TString* namecall; // 16
+    GCObject* gclist; // 24
+    Table* gt; // 32
+    StkId base; // 40
+    StkId stack; // 48
+    StkId top; // 56
+    CallInfo* ci; // 64
+    luastate_global<global_State*> global; // 72
+    StkId stack_last; // 80
+    luastate_stacksize<int> stacksize; // 88
+    int size_ci; // 92
+    UpVal* openupval; // 96
+    CallInfo* end_ci; // 104
+    CallInfo* base_ci; // 112
+    unsigned short nCcalls; // 120
+    unsigned short baseCcalls; // 122
+    int cachedslot; // 124
+};
+
+typedef struct Closure
+{
+    CommonHeader ; // 0
+    uint8_t isC; // 3
+    uint8_t preload; // 4
+    uint8_t nupvalues; // 5
+    uint8_t stacksize; // 6
+    GCObject* gclist; // 8
+    struct Table* env; // 16
+
+    union
+    {
+        struct
+        {
+            closure_c_f<lua_CFunction> f; // 24
+            closure_c_debugname<const char*> debugname; // 32
+            closure_c_cont<lua_Continuation> cont; // 40
+            TValue upvals[1]; // 48
+        } c;
+
+        struct
+        {
+            closure_l_p<struct Proto*> p; // 24
+            TValue uprefs[1]; // 44
+        } l;
+    };
+} Closure;
+
+typedef struct global_State 
+{
+    stringtable strt; // -1
+    size_t GCthreshold; // -1
+    size_t totalbytes; // -1
+    int gcgoal; // -1
+    int gcstepsize; // -1
+    int gcstepmul; // -1
+    GCObject* gray; // -1
+    GCObject* weak; // -1
+    GCObject* grayagain; // -1
+    lua_Alloc frealloc; // -1
+    void* ud; // -1
+    uint8_t currentwhite; // -1
+    uint8_t gcstate; // -1
+    struct lua_Page* sweepgcopage; // -1
+    struct lua_Page* freepages[LUA_SIZECLASSES]; // -1
+    struct lua_State* mainthread; // -1
+    struct lua_Page* freegcopages[LUA_SIZECLASSES]; // -1
+    struct lua_Page* allgcopages; // -1
+    struct lua_Page* allpages; // -1
+    UpVal uvhead; // -1
+    size_t memcatbytes[LUA_MEMORY_CATEGORIES]; // -1
+    struct Table* mt[LUA_T_COUNT]; // -1
+    globalstate_ttname<TString*> ttname[LUA_T_COUNT]; // -1
+    globalstate_tmname<TString*> tmname[TM_N]; // -1
+    TValue pseudotemp; // -1
+    TValue registry; // -1
+    uint64_t rngstate; // -1
+    uint64_t ptrenckey[4]; // -1
+    TString* lightuserdataname[LUA_LUTAG_LIMIT]; // -1
+    struct lua_jmpbuf* errorjmp; // -1
+    registryfree_value registryfree; // -1
+    void (*udatagc[LUA_UTAG_LIMIT])(lua_State*, void*); // -1
+    Table* udatamt[LUA_UTAG_LIMIT]; // -1
+    lua_Callbacks cb; // -1
+    lua_ExecutionCallbacks ecb; // -1
+    GCStats gcstats; // -1
+#ifdef LUAI_GCMETRICS
+    GCMetrics gcmetrics; // -1
+#endif
+} global_State;
+
+typedef struct Proto 
+{
+    uintptr_t exectarget; // -1
+    proto_userdata<void*> userdata; // -1
+    CommonHeader ; // 0
+    uint8_t is_vararg; // 3
+    uint8_t maxstacksize; // 4
+    uint8_t nups; // 5
+    uint8_t numparams; // 6
+    uint8_t flags; // 7
+    TValue* k; // 8
+    Instruction* code; // 16
+    proto_lineinfo<uint8_t*> lineinfo; // 24
+    proto_locvars<struct LocVar*> locvars; // 32
+    proto_source<TString*> source; // 40
+    struct Proto** p; // 56
+    const Instruction* codeentry; // 64
+    proto_upvalues<TString**> upvalues; // 72
+    proto_abslineinfo<int*> abslineinfo; // 80
+    GCObject* gclist; // 88
+    proto_debuginsn<uint8_t*> debuginsn; // 96
+    proto_debugname<TString*> debugname; // 104
+    proto_typeinfo<uint8_t*> typeinfo; // 112
+    void* execdata; // 120
+    int sizek; // 136
+    int linegaplog2; // 140
+    int sizetypeinfo; // 144
+    int sizelineinfo; // 148
+    int sizecode; // 152
+    int sizelocvars; // 156
+    int bytecodeid; // 160
+    int sizep; // 164
+    int linedefined; // 168
+    int sizeupvalues; // 172
+} Proto;
