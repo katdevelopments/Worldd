@@ -386,6 +386,152 @@ namespace Offsets
     inline uintptr_t Luau_Execute               = REBASE(0x37D9E60);
 }
 
-// Client Offsets (NEXO)
+// Client Offsets (ChasM)
+#pragma once
 
+#include "Protection/VMValues.hpp"
+#include <functional>
+#include <Windows.h>
+#include <iostream>
+#include <mutex>
 
+#define REBASE(x) x + reinterpret_cast<uintptr_t>(GetModuleHandleA(nullptr))
+#define REBASEHYPERION(x) x + reinterpret_cast<uintptr_t>(GetModuleHandleA("RobloxPlayerbeta.dll"))
+
+#define MAXCAPABILITIES (0x200000000000003FLL | 0xFFFFFFF00LL) | (1ull << 48ull)
+
+inline std::vector<std::function<void()>> g_hooks;
+inline std::mutex g_hooksMutex;
+
+struct lua_State;
+
+// version-5b077c09380f4fe6
+// Dumped in 514ms
+
+// lua_State* DecryptLuaState(uintptr_t scriptContext) { 
+//     uintptr_t encryptedState = scriptContext + 0x638;
+//     uint32_t low = *reinterpret_cast<uint32_t*>(encryptedState) - reinterpret_cast<uint32_t>(encryptedState);
+//     uint32_t high = *reinterpret_cast<uint32_t*>(encryptedState + 0x4) - reinterpret_cast<uint32_t>(encryptedState);
+//     uintptr_t luaState = (static_cast<uint64_t>(high) << 32) | low;
+//     return reinterpret_cast<lua_State*>(luaState);
+// }
+
+namespace Offsets 
+{
+    const uintptr_t AppDataInfo = REBASE(0x7e15328);
+    const uintptr_t EnableLoadModule = REBASE(0x679d8f8);
+    const uintptr_t FLogDataBank = REBASE(0x7a85738);
+    const uintptr_t IdentityPtr = REBASE(0x7501758);
+    const uintptr_t KTable = REBASE(0x74c0ef0);
+    const uintptr_t LockViolationInstanceCrash = REBASE(0x67a3d30);
+    const uintptr_t LuaH_DummyNode = REBASE(0x5730168);
+    const uintptr_t LuaO_NilObject = REBASE(0x5730768);
+    const uintptr_t LuaT_Eventnames = REBASE(0x57306c0);
+    const uintptr_t LuaT_Typenames = REBASE(0x5730650);
+    const uintptr_t OpcodeLookupTable = REBASE(0x5bf4a70);
+    const uintptr_t TaskScheduler = REBASE(0x7e1cb88);
+    const uintptr_t TaskSchedulerTargetFPS = REBASE(0x74c0e6c);
+    const uintptr_t GetLuaState = REBASE(0xd778c0);
+    const uintptr_t GetGlobalState = REBASE(0xfea400);
+    const uintptr_t FireMouseClick = REBASE(0x1e34700);
+    const uintptr_t FireRightMouseClick = REBASE(0x1e348a0);
+    const uintptr_t FireMouseHoverEnter = REBASE(0x1e35ca0);
+    const uintptr_t FireMouseHoverLeave = REBASE(0x1e35e40);
+    const uintptr_t FireProximityPrompt = REBASE(0x1e95990);
+    const uintptr_t FireTouchInterest = REBASE(0x21c5b90);
+    const uintptr_t GetContextObject = REBASE(0x1023be0);
+    const uintptr_t GetCurrentThreadId = REBASE(0xda74d0);
+    const uintptr_t GetFFlag = REBASE(0x4e61d60);
+    const uintptr_t SetFFlag = REBASE(0x40701f0);
+    // Failed to dump GetIdentityStruct
+    const uintptr_t GetModuleFromVMStateMap = REBASE(0x1127640);
+    const uintptr_t GetProperty = REBASE(0xbf00e0);
+    const uintptr_t GetValues = REBASE(0xd8be90);
+    const uintptr_t LuaA_toobject = REBASE(0x37c3520);
+    const uintptr_t LuaC_step = REBASE(0x37cef00);
+    const uintptr_t LuaD_throw = REBASE(0x37d28d0);
+    const uintptr_t LuaL_checklstring = REBASE(0x37c7090);
+    const uintptr_t LuaL_getmetafield = REBASE(0x37c7530);
+    const uintptr_t LuaL_register = REBASE(0x37c8830);
+    const uintptr_t LuaM_visitgco = REBASE(0x38194a0);
+    const uintptr_t LuaVM__Load = REBASE(0xe5e2d0);
+    const uintptr_t Luau_execute = REBASE(0x37d9e60);
+    const uintptr_t Print = REBASE(0x17c51f0);
+    const uintptr_t Pseudo2Addr = REBASE(0x37c3460);
+    const uintptr_t PushInstance1 = REBASE(0x106eb30);
+    const uintptr_t PushInstance2 = REBASE(0x10329e7);
+    const uintptr_t RaiseEventInvocation = REBASE(0x17845e0);
+    const uintptr_t ScriptContextResume = REBASE(0x101c480);
+    const uintptr_t SetProtoCapabilities = REBASE(0x33e9e00);
+    const uintptr_t TaskDefer = REBASE(0x1284c90);
+    const uintptr_t TaskSpawn = REBASE(0x127f5e0);
+    const uintptr_t TaskDelay = REBASE(0x1cc9970);
+    const uintptr_t TaskWait = REBASE(0x3c0eb50);
+    const uintptr_t TaskCancel = REBASE(0x1285ba0);
+    const uintptr_t VariantCastArgs = REBASE(0xd8be90);
+    const uintptr_t VariantCastInt = REBASE(0x178ace0);
+    const uintptr_t VariantCastInt64 = REBASE(0x178afe0);
+    const uintptr_t VariantCastFloat = REBASE(0x404c630);
+
+    namespace Roblox 
+    {
+        const uintptr_t JobStart = 0x1d0;
+        const uintptr_t JobEnd = 0x1d8;
+        const uintptr_t JobName = 0x18;
+        const uintptr_t ClassDescriptor = 0x18;
+        const uintptr_t Properties = 0x5b8;
+        const uintptr_t PropertyDescriptors = 0x38;
+        const uintptr_t PropertyDescriptorBitFlags = 0x88;
+        const uintptr_t PropertyDescriptorType = 0x48;
+        const uintptr_t PropertyDescriptorGetSet = 0xa0;
+        const uintptr_t ReflectionType = 0x30;
+        const uintptr_t ScriptableMask = 0x10;
+        const uintptr_t DescriptorName = 0x8;
+        const uintptr_t Identity = 0x30;
+        const uintptr_t Capabilities = 0x50;
+
+        namespace Bytecode 
+        {
+            // Failed to dump LocalscriptBytecode
+            const uintptr_t ModulescriptBytecode = 0x150;
+        }
+
+        namespace Datamodel 
+        {
+            const uintptr_t FakeDatamodel = REBASE(0x7d03628);
+            const uintptr_t VisualEngine = REBASE(0x7a69470);
+            const uintptr_t VisualEngineToDatamodel = 0x700;
+            const uintptr_t DatamodelOffset = 0x1c0;
+            const uintptr_t ScriptContext = 0x3f0;
+            const uintptr_t RequireBypass = 0x920;
+            const uintptr_t IsCoreScript = 0x180;
+            const uintptr_t GameLoaded = 0x600;
+        }
+
+        namespace Instance 
+        {
+            // Failed to dump CallbackValue
+            const uintptr_t Name = 0xb0;
+            const uintptr_t Children = 0x70;
+            const uintptr_t Parent = 0x8;
+            const uintptr_t Primitive = 0x148;
+            const uintptr_t Overlap = 0x1e0;
+        }
+
+        namespace Player 
+        {
+            const uintptr_t LocalPlayer = 0x130;
+            const uintptr_t UserId = 0x2a8;
+            const uintptr_t TargetFrametime = 0x1b0;
+        }
+    }
+
+    namespace Hyperion 
+    {
+        // Failed to dump Bitmap
+    }
+}
+
+namespace RBX 
+{
+}
