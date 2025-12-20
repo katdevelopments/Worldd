@@ -32,6 +32,249 @@ uintptr_t get_lua_state()
     return 0;
 }
 
+// DECRYPT LUASTATE
+lua_State* DecryptLuaState(uintptr_t ScriptContext)
+{
+    *reinterpret_cast<BOOLEAN*>(ScriptContext + 0x920) = TRUE;
+
+    auto Address = ScriptContext + 0x288;
+    auto EncryptedState = reinterpret_cast<uint32_t*>(Address);
+
+    uint32_t Low  = static_cast<uint32_t>(Address) - EncryptedState[0];
+    uint32_t High = static_cast<uint32_t>(Address) - EncryptedState[1];
+
+    return reinterpret_cast<lua_State*>(
+        (static_cast<uint64_t>(High) << 32) | Low
+    );
+}
+
+// CLIENT FUNCTIONS (yub)
+constexpr uintptr_t require_lock       = (0x920);
+constexpr uintptr_t overlap            = (0x1E0);
+
+constexpr uintptr_t SCResume           = (0x850);
+constexpr uintptr_t get_set            = (0x90);
+constexpr uintptr_t class_desc         = (0x18);
+constexpr uintptr_t flag_f             = (0x50);
+
+constexpr uintptr_t PropDescriptor     = (0x5B8);
+constexpr uintptr_t ttype              = (0x60);
+constexpr uintptr_t type_number        = (0x30);
+
+// CLIENT OFFSETS (yub)
+#pragma once
+
+#include <Windows.h>
+#include <iostream>
+#include <vector>
+#include <xorstr/xorstr.hpp>
+
+static uintptr_t Roblox_BASE = (uintptr_t)GetModuleHandleA(0);
+#define REBASE(x) (x + Roblox_BASE)
+inline const uintptr_t Hyperion_Base = (uintptr_t)GetModuleHandle(xorstr_("RobloxPlayerBeta.dll"));
+#define Hyperion_Rbase(x) ((x) + Hyperion_Base)
+
+
+struct SignalT;
+struct lua_State;
+struct Proto;
+
+struct DebuggerResult
+{
+    std::int32_t Result;
+    std::int32_t Unk[4];
+};
+
+struct WeakThreadRef
+{
+    std::atomic<std::int32_t> Refs;
+    lua_State* L;
+    std::int32_t ThreadRef;
+    std::int32_t ObjectId;
+    std::int32_t Unk1;
+    std::int32_t Unk2;
+
+    WeakThreadRef(lua_State* L) : Refs(0), L(L), ThreadRef(0), ObjectId(0), Unk1(0), Unk2(0) {}
+};
+typedef enum { SUCCESS, YIELD, ERR } SCResume_Result;
+
+namespace Offsets {
+    const uintptr_t BitMap                               = Hyperion_Rbase(0x10EF8);
+
+    const uintptr_t luaF_freeproto                       = REBASE(0x3828700);
+    const uintptr_t luaF_newproto                        = REBASE(0x3828240);
+    const uintptr_t luaL_argerrorL                       = REBASE(0x37C5270);
+    const uintptr_t luaL_typeerrorL                      = REBASE(0x37C52F0);
+    const uintptr_t luaL_findtable                       = REBASE(0x37C9710);
+    const uintptr_t luaL_where                           = REBASE(0x37C5410);
+    const uintptr_t luaL_getmetafield                    = REBASE(0x37C7400);
+    const uintptr_t luaL_register                        = REBASE(0x37C8830);
+    const uintptr_t currfuncname                         = REBASE(0x37C51F0);
+
+    const uintptr_t luaG_runerrorL                       = REBASE(0x37CFF60);
+    const uintptr_t luaO_pushvfstring                    = REBASE(0x37C44D0);
+    const uintptr_t newpage                              = REBASE(0x3818F50);
+    const uintptr_t newclasspage                         = REBASE(0x3819000);
+    const uintptr_t freeclasspage                        = REBASE(0x3819070);
+    const uintptr_t newgcoblock                          = REBASE(0x3819110);
+    const uintptr_t freeblock                            = REBASE(0x3819250);
+    const uintptr_t luaM_free                            = REBASE(0x3819300);
+    const uintptr_t luaM_freegco                         = REBASE(0x3819380);
+    const uintptr_t luaM_visitgco                        = REBASE(0x38194A0);
+    const uintptr_t luaM_toobig                          = REBASE(0x3818F20);
+
+    const uintptr_t close_state                          = REBASE(0x37D1310);
+    const uintptr_t lua_newstate                         = REBASE(0x37D19B0);
+    const uintptr_t f_luaopen                            = REBASE(0x37D05C0);
+    const uintptr_t lua_rawcheckstack                    = REBASE(0x37C3980);
+    const uintptr_t luaA_toobject                        = REBASE(0x37C3520);
+    const uintptr_t lua_pushvfstring                     = REBASE(0x37C44D0);
+    const uintptr_t pseudo2addr                          = REBASE(0x37C3460);
+
+    const uintptr_t luaT_objtypenamestr                  = REBASE(0x3828090);
+    const uintptr_t luaT_objtypename                     = REBASE(0x3828220);
+    const uintptr_t auxopen                              = REBASE(0x37FA270);
+    const uintptr_t luaD_throw                           = REBASE(0x37D28D0);
+    const uintptr_t luaD_rawrunprotected                 = REBASE(0x37D28A0);
+    const uintptr_t get_capabilites                      = REBASE(0x3AF0520);
+    const uintptr_t FlogDataBank                         = REBASE(0x7A85738);
+    const uintptr_t ScriptContextResume                  = REBASE(0x101C480);
+    const uintptr_t AppdataInfo                          = REBASE(0x7D032D8);
+    const uintptr_t OpcodeLookupTable                    = REBASE(0x5bf4a70);
+    const uintptr_t Print                                = REBASE(0x17C51F0);
+
+    const uintptr_t GetGlobalState                       = REBASE(0xD778C0);
+    const uintptr_t Encrypt_State                        = REBASE(0xFEA400);
+    const uintptr_t RawScheduler                         = REBASE(0x7E1CB88);
+    const uintptr_t TaskSchedulerTargetFps               = REBASE(0x74C0E6C);
+
+    const uintptr_t LuaVMLoad                            = REBASE(0xE5E2D0);
+    const uintptr_t Impersonator                         = REBASE(0x3AF05D0);
+    const uintptr_t IdentityPtr                          = REBASE(0x7501758);
+    const uintptr_t GetIdentityStruct                    = REBASE(0x9570);
+
+    const uintptr_t PushInstance                         = REBASE(0x106EB30);
+    const uintptr_t PushInstance2                        = REBASE(0x106EB80);
+    const uintptr_t Luau_Execute                         = REBASE(0x37D9E60);
+    const uintptr_t TaskDefer                            = REBASE(0x1284C90);
+
+    const uintptr_t LuaD_throw                           = REBASE(0x37D28D0);
+    const uintptr_t LuaO_NilObject                       = REBASE(0x5730768);
+    const uintptr_t LuaH_DummyNode                       = REBASE(0x5730168);
+    const uintptr_t KTable                               = REBASE(0x74C0EF0);
+
+    const uintptr_t FireMouseClick                       = REBASE(0x1E34700);
+    const uintptr_t FireRightMouseClick                  = REBASE(0x1E348A0);
+    const uintptr_t FireMouseHoverEnter                  = REBASE(0x1E35CA0);
+    const uintptr_t FireMouseHoverLeave                  = REBASE(0x1E35E40);
+
+    const uintptr_t FireTouchInterest                    = REBASE(0x21C5B90);
+    const uintptr_t GetProperty                          = REBASE(0xBF00E0);
+    const uintptr_t FireProximityPrompt                  = REBASE(0x1E95990);
+
+    namespace InternalFastFlags {
+        const uintptr_t EnableLoadModule                 = REBASE(0x679D8F8);
+        const uintptr_t DebugCheckRenderThreading        = REBASE(0x67D24B0);
+        const uintptr_t RenderDebugCheckThreading2       = REBASE(0x67D1E60);
+        const uintptr_t DisableCorescriptLoadstring      = REBASE(0x679D8C8);
+        const uintptr_t LockViolationInstanceCrash       = REBASE(0x67A3D50);
+        const uintptr_t LockViolationScriptCrash         = REBASE(0x67970E0);
+        const uintptr_t WndProcessCheck                  = REBASE(0x6785248);
+        const uintptr_t LuaStepIntervalMsOverrideEnabled = REBASE(0x679A748);
+        const uintptr_t Crash147727ReportAll             = REBASE(0x679B8C8);
+        const uintptr_t HangDetectionReport              = REBASE(0x67EF998);
+        const uintptr_t HangDetectionForceCrash          = REBASE(0x67EF978);
+        const uintptr_t DebugDisableTimeoutDisconnect    = REBASE(0x67AE7A0);
+        const uintptr_t SetFastFlag                      = REBASE(0x40701F0);
+    }
+
+    namespace yubxuserData {
+        const uintptr_t SCResume_offset                  = 0x850;
+        const uintptr_t DisableRequireLock               = 0x920;
+    }
+
+    namespace ReplicateSignal {
+        const uintptr_t Register                         = REBASE(0x2300C70);
+        const uintptr_t CastArgs                         = REBASE(0xD8BE90);
+        const uintptr_t VariantCastInt64                 = REBASE(0x178AFE0); // (isFree)
+        const uintptr_t VariantCastInt                   = REBASE(0x178ACE0);
+        const uintptr_t VariantCastFloat                 = REBASE(0x178B520);
+    }
+
+    namespace Instance {
+        constexpr uintptr_t PropertyDescriptor           = 0x5B8;
+        constexpr uintptr_t ClassName                    = 0x8;
+        constexpr uintptr_t Flags                        = 0x50;
+    }
+
+    namespace Scripts {
+        const uintptr_t LocalScriptByteCode              = 0x1A8;
+        const uintptr_t ModuleScriptByteCode             = 0x148;
+                                                         
+        const uintptr_t weak_thread_node                 = 0x180;
+        const uintptr_t weak_thread_ref                  = 0x8;
+        const uintptr_t weak_thread_ref_live             = 0x20;
+        const uintptr_t weak_thread_ref_live_thread      = 0x8;
+    }
+            
+    namespace TaskScheduler {
+        const uintptr_t FpsCap                           = 0x1B0;
+        const uintptr_t JobStart                         = 0x1D0;
+        const uintptr_t JobEnd                           = 0x1D8;
+            
+        namespace Job {
+            const uintptr_t Name                         = 0x18;
+            const uintptr_t TypeName                     = 0x150;
+            
+            namespace WaitingHybridScriptsJob {
+                const uintptr_t ScriptContext            = 0x1F8;
+            }
+        }
+    }
+
+    namespace DataModel {        
+        constexpr uintptr_t FakeDataModelToDataModel     = 0x1C0;
+        const     uintptr_t FakeDataModelPointer         = REBASE(0x7D03628);
+        constexpr uintptr_t Overlap                      = 0x1E0;
+
+        constexpr uintptr_t PlaceId                      = 0x190;
+        constexpr uintptr_t Name                         = 0xA8;
+        constexpr uintptr_t ClassDescriptor              = 0x18;
+        constexpr uintptr_t PrimitiveTouch               = 0x140;
+    }
+} 
+            
+namespace Roblox {
+    inline auto Print = (uintptr_t(__fastcall*)(int, const char*, ...))Offsets::Print;
+    inline auto PushInstance = (uintptr_t * (__fastcall*)(lua_State*, uintptr_t))Offsets::PushInstance;
+    inline auto PushInstance2 = (uintptr_t * (__fastcall*)(lua_State*, std::shared_ptr<uintptr_t*>))Offsets::PushInstance2;
+    inline auto FireProximityPrompt = (uintptr_t * (__thiscall*)(uintptr_t))Offsets::FireProximityPrompt;
+    inline auto FireMouseClick = (void(__fastcall*)(__int64 a1, float a2, __int64 a3))Offsets::FireMouseClick;
+
+    inline auto FireRightMouseClick = (void(__fastcall*)(__int64 a1, float a2, __int64 a3))Offsets::FireRightMouseClick;
+    inline auto FireMouseHoverEnter = (void(__fastcall*)(__int64 a1, __int64 a2))Offsets::FireMouseHoverEnter;
+    inline auto FireMouseHoverLeave = (void(__fastcall*)(__int64 a1, __int64 a2))Offsets::FireMouseHoverLeave;
+    inline auto FireTouchInterest = (void(__fastcall*)(uintptr_t, uintptr_t, uintptr_t, bool, bool))Offsets::FireTouchInterest;
+    inline auto GetState = (uintptr_t(__fastcall*)(int64_t, uint64_t*, uint64_t*))Offsets::GetGlobalState;
+
+    inline auto KTable = reinterpret_cast<uintptr_t*>(Offsets::KTable);
+    inline auto GetProperty = (uintptr_t * (__thiscall*)(uintptr_t, uintptr_t*))Offsets::GetProperty;
+    inline auto Impersonator = (void(__fastcall*)(void*, void*, const void*, uint64_t, uint64_t))Offsets::Impersonator;
+    inline auto GetIdentityStruct = reinterpret_cast<void* (__fastcall*)(void*)>(Offsets::GetIdentityStruct);
+    inline auto TaskDefer = (int(__fastcall*)(lua_State*))Offsets::TaskDefer;
+
+    inline auto CastArgs = (uintptr_t(__fastcall*)(lua_State * L, int, void*, bool, int))Offsets::ReplicateSignal::CastArgs;
+    inline auto CastInt = (void(__fastcall*)(void* L))Offsets::ReplicateSignal::VariantCastInt;
+    inline auto CastInt64 = (void(__fastcall*)(void* L))Offsets::ReplicateSignal::VariantCastInt64;
+    inline auto CastFloat = (void(__fastcall*)(void* L))Offsets::ReplicateSignal::VariantCastFloat;
+	inline auto SCResume = (int(__fastcall*)(int64_t, DebuggerResult*, WeakThreadRef**, int32_t, bool, const char*))Offsets::ScriptContextResume;
+    inline auto Luau_Execute = (void(__fastcall*)(lua_State*))Offsets::Luau_Execute;
+    inline auto LuaD_Throw = (void(__fastcall*)(lua_State*, int))Offsets::LuaD_throw;
+
+    inline auto ValidateBytecode = (int(__fastcall*)(__int64, const char*, unsigned char*, unsigned __int64, int))Offsets::ValidateBytecode_offset;
+
+}
+
 // CLIENT OFFSETS (rbxoffsets)
 #pragma once
 
@@ -144,4 +387,5 @@ namespace Offsets
 }
 
 // Client Offsets (NEXO)
+
 
