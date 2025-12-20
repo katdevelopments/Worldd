@@ -5,6 +5,8 @@
 #define PROTO_DEBUGINSN_ENC VMValue1
 #define PROTO_DEBUGNAME_ENC VMValue4
 #define PROTO_TYPEINFO_ENC VMValue1
+#define PROTO_LOCVARS_ENC   VMValue3
+#define PROTO_UPVALUES_ENC  VMValue4 // luaF_freeproto
 
 #pragma once
 
