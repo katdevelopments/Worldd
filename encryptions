@@ -1,12 +1,17 @@
 // Roblox Version: version-5b077c09380f4fe6 (LIVE)
 // Byfron Version(s): [hyperion-secured] [yara-secured]
 
-#define PROTO_LINEINFO_ENC VMValue1
+// Encryptions (by felix)
+
+#define PROTO_LINEINFO_ENC  VMValue1
 #define PROTO_DEBUGINSN_ENC VMValue1
-#define PROTO_DEBUGNAME_ENC VMValue4
-#define PROTO_TYPEINFO_ENC VMValue1
 #define PROTO_LOCVARS_ENC   VMValue3
-#define PROTO_UPVALUES_ENC  VMValue4
+#define PROTO_TYPEINFO_ENC  VMValue1
+#define PROTO_UPVALUES_ENC  VMValue4 
+#define PROTO_DEBUGNAME_ENC VMValue4
+#define TSTRING_LEN_HASH VMValue4
+
+// Auto generated structs (by igromanvtv)
 
 #pragma once
 
