@@ -1,7 +1,7 @@
 // Roblox Version: version-5b077c09380f4fe6 (LIVE)
 // Byfron Version(s): [hyperion-secured] [yara-secured]
 
-// LUA STATE
+// LUA STATE (yub)
 inline uintptr_t GetGlobalState(uintptr_t ScriptContext, uintptr_t& a2, uintptr_t& a3) {
     a2 = 0;
     a3 = 0;
@@ -10,7 +10,6 @@ inline uintptr_t GetGlobalState(uintptr_t ScriptContext, uintptr_t& a2, uintptr_
     return globalstate;
 }
 
-//Ducks is gonna touch me
 uintptr_t get_lua_state()
 {
     uintptr_t base = script_context();
@@ -32,7 +31,7 @@ uintptr_t get_lua_state()
     return 0;
 }
 
-// DECRYPT LUASTATE
+// DECRYPT LUASTATE (yub)
 lua_State* DecryptLuaState(uintptr_t ScriptContext)
 {
     *reinterpret_cast<BOOLEAN*>(ScriptContext + 0x920) = TRUE;
@@ -535,3 +534,4 @@ namespace Offsets
 namespace RBX 
 {
 }
+
