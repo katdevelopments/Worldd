@@ -1,24 +1,39 @@
 // Roblox Version: version-5b077c09380f4fe6 (LIVE)
 // Byfron Version(s): [hyperion-secured] [yara-secured]
 
-// Encryptions (by felix)
+// Encryptions (by enzo)
 
-#define PROTO_LINEINFO_ENC  VMValue1
-#define PROTO_DEBUGINSN_ENC VMValue1
-#define PROTO_LOCVARS_ENC   VMValue3
-#define PROTO_TYPEINFO_ENC  VMValue1
-#define PROTO_UPVALUES_ENC  VMValue4 
-#define PROTO_DEBUGNAME_ENC VMValue4
-#define TSTRING_LEN_HASH VMValue4
+#define LSTATE_GLOBAL_ENC VMVALUE0
+#define CLOSURE_FUNC_ENC VMVALUE0
+#define TABLE_MEMBER_ENC VMVALUE0
+#define TABLE_META_ENC VMVALUE0
+#define TSTRING_LEN_ENC VMVALUE0
+#define GSTATE_TTNAME_ENC VMVALUE0
+#define GSTATE_TMNAME_ENC VMVALUE0
+#define PROTO_DEBUGINSN_ENC VMVALUE1
+#define CLOSURE_DEBUGNAME_ENC VMVALUE4
+#define PROTO_TYPEINFO_ENC VMVALUE1
+#define PROTO_ABSLINEINFO_ENC VMVALUE3
+#define PROTO_DEBUGNAME_ENC VMVALUE4
+#define PROTO_MEMBER1_ENC VMVALUE0
+#define PROTO_USERDATA_ENC VMVALUE3
+#define PROTO_UPVALUES_ENC VMVALUE1
+#define PROTO_LOCVARS_ENC VMVALUE3
+#define PROTO_SOURCE_ENC VMVALUE2
+#define PROTO_LINEINFO_ENC VMVALUE1 
+#define CLOSURE_CONT_ENC VMVALUE2
+#define LSTATE_STACKSIZE_ENC VMVALUE3
+#define TSTRING_HASH_ENC VMVALUE4
+#define UDATA_META_ENC VMVALUE2
 
 // Auto generated structs (by igromanvtv)
 
 #pragma once
 
 #define CommonHeader \
-    uint8_t tt; \ // 0
-    uint8_t memcat; \ // 1
-    uint8_t marked;  // 2
+    uint8_t marked; \ // 0
+    uint8_t tt; \ // 1
+    uint8_t memcat;  // 2
 
 typedef struct stringtable 
 {
@@ -26,7 +41,7 @@ typedef struct stringtable
     uint32_t nuse; // 60
     TString** hash; // 64
 } stringtable;
-
+	
 typedef struct CallInfo
 {
     StkId base; // 0
@@ -66,31 +81,42 @@ typedef struct Table
     table_array<TValue*> array; // 40
 } Table;
 
-struct lua_State
-{
-    CommonHeader ; // 0
-    uint8_t status; // 3
-    uint8_t activememcat; // 4
-    bool singlestep; // 5
-    bool isactive; // 6
-    RBXExtraSpace* userdata; // 8
-    TString* namecall; // 16
-    GCObject* gclist; // 24
-    Table* gt; // 32
-    StkId base; // 40
-    StkId stack; // 48
-    StkId top; // 56
-    CallInfo* ci; // 64
-    luastate_global<global_State*> global; // 72
-    StkId stack_last; // 80
-    luastate_stacksize<int> stacksize; // 88
-    int size_ci; // 92
-    UpVal* openupval; // 96
-    CallInfo* end_ci; // 104
-    CallInfo* base_ci; // 112
-    unsigned short nCcalls; // 120
-    unsigned short baseCcalls; // 122
-    int cachedslot; // 124
+struct lua_State {
+    CommonHeader;
+
+    uint8_t status;
+
+    uint8_t activememcat;
+
+    bool singlestep;
+    bool isactive;
+
+    RobloxExtraSpace* userdata;
+
+    TString* namecall;
+
+    GCObject* gclist;
+    LuaTable* gt;
+
+    StkId top;
+    StkId stack;
+    StkId base;
+    CallInfo* ci;
+    global_State* global;
+    StkId stack_last;
+
+    LSTATE_STACKSIZE_ENC< int > stacksize;
+    int size_ci;
+
+    UpVal* openupval;
+
+    CallInfo* end_ci;
+    CallInfo* base_ci;
+
+    unsigned short nCcalls;
+    unsigned short baseCcalls;
+
+    int cachedslot;
 };
 
 typedef struct Closure
@@ -121,53 +147,49 @@ typedef struct Closure
     };
 } Closure;
 
-typedef struct global_State 
-{
-    stringtable strt; // -1
-    size_t GCthreshold; // -1
-    size_t totalbytes; // -1
-    int gcgoal; // -1
-    int gcstepsize; // -1
-    int gcstepmul; // -1
-    GCObject* gray; // -1
-    GCObject* weak; // -1
-    GCObject* grayagain; // -1
-    lua_Alloc frealloc; // -1
-    void* ud; // -1
-    uint8_t currentwhite; // -1
-    uint8_t gcstate; // -1
-    struct lua_Page* sweepgcopage; // -1
-    struct lua_Page* freepages[LUA_SIZECLASSES]; // -1
-    struct lua_State* mainthread; // -1
-    struct lua_Page* freegcopages[LUA_SIZECLASSES]; // -1
-    struct lua_Page* allgcopages; // -1
-    struct lua_Page* allpages; // -1
-    UpVal uvhead; // -1
-    size_t memcatbytes[LUA_MEMORY_CATEGORIES]; // -1
-    struct Table* mt[LUA_T_COUNT]; // -1
-    globalstate_ttname<TString*> ttname[LUA_T_COUNT]; // -1
-    globalstate_tmname<TString*> tmname[TM_N]; // -1
-    TValue pseudotemp; // -1
-    TValue registry; // -1
-    uint64_t rngstate; // -1
-    uint64_t ptrenckey[4]; // -1
-    TString* lightuserdataname[LUA_LUTAG_LIMIT]; // -1
-    struct lua_jmpbuf* errorjmp; // -1
-    registryfree_value registryfree; // -1
-    void (*udatagc[LUA_UTAG_LIMIT])(lua_State*, void*); // -1
-    Table* udatamt[LUA_UTAG_LIMIT]; // -1
-    lua_Callbacks cb; // -1
-    lua_ExecutionCallbacks ecb; // -1
-    GCStats gcstats; // -1
-#ifdef LUAI_GCMETRICS
-    GCMetrics gcmetrics; // -1
-#endif
+typedef struct global_State {
+    int gcgoal;
+    int gcstepsize;
+    int gcstepmul;
+    uint8_t __padding_0[ 4 ];
+    lua_Alloc frealloc;
+    void* ud;
+    size_t GCthreshold;
+    size_t totalbytes;
+    uint8_t currentwhite;
+    uint8_t gcstate;
+    uint8_t __padding_1[ 4 ];
+    stringtable strt;
+    GCObject* gray;
+    GCObject* grayagain;
+    GCObject* weak;
+    UpVal uvhead;
+    struct lua_Page* freegcopages[ LUA_SIZECLASSES ];
+    struct lua_Page* freepages[ LUA_SIZECLASSES ];
+    struct lua_Page* sweepgcopage;
+    size_t memcatbytes[ LUA_MEMORY_CATEGORIES ];
+    struct lua_State* mainthread;
+    struct lua_Page* allpages;
+    struct lua_Page* allgcopages;
+    struct LuaTable* mt[ LUA_T_COUNT ];
+    TString* ttname[ LUA_T_COUNT ];
+    TString* tmname[ TM_N ];
+    TValue pseudotemp;
+    TValue registry;
+    int registryfree;
+    uint64_t ptrenckey[ 4 ];
+    uint64_t rngstate;
+    lua_Callbacks cb;
+    lua_ExecutionCallbacks ecb;
+    char _[ 0x8 ];
+    void ( *udatagc[ LUA_UTAG_LIMIT ] )( lua_State*, void* );
+    LuaTable* udatamt[ LUA_UTAG_LIMIT ];
+    TString* lightuserdataname[ LUA_LUTAG_LIMIT ];
+    GCStats gcstats;
 } global_State;
 
 typedef struct Proto 
 {
-    uintptr_t exectarget; // -1
-    proto_userdata<void*> userdata; // -1
     CommonHeader ; // 0
     uint8_t is_vararg; // 3
     uint8_t maxstacksize; // 4
@@ -179,6 +201,7 @@ typedef struct Proto
     proto_lineinfo<uint8_t*> lineinfo; // 24
     proto_locvars<struct LocVar*> locvars; // 32
     proto_source<TString*> source; // 40
+    proto_userdata<void*> userdata; // 48
     struct Proto** p; // 56
     const Instruction* codeentry; // 64
     proto_upvalues<TString**> upvalues; // 72
@@ -188,6 +211,7 @@ typedef struct Proto
     proto_debugname<TString*> debugname; // 104
     proto_typeinfo<uint8_t*> typeinfo; // 112
     void* execdata; // 120
+    uintptr_t exectarget; // 128
     int sizek; // 136
     int linegaplog2; // 140
     int sizetypeinfo; // 144
