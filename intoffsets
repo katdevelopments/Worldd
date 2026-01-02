@@ -1,5 +1,5 @@
 // Roblox Version: version-5b077c09380f4fe6 (OUTDATED)
-// Byfron Version(s): [hyperion-secured] [yara-secured]
+// Byfron Version(s): Hyperion 5.2
 
 // LUA STATE (yub)
 inline uintptr_t GetGlobalState(uintptr_t ScriptContext, uintptr_t& a2, uintptr_t& a3) {
