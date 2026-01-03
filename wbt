@@ -11,7 +11,7 @@ local WBT_SETTINGS = {
     LogLevel = "Info",
     UseGui = true,
     AutoCopyLink = false,
-    TestTimeout = 0.5 -- Seconds to wait before failing a test (prevents freezing)
+    TestTimeout = 0.5 
 }
 
 local WBT = {}
@@ -20,21 +20,19 @@ WBT.Results = {}
 WBT.Logs = {}
 WBT.Stats = { Total = 0, Passed = 0 }
 
--- // UI THEME CONFIG (Pitch Black Theme) // --
 local THEME = {
-    Background = Color3.fromRGB(0, 0, 0),          -- Pitch Black
-    Header = Color3.fromRGB(0, 0, 0),              -- Pitch Black
-    ContentBg = Color3.fromRGB(0, 0, 0),           -- Pitch Black
-    Text = Color3.fromRGB(255, 255, 255),          -- Pure White
-    SubText = Color3.fromRGB(180, 180, 180),       -- Light Gray
-    Stroke = Color3.fromRGB(80, 80, 80),           -- Dark Gray Stroke
-    Button = Color3.fromRGB(40, 40, 40),           -- Dark Gray Button
-    Green = Color3.fromRGB(100, 255, 100),         -- Pass
-    Red = Color3.fromRGB(255, 80, 80),             -- Fail
-    Yellow = Color3.fromRGB(255, 215, 0),          -- Unsupported
+    Background = Color3.fromRGB(0, 0, 0),
+    Header = Color3.fromRGB(0, 0, 0),
+    ContentBg = Color3.fromRGB(0, 0, 0),
+    Text = Color3.fromRGB(255, 255, 255),
+    SubText = Color3.fromRGB(180, 180, 180),
+    Stroke = Color3.fromRGB(80, 80, 80),
+    Button = Color3.fromRGB(40, 40, 40),
+    Green = Color3.fromRGB(100, 255, 100),
+    Red = Color3.fromRGB(255, 80, 80),
+    Yellow = Color3.fromRGB(255, 215, 0),
 }
 
--- // LOGGING // --
 local function Log(level, ...)
     local message = table.concat({...}, " ")
     table.insert(WBT.Logs, {Level = level, Message = message, Time = os.time()})
@@ -50,7 +48,6 @@ local function Log(level, ...)
     end
 end
 
--- // GUI SYSTEM // --
 local GUI = {}
 GUI.ScreenGui = nil
 GUI.MainFrame = nil
@@ -88,7 +85,6 @@ function GUI:Create()
 
     local parent = gethui and gethui() or game:GetService("CoreGui")
 
-    -- Main GUI
     GUI.ScreenGui = Create("ScreenGui", {
         Name = "WBT_UI",
         Parent = parent,
@@ -96,12 +92,11 @@ function GUI:Create()
         DisplayOrder = 999
     })
 
-    -- Main Container
     GUI.MainFrame = Create("Frame", {
         Name = "MainFrame",
         AnchorPoint = Vector2.new(0.5, 0.5),
         Position = UDim2.fromScale(0.5, 0.5),
-        Size = UDim2.fromScale(0, 0), -- Start small for tween
+        Size = UDim2.fromScale(0, 0), 
         BackgroundColor3 = THEME.Background,
         BorderSizePixel = 0,
         ClipsDescendants = true,
@@ -109,7 +104,6 @@ function GUI:Create()
     }, {
         Create("UICorner", { CornerRadius = UDim.new(0, 10) }),
         Create("UIStroke", { Color = THEME.Stroke, Thickness = 2, Transparency = 0.5 }),
-        -- Size Constraint: Fills screen on mobile, limits size on PC
         Create("UISizeConstraint", {
             MaxSize = Vector2.new(600, 450),
             MinSize = Vector2.new(320, 250)
@@ -118,7 +112,6 @@ function GUI:Create()
 
     Tween(GUI.MainFrame, { Size = UDim2.fromScale(0.9, 0.65) }, 0.8, Enum.EasingStyle.Elastic)
 
-    -- Header
     local header = Create("Frame", {
         Name = "Header",
         Size = UDim2.new(1, 0, 0, 40),
@@ -138,7 +131,6 @@ function GUI:Create()
         })
     })
 
-    -- Close Button
     local closeBtn = Create("TextButton", {
         Text = "×",
         Font = Enum.Font.GothamMedium,
@@ -155,7 +147,6 @@ function GUI:Create()
         GUI.ScreenGui:Destroy()
     end)
 
-    -- Content Area
     GUI.ContentFrame = Create("Frame", {
         Name = "Content",
         Size = UDim2.new(1, -20, 1, -100),
@@ -165,7 +156,6 @@ function GUI:Create()
         Parent = GUI.MainFrame
     })
 
-    -- Footer / Progress Area
     local footer = Create("Frame", {
         Name = "Footer",
         Size = UDim2.new(1, -20, 0, 40),
@@ -236,7 +226,6 @@ function GUI:Create()
         end
     end)
 
-    -- Dragging
     local dragging, dragInput, dragStart, startPos
     local function update(input)
         local delta = input.Position - dragStart
@@ -347,7 +336,6 @@ function GUI:ShowLink(url)
     if not GUI.ContentFrame then return end
     if GUI.LogList then Tween(GUI.LogList, {Position = UDim2.new(1, 0, 0, 0)}, 0.5, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out) end
     
-    -- Ensure explicit Pitch Black background for the results container
     GUI.ResultsFrame = Create("Frame", {
         Size = UDim2.new(1, 0, 1, 0),
         BackgroundTransparency = 1,
@@ -359,7 +347,7 @@ function GUI:ShowLink(url)
 
     local box = Create("TextBox", {
         Text = url, Font = Enum.Font.Code, TextSize = 12, TextColor3 = THEME.Text,
-        BackgroundColor3 = THEME.Background, -- PITCH BLACK
+        BackgroundColor3 = THEME.Background,
         Size = UDim2.new(1, 0, 0.25, 0), Position = UDim2.new(0, 0, 0.3, 0),
         ClearTextOnFocus = false, TextEditable = false, TextWrapped = true, Parent = GUI.ResultsFrame
     }, { Create("UICorner", {CornerRadius = UDim.new(0, 6)}), Create("UIStroke", {Color = THEME.Stroke, Thickness = 1}) })
@@ -393,10 +381,8 @@ function GUI:ShowLink(url)
     Tween(GUI.ResultsFrame, {BackgroundTransparency = 0}, 0.5)
 end
 
--- // CORE LOGIC // --
 WBT.Test = {}
 
--- FULL TEST LIST from prompt
 local AllTestsOrdered = {
     "getgenv", "getrenv", "getreg", "getgc", "getinstances", "getnilinstances", "getscripts", "getloadedmodules", "getconnections", "getthreadidentity", "setthreadidentity", "setthreadidentity (behavior)", "firesignal", "fireclickdetector", "firetouchinterest", "is_executor_closure", "is_syn_closure", "checkcaller", "loadstring (behavior)",
     "getchildren", "getdescendants", "findfirstchild", "findfirstchildofclass", "findfirstancestor",
@@ -429,7 +415,6 @@ local AllTestsOrdered = {
     "Hook Speed", "GC Speed", "Instance Creation Speed"
 }
 
--- UPDATED: TIMEOUT WRAPPER to prevent freezing
 function WBT.Test:Run(category, name, testFunc)
     if not WBT.Results[category] then WBT.Results[category] = {} end
     WBT.Stats.Total = WBT.Stats.Total + 1
@@ -439,7 +424,6 @@ function WBT.Test:Run(category, name, testFunc)
     local resultStatus = "fail"
     local finished = false
     
-    -- Run test in isolated thread
     task.spawn(function()
         local success, res = pcall(testFunc)
         if success then
@@ -447,16 +431,15 @@ function WBT.Test:Run(category, name, testFunc)
             elseif res == true then resultStatus = "pass"
             else resultStatus = "fail" end
         else
-            resultStatus = "fail" -- Error occurred
+            resultStatus = "fail"
         end
         finished = true
     end)
     
-    -- Wait loop with Timeout
     local start = os.clock()
     while not finished do
         if os.clock() - start > WBT_SETTINGS.TestTimeout then
-            resultStatus = "fail" -- Timeout! Test froze or took too long
+            resultStatus = "fail" 
             break
         end
         task.wait()
@@ -464,7 +447,6 @@ function WBT.Test:Run(category, name, testFunc)
     
     if resultStatus == "pass" then WBT.Stats.Passed = WBT.Stats.Passed + 1 end
     
-    -- CONSOLE LOGGING (Requested)
     Log("Info", ("Test: %s -> %s"):format(name, resultStatus:upper()))
     
     pcall(GUI.AddLogEntry, GUI, name, resultStatus)
@@ -488,13 +470,11 @@ function WBT:GetExecutorInfo()
     if s_level and level then WBT.Info.Level = tostring(level) end
 end
 
--- Safely attaching RunAllTests to WBT
 WBT.RunAllTests = function(self)
     self:GetExecutorInfo()
     local T = self.Test
     local function Run(cat, name, func) T:Run(cat, name, func) end
 
-    -- Core Environment
     local category = "Core Environment"
     Run(category, "getgenv", function() return getgenv and type(getgenv()) == "table" and getgenv()._G == _G end)
     Run(category, "getrenv", function() return getrenv and type(getrenv()) == "table" and getrenv().game == game end)
@@ -529,7 +509,6 @@ WBT.RunAllTests = function(self)
         return f() == 123
     end)
 
-    -- Instance Functions
     category = "Instance Functions"
     Run(category, "getchildren", function() return #game:GetChildren() > 0 end)
     Run(category, "getdescendants", function() return #game:GetDescendants() > 0 end)
@@ -537,16 +516,14 @@ WBT.RunAllTests = function(self)
     Run(category, "findfirstchildofclass", function() return game:FindFirstChildOfClass("Workspace") ~= nil end)
     Run(category, "findfirstancestor", function() return game.Workspace:FindFirstAncestor("game") == game end)
 
-    -- Require
     category = "Require"
     Run(category, "require (existence)", function() return not not require end)
     Run(category, "require (behavior)", function() 
         if not require then return "unsupported" end
-        pcall(require, game:GetService("Players")) -- Just verify it doesn't crash on standard roblox objects
+        pcall(require, game:GetService("Players")) 
         return true 
     end)
 
-    -- Filesystem
     category = "Filesystem (I/O)"
     Run(category, "writefile", function() return not not writefile end)
     Run(category, "readfile", function() return not not readfile end)
@@ -567,7 +544,6 @@ WBT.RunAllTests = function(self)
         return content == "test"
     end)
 
-    -- Metatable & Debugging
     category = "Metatable & Debugging"
     Run(category, "getrawmetatable", function() return getrawmetatable and type(getrawmetatable(game)) == "table" end)
     Run(category, "setrawmetatable", function() return not not setrawmetatable end)
@@ -609,7 +585,6 @@ WBT.RunAllTests = function(self)
     Run(category, "debug.getfenv", function() return debug and not not debug.getfenv end)
     Run(category, "debug.setfenv", function() return debug and not not debug.setfenv end)
 
-    -- Console
     category = "Console"
     Run(category, "rconsoleprint", function() return not not rconsoleprint end)
     Run(category, "rconsoleinfo", function() return not not rconsoleinfo end)
@@ -625,7 +600,6 @@ WBT.RunAllTests = function(self)
     Run(category, "error", function() return not not error end)
     Run(category, "pcall", function() return not not pcall end)
 
-    -- Input
     category = "Input Simulation"
     Run(category, "keypress", function() return not not keypress end)
     Run(category, "keyrelease", function() return not not keyrelease end)
@@ -644,7 +618,6 @@ WBT.RunAllTests = function(self)
     Run(category, "mousemoveabs", function() return not not mousemoveabs end)
     Run(category, "mousemoverel", function() return not not mousemoverel end)
 
-    -- Crypt
     category = "Cryptography & Encoding"
     Run(category, "crypt.encrypt", function() return crypt and not not crypt.encrypt end)
     Run(category, "crypt.decrypt", function() return crypt and not not crypt.decrypt end)
@@ -655,7 +628,6 @@ WBT.RunAllTests = function(self)
     Run(category, "lz4.compress", function() return lz4 and not not lz4.compress end)
     Run(category, "lz4.decompress", function() return lz4 and not not lz4.decompress end)
 
-    -- Drawing
     category = "Drawing Library"
     local function testDraw(t) 
         if not Drawing then return "unsupported" end
@@ -679,7 +651,6 @@ WBT.RunAllTests = function(self)
         return true
     end)
 
-    -- SUNC
     category = "SUNC Extensions"
     Run(category, "getscriptbytecode", function() return not not getscriptbytecode end)
     Run(category, "getscripthash", function() return not not getscripthash end)
@@ -698,12 +669,10 @@ WBT.RunAllTests = function(self)
     Run(category, "getinstancein", function() return not not getinstancein end)
     Run(category, "getinstancesin", function() return not not getinstancesin end)
     
-    -- Exec Info
     category = "Executor Info"
     Run(category, "identifyexecutor", function() return identifyexecutor and type(identifyexecutor()) == "string" end)
     Run(category, "getexecutorname", function() return getexecutorname and type(getexecutorname()) == "string" end)
 
-    -- Bit
     category = "bit Library"
     local b = bit or bit32
     Run(category, "bit.band", function() return b and not not b.band end)
@@ -714,14 +683,12 @@ WBT.RunAllTests = function(self)
     Run(category, "bit.arshift", function() return b and not not b.arshift end)
     Run(category, "bit.not", function() return b and not not b["not"] end)
 
-    -- HTTP
     category = "http Library"
     Run(category, "http_request", function() return not not http_request end)
     Run(category, "request", function() return not not (request or http_request or (http and http.request)) end)
     Run(category, "http.get", function() return http and not not http.get end)
     Run(category, "http.post", function() return http and not not http.post end)
 
-    -- Websocket
     category = "WebSocket Library"
     Run(category, "websocket.connect", function() return websocket and not not websocket.connect end)
     Run(category, "websocket.send", function() return websocket and not not websocket.send end)
@@ -729,7 +696,6 @@ WBT.RunAllTests = function(self)
     Run(category, "websocket.on_message", function() return websocket and not not websocket.on_message end)
     Run(category, "websocket.on_error", function() return websocket and not not websocket.on_error end)
 
-    -- Standard Libs (Extended)
     category = "Standard os Library"
     Run(category, "os.execute", function() return os and not not os.execute end)
     Run(category, "os.remove", function() return os and not not os.remove end)
@@ -771,7 +737,7 @@ WBT.RunAllTests = function(self)
         if not sethiddenproperty then return "unsupported" end
         local p = Instance.new("Part"); sethiddenproperty(p, "Name", "Test"); return p.Name == "Test"
     end)
-    Run(category, "ParentLock Bypass", function() return false end) -- Hard to safely test without freezing
+    Run(category, "ParentLock Bypass", function() return false end)
 
     category = "Obscure Thread/Debug"
     Run(category, "getcallingscript", function() return not not getcallingscript end)
@@ -801,9 +767,8 @@ WBT.RunAllTests = function(self)
 
     category = "Anti-Detection"
     Run(category, "debug.debug", function() return debug and not not debug.debug end)
-    Run(category, "Instance Hiding (getchildren)", function() return false end) -- Complex to test safely
+    Run(category, "Instance Hiding (getchildren)", function() return false end)
 
-    -- Performance
     category = "Performance Benchmarking"
     Run(category, "Hook Speed", function()
         if not hookfunction then return "unsupported" end
@@ -857,7 +822,7 @@ function WBT:Submit()
         timestamp = os.time()
     }
     
-    task.wait(0.2) -- Anti-freeze
+    task.wait(0.2) 
     local json = WBT:SerializeJSON(payload)
     local http_func = request or http_request or (http and http.post)
     
@@ -868,7 +833,7 @@ function WBT:Submit()
     end
     
     GUI.StatusLabel.Text = "Uploading results..."
-    task.wait(0.2) -- Allow text to update
+    task.wait(0.2) 
     
     local s, res = pcall(http_func, {
         Url = WBT_SETTINGS.SubmitApiUrl,
