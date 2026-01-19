@@ -1,0 +1,47 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local player = Players.LocalPlayer
+local mouse = player:GetMouse()
+
+-- ScreenGui
+local gui = Instance.new("ScreenGui")
+gui.Parent = player:WaitForChild("PlayerGui")
+
+-- Drawing container
+local canvas = Instance.new("Frame")
+canvas.Size = UDim2.fromScale(1, 1)
+canvas.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+canvas.Parent = gui
+
+local drawing = false
+local lastPos = nil
+
+-- Draw function
+local function drawDot(pos)
+    local dot = Instance.new("Frame")
+    dot.Size = UDim2.fromOffset(4, 4)
+    dot.Position = UDim2.fromOffset(pos.X, pos.Y)
+    dot.BackgroundColor3 = Color3.new(1, 1, 1)
+    dot.BorderSizePixel = 0
+    dot.Parent = canvas
+end
+
+-- Input handling
+UserInputService.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        drawing = true
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        drawing = false
+        lastPos = nil
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if drawing and input.UserInputType == Enum.UserInputType.MouseMovement then
+        drawDot(input.Position)
+    end
+end)
