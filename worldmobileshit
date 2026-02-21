@@ -14,14 +14,12 @@ if playerGui:FindFirstChild("WorldClientGui") then
     return
 end
 
-local isLoadstringEnabled = false
-local success, result = pcall(loadstring, "return 1")
-if success and type(result) == "function" then
-    local funcSuccess, funcResult = pcall(result)
-    if funcSuccess and funcResult == 1 then
-        isLoadstringEnabled = true
+local isExecuteScriptEnabled = false
+pcall(function()
+    if getgenv and getgenv().execute_script then
+        isExecuteScriptEnabled = true
     end
-end
+end)
 
 local commandHistory = {}
 local historyIndex = 0
@@ -565,8 +563,8 @@ end
 
 function refreshLogs()
     clearLogs()
-    if not isLoadstringEnabled then
-        log("Warning: 'loadstring' is disabled. Code execution will not work.", "Warning")
+    if not isExecuteScriptEnabled then
+        log("Warning: 'execute_script' is not found in getgenv(). Code execution will not work.", "Warning")
     end
     for _, entry in ipairs(LogService:GetLogHistory()) do
         local typeStr = "Output"
@@ -688,22 +686,17 @@ function executeCommand()
         showTutorial()
         return
     end
-    if not isLoadstringEnabled then
-        log("Execution failed: 'loadstring' is disabled in this Roblox environment for security reasons.", "Error")
+    if not isExecuteScriptEnabled then
+        log("Execution failed: 'execute_script' is not available in the current environment.", "Error")
         return
     end
-    local func, err = loadstring(command)
-    if not func then
-        log("Syntax Error: " .. err, "Error")
-        return
-    end
-    local success, result = pcall(func)
+    
+    local success, err = pcall(function()
+        getgenv().execute_script(command)
+    end)
+    
     if not success then
-        log("Runtime Error: " .. tostring(result), "Error")
-    else
-        if result ~= nil then
-            log(tostring(result), "Output")
-        end
+        log("Runtime Error: " .. tostring(err), "Error")
     end
 end
 
@@ -968,3 +961,4 @@ toggleMinimize()
 loopGlow()
 updateInputControlsVisibility()
 onInsetsChanged()
+
