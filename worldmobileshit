@@ -3,6 +3,7 @@ local UserInputService = game:GetService("UserInputService")
 local LogService = game:GetService("LogService")
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
+
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 local playerScripts = player:WaitForChild("PlayerScripts")
@@ -10,7 +11,6 @@ local playerModule = require(playerScripts:WaitForChild("PlayerModule"))
 local controls = playerModule:GetControls()
 
 if playerGui:FindFirstChild("WorldClientGui") then
-    warn("World Client is already running. Aborting duplicate script.")
     return
 end
 
@@ -20,43 +20,6 @@ pcall(function()
         isExecuteScriptEnabled = true
     end
 end)
-
-local commandHistory = {}
-local historyIndex = 0
-local logCounter = 0
-local isVisible = true
-local isMinimized = false
-local isDragging = false
-local isLoggingInternally = false
-local tutorialShown = false
-local isInputMaximized = false
-local dragStart, frameStartPos
-local lastMinimizedPosition = UDim2.new(0.5, 0, 0.05, 0)
-local activeTweens = {}
-local connections = {}
-local targetPosition
-local targetSize
-local dragStartTime
-
-local function safeSetCursor(object, cursor)
-    pcall(function()
-        object.CursorIcon = cursor
-    end)
-end
-
-local function debounce(func, delay)
-    local timer
-    return function(...)
-        local context = self
-        local args = {...}
-        if timer then
-            task.cancel(timer)
-        end
-        timer = task.delay(delay, function()
-            func(context, unpack(args))
-        end)
-    end
-end
 
 local CONFIG = {
     IconID = "rbxassetid://133555354035357",
@@ -78,6 +41,36 @@ local CONFIG = {
     Font = Enum.Font.SourceSans,
     BoldFont = Enum.Font.SourceSansBold,
 }
+
+local commandHistory = {}
+local activeLogFrames = {}
+local connections = {}
+local activeTweens = {}
+local historyIndex = 0
+local logCounter = 0
+local isVisible = true
+local isMinimized = false
+local isDragging = false
+local isLoggingInternally = false
+local tutorialShown = false
+local isInputMaximized = false
+local queuedCanvasUpdate = false
+local dragStart, frameStartPos, targetPosition, targetSize, dragStartTime
+local lastMinimizedPosition = UDim2.new(0.5, 0, 0.05, 0)
+
+local function safeSetCursor(object, cursor)
+    pcall(function() object.CursorIcon = cursor end)
+end
+
+local function debounce(func, delay)
+    local timer
+    return function(...)
+        local context = self
+        local args = {...}
+        if timer then task.cancel(timer) end
+        timer = task.delay(delay, function() func(context, unpack(args)) end)
+    end
+end
 
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "WorldClientGui"
@@ -113,7 +106,6 @@ mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 mainFrame.BackgroundTransparency = 1
 mainFrame.ClipsDescendants = true
 mainFrame.ZIndex = 1
-mainFrame.Visible = true
 
 local mainCorner = Instance.new("UICorner", mainFrame)
 mainCorner.CornerRadius = UDim.new(0, 8)
@@ -123,7 +115,6 @@ blurFrame.Name = "BlurFrame"
 blurFrame.BackgroundColor3 = CONFIG.Colors.Background
 blurFrame.BackgroundTransparency = 0.3
 blurFrame.ZIndex = 0
-blurFrame.Visible = true
 blurFrame.Size = mainFrame.Size
 blurFrame.Position = mainFrame.Position
 blurFrame.AnchorPoint = mainFrame.AnchorPoint
@@ -162,7 +153,6 @@ titleLabel.Text = CONFIG.Title
 titleLabel.TextColor3 = CONFIG.Colors.Text
 titleLabel.TextSize = 18
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-titleLabel.RichText = true
 
 local function createClickParticles(parent, color)
     local emitter = Instance.new("ParticleEmitter")
@@ -175,11 +165,7 @@ local function createClickParticles(parent, color)
     emitter.SpreadAngle = Vector2.new(360, 360)
     emitter.Parent = parent
     emitter:Emit(25)
-    task.delay(1, function()
-        if emitter and emitter.Parent then
-            emitter:Destroy()
-        end
-    end)
+    task.delay(1, function() if emitter.Parent then emitter:Destroy() end end)
 end
 
 local function createIconButton(parent, emoji, size, color)
@@ -190,9 +176,9 @@ local function createIconButton(parent, emoji, size, color)
     btn.Text = emoji
     btn.TextColor3 = Color3.new(1, 1, 1)
     btn.TextSize = math.floor(size * 0.7)
-    btn.RichText = true
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
     safeSetCursor(btn, "rbxasset://SystemCursor/Arrow")
+    
     local originalSize = btn.Size
     table.insert(connections, btn.MouseEnter:Connect(function()
         TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = CONFIG.Colors.UtilButtonHover}):Play()
@@ -225,10 +211,8 @@ allControlsLayout.VerticalAlignment = Enum.VerticalAlignment.Center
 allControlsLayout.Padding = UDim.new(0, 8)
 
 local leftControls = Instance.new("Frame", allControls)
-leftControls.Name = "LeftControls"
 leftControls.BackgroundTransparency = 1
 leftControls.AutomaticSize = Enum.AutomaticSize.X
-
 local leftControlsLayout = Instance.new("UIListLayout", leftControls)
 leftControlsLayout.FillDirection = Enum.FillDirection.Horizontal
 leftControlsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
@@ -236,10 +220,8 @@ leftControlsLayout.VerticalAlignment = Enum.VerticalAlignment.Center
 leftControlsLayout.Padding = UDim.new(0, 8)
 
 local rightControls = Instance.new("Frame", allControls)
-rightControls.Name = "RightControls"
 rightControls.BackgroundTransparency = 1
 rightControls.AutomaticSize = Enum.AutomaticSize.X
-
 local rightControlsLayout = Instance.new("UIListLayout", rightControls)
 rightControlsLayout.FillDirection = Enum.FillDirection.Horizontal
 rightControlsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
@@ -277,7 +259,6 @@ uiListLayout.Padding = UDim.new(0, 5)
 uiListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
 local runButton = Instance.new("TextButton", footer)
-runButton.Name = "RunButton"
 runButton.Size = UDim2.new(0, 80, 1, -10)
 runButton.Position = UDim2.new(1, -5, 0.5, 0)
 runButton.AnchorPoint = Vector2.new(1, 0.5)
@@ -295,7 +276,6 @@ expandInputButton.ZIndex = 3
 expandInputButton.Visible = false
 
 local inputContainer = Instance.new("ScrollingFrame", footer)
-inputContainer.Name = "InputContainer"
 inputContainer.Size = UDim2.new(1, -100, 1, -10)
 inputContainer.Position = UDim2.new(0, 5, 0.5, 0)
 inputContainer.AnchorPoint = Vector2.new(0, 0.5)
@@ -309,7 +289,6 @@ Instance.new("UICorner", inputContainer).CornerRadius = UDim.new(0, 6)
 safeSetCursor(inputContainer, "rbxasset://SystemCursor/Arrow")
 
 local inputBox = Instance.new("TextBox", inputContainer)
-inputBox.Name = "InputBox"
 inputBox.BackgroundTransparency = 1
 inputBox.ClearTextOnFocus = false
 inputBox.Font = CONFIG.Font
@@ -330,34 +309,74 @@ Instance.new("UIPadding", inputBox, {
     PaddingBottom = UDim.new(0, 5)
 })
 
-local function updateInputControlsVisibility()
-    task.wait()
-    local needsControls = #inputBox.Text >= 100
-    expandInputButton.Visible = needsControls and not isInputMaximized
-    if isInputMaximized and needsControls then
-        inputContainer.ScrollBarThickness = 10
-    else
-        inputContainer.ScrollBarThickness = 8
+local templateLog = Instance.new("Frame")
+templateLog.Name = "LogFrame"
+templateLog.BackgroundTransparency = 1
+templateLog.Size = UDim2.new(1, 0, 0, 0)
+templateLog.AutomaticSize = Enum.AutomaticSize.Y
+local templateLayout = Instance.new("UIListLayout", templateLog)
+templateLayout.FillDirection = Enum.FillDirection.Horizontal
+templateLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+local templateEntry = Instance.new("TextLabel", templateLog)
+templateEntry.Name = "LogEntry"
+templateEntry.BackgroundTransparency = 1
+templateEntry.Font = CONFIG.Font
+templateEntry.TextSize = 14
+templateEntry.TextWrapped = true
+templateEntry.TextXAlignment = Enum.TextXAlignment.Left
+templateEntry.Size = UDim2.new(1, -60, 0, 0)
+templateEntry.AutomaticSize = Enum.AutomaticSize.Y
+templateEntry.RichText = true
+local templateActions = Instance.new("Frame", templateLog)
+templateActions.Name = "Actions"
+templateActions.Size = UDim2.new(0, 60, 1, 0)
+templateActions.BackgroundTransparency = 1
+templateActions.Visible = false
+local templateActionsLayout = Instance.new("UIListLayout", templateActions)
+templateActionsLayout.FillDirection = Enum.FillDirection.Horizontal
+templateActionsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+templateActionsLayout.Padding = UDim.new(0, 4)
+createIconButton(templateActions, "📋", 22, CONFIG.Colors.UtilButton).Name = "CopyBtn"
+createIconButton(templateActions, "🗑️", 22, CONFIG.Colors.UtilButton).Name = "DelBtn"
+
+local function requestCanvasUpdate()
+    if not queuedCanvasUpdate then
+        queuedCanvasUpdate = true
+        task.defer(function()
+            if uiListLayout and uiListLayout.Parent then
+                logContainer.CanvasSize = UDim2.new(0, 0, 0, uiListLayout.AbsoluteContentSize.Y)
+            end
+            queuedCanvasUpdate = false
+        end)
     end
 end
 
+local function updateInputControlsVisibility()
+    task.defer(function()
+        local needsControls = #inputBox.Text >= 100
+        expandInputButton.Visible = needsControls and not isInputMaximized
+        inputContainer.ScrollBarThickness = (isInputMaximized and needsControls) and 10 or 8
+    end)
+end
+
 local function updateInputCanvas()
-    task.wait()
-    local padding = Vector2.new(20, 10)
-    local newSize = inputBox.TextBounds + padding
-    local containerSize = inputContainer.AbsoluteSize
-    local finalWidth = math.max(newSize.X, containerSize.X)
-    local finalHeight = math.max(newSize.Y, containerSize.Y)
-    inputBox.Size = UDim2.fromOffset(finalWidth, finalHeight)
-    inputContainer.CanvasSize = UDim2.fromOffset(finalWidth, finalHeight)
-    updateInputControlsVisibility()
+    task.defer(function()
+        local padding = Vector2.new(20, 10)
+        local newSize = inputBox.TextBounds + padding
+        local containerSize = inputContainer.AbsoluteSize
+        local finalWidth = math.max(newSize.X, containerSize.X)
+        local finalHeight = math.max(newSize.Y, containerSize.Y)
+        inputBox.Size = UDim2.fromOffset(finalWidth, finalHeight)
+        inputContainer.CanvasSize = UDim2.fromOffset(finalWidth, finalHeight)
+        updateInputControlsVisibility()
+    end)
 end
 
 local debouncedUpdate = debounce(updateInputCanvas, 0.1)
 table.insert(connections, inputBox:GetPropertyChangedSignal("Text"):Connect(debouncedUpdate))
 table.insert(connections, inputContainer:GetPropertyChangedSignal("AbsoluteSize"):Connect(debouncedUpdate))
 
-function showTutorial()
+local function showTutorial()
     tutorialShown = true
     local tutorialOverlay = Instance.new("TextButton", screenGui)
     tutorialOverlay.Name = "TutorialOverlay"
@@ -369,19 +388,20 @@ function showTutorial()
     tutorialOverlay.AutoButtonColor = false
     safeSetCursor(tutorialOverlay, "rbxasset://SystemCursor/Arrow")
     TweenService:Create(tutorialOverlay, TweenInfo.new(0.5), {BackgroundTransparency = 0.6}):Play()
+
     local tutorialFrame = Instance.new("Frame", screenGui)
-    tutorialFrame.Name = "TutorialFrame"
     tutorialFrame.Size = UDim2.new(0, 450, 0, 280)
     tutorialFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
     tutorialFrame.AnchorPoint = Vector2.new(0.5, 0.5)
     tutorialFrame.BackgroundColor3 = CONFIG.Colors.Background
     tutorialFrame.BackgroundTransparency = 0.1
     tutorialFrame.ZIndex = 10
-    local tutCorner = Instance.new("UICorner", tutorialFrame)
-    tutCorner.CornerRadius = UDim.new(0, 8)
+    Instance.new("UICorner", tutorialFrame).CornerRadius = UDim.new(0, 8)
+    
     local tutStroke = Instance.new("UIStroke", tutorialFrame)
     tutStroke.Color = CONFIG.Colors.PrimaryAccent
     tutStroke.Thickness = 2
+
     local tutTitle = Instance.new("TextLabel", tutorialFrame)
     tutTitle.Size = UDim2.new(1, -20, 0, 30)
     tutTitle.Position = UDim2.new(0.5, 0, 0, 10)
@@ -390,6 +410,7 @@ function showTutorial()
     tutTitle.Font = CONFIG.BoldFont
     tutTitle.TextColor3 = CONFIG.Colors.Text
     tutTitle.TextSize = 20
+
     local tutBody = Instance.new("TextLabel", tutorialFrame)
     tutBody.Size = UDim2.new(1, -20, 0, 160)
     tutBody.Position = UDim2.new(0.5, 0, 0, 45)
@@ -401,11 +422,13 @@ function showTutorial()
     tutBody.TextWrapped = true
     tutBody.TextYAlignment = Enum.TextYAlignment.Top
     tutBody.Text = ""
+
     local buttonFrame = Instance.new("Frame", tutorialFrame)
     buttonFrame.Size = UDim2.new(1, 0, 0, 35)
     buttonFrame.Position = UDim2.new(0.5, 0, 1, -15)
     buttonFrame.AnchorPoint = Vector2.new(0.5, 1)
     buttonFrame.BackgroundTransparency = 1
+
     local pageIndicator = Instance.new("TextLabel", buttonFrame)
     pageIndicator.Size = UDim2.new(0, 50, 1, 0)
     pageIndicator.Position = UDim2.new(0.5, 0, 0.5, 0)
@@ -414,12 +437,15 @@ function showTutorial()
     pageIndicator.Font = CONFIG.BoldFont
     pageIndicator.TextColor3 = CONFIG.Colors.Text
     pageIndicator.TextSize = 16
+
     local prevButton = createIconButton(buttonFrame, "⬅️", 35, CONFIG.Colors.UtilButton)
     prevButton.Position = UDim2.new(0, 20, 0.5, 0)
     prevButton.AnchorPoint = Vector2.new(0, 0.5)
+
     local nextButton = createIconButton(buttonFrame, "➡️", 35, CONFIG.Colors.SecondaryAccent)
     nextButton.Position = UDim2.new(1, -20, 0.5, 0)
     nextButton.AnchorPoint = Vector2.new(1, 0.5)
+
     local skipButton = Instance.new("TextButton", buttonFrame)
     skipButton.Size = UDim2.new(0, 100, 1, 0)
     skipButton.Position = UDim2.new(0.5, -110, 0.5, 0)
@@ -431,20 +457,23 @@ function showTutorial()
     skipButton.TextSize = 18
     Instance.new("UICorner", skipButton).CornerRadius = UDim.new(0, 6)
     safeSetCursor(skipButton, "rbxasset://SystemCursor/Arrow")
+
     tutorialFrame.Size = UDim2.new(0, 0, 0, 0)
     TweenService:Create(tutorialFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0, 450, 0, 280)}):Play()
     createClickParticles(tutorialFrame, CONFIG.Colors.PrimaryAccent)
+
     local pages = {
-        {Title = "Welcome!", Text = "This is the World Client, a powerful in-game tool. This short tutorial will guide you through its features."},
-        {Title = "Minimizing", Text = "Click the ('✖️') button to minimize the client. This will turn it into a small icon. Click the icon again to maximize it."},
-        {Title = "Dragging", Text = "When minimized, you can drag the icon anywhere on your screen. It's designed to stay on-screen so you won't lose it!"},
-        {Title = "Player Input", Text = "When the client is open, your character movement and camera controls are disabled so you can interact with the UI without interruption. Minimizing restores your controls instantly."},
-        {Title = "Header Buttons", Text = "The buttons on the top bar provide quick access to our Script Hub (📜), Website (🌐), and Discord (💬). Clicking them copies the link to your clipboard."},
-        {Title = "Log Controls", Text = "You can clear all logs with (🗑️) or refresh them from the game's console with (🔄). You can also copy all logs to your clipboard with (📋)."},
-        {Title = "Executing Code", Text = "Type or paste any Luau script into the input box at the bottom. Press 'Run' or hit Enter to execute it. You can use the Up/Down arrow keys to navigate your command history."},
-        {Title = "The Script Editor", Text = "If you're working with a large script (>100 characters), a '↗️' button will appear. Click it to expand the editor to a full-screen view for easier editing."},
-        {Title = "You're all set!", Text = "That covers all the main features. You can re-open this tutorial anytime by typing 'tutorial()' in the command bar and running it. Enjoy!"}
+        {Title = "Welcome!", Text = "This is the World Client. This short tutorial will guide you through its features."},
+        {Title = "Minimizing", Text = "Click the ('✖️') button to minimize the client. Click the icon again to maximize it."},
+        {Title = "Dragging", Text = "When minimized, you can drag the icon anywhere on your screen."},
+        {Title = "Player Input", Text = "When the client is open, character movement is disabled. Minimizing restores it."},
+        {Title = "Header Buttons", Text = "Quick access to our Hub (📜), Website (🌐), and Discord (💬)."},
+        {Title = "Log Controls", Text = "Clear logs (🗑️), refresh (🔄), or copy all to clipboard (📋)."},
+        {Title = "Executing Code", Text = "Type Luau code and press 'Run'. Use Up/Down arrow keys for history."},
+        {Title = "Script Editor", Text = "For large scripts, click '↗️' to expand the editor to a full-screen view."},
+        {Title = "You're set!", Text = "Type 'tutorial()' in the command bar to view this again."}
     }
+
     local currentPage = 1
     local function updatePage()
         local pageData = pages[currentPage]
@@ -453,73 +482,61 @@ function showTutorial()
         prevButton.Visible = currentPage > 1
         nextButton.Text = (currentPage == #pages) and "✅" or "➡️"
         skipButton.Visible = (currentPage ~= #pages)
+        
         for i = 1, #pageData.Text do
-            if not tutBody.Parent then
-                break
-            end
+            if not tutBody.Parent then break end
             tutBody.Text = string.sub(pageData.Text, 1, i)
             task.wait(0.01)
         end
     end
+
     local function closeTutorial()
-        if not tutorialFrame.Parent then
-            return
-        end
+        if not tutorialFrame.Parent then return end
         local overlay = screenGui:FindFirstChild("TutorialOverlay")
         if overlay then
             TweenService:Create(overlay, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
-            task.delay(0.3, function()
-                if overlay.Parent then
-                    overlay:Destroy()
-                end
-            end)
+            task.delay(0.3, function() if overlay.Parent then overlay:Destroy() end end)
         end
         local tween = TweenService:Create(tutorialFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Size = UDim2.new(0, 0, 0, 0)})
         tween:Play()
         tween.Completed:Wait()
-        if tutorialFrame.Parent then
-            tutorialFrame:Destroy()
-        end
+        if tutorialFrame.Parent then tutorialFrame:Destroy() end
     end
+
     table.insert(connections, prevButton.MouseButton1Click:Connect(function()
-        if currentPage > 1 then
-            currentPage -= 1
-            updatePage()
-        end
+        if currentPage > 1 then currentPage -= 1 updatePage() end
     end))
     table.insert(connections, nextButton.MouseButton1Click:Connect(function()
-        if currentPage < #pages then
-            currentPage += 1
-            updatePage()
-        else
-            closeTutorial()
-        end
+        if currentPage < #pages then currentPage += 1 updatePage() else closeTutorial() end
     end))
     table.insert(connections, skipButton.MouseButton1Click:Connect(function()
-        createClickParticles(skipButton)
-        closeTutorial()
+        createClickParticles(skipButton) closeTutorial()
     end))
     updatePage()
 end
 
-function toggleMinimize()
+local function toggleMinimize()
     isMinimized = not isMinimized
     local tweenInfo = TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+    
     footer.Visible = not isMinimized
     logContainer.Visible = not isMinimized
     blur.Enabled = not isMinimized
     inputSink.Active = not isMinimized
+
     if isMinimized then
         controls:Enable()
         UserInputService.MouseBehavior = Enum.MouseBehavior.Default
         TweenService:Create(mainCorner, tweenInfo, {CornerRadius = UDim.new(1, 0)}):Play()
         TweenService:Create(blurCorner, tweenInfo, {CornerRadius = UDim.new(1, 0)}):Play()
         TweenService:Create(mainFrame, tweenInfo, {Size = UDim2.new(0, 60, 0, 60), Position = lastMinimizedPosition, AnchorPoint = Vector2.new(0.5, 0)}):Play()
+        
         header.Size = UDim2.new(1, 0, 1, 0)
         icon.Visible = true
         icon.Position = UDim2.new(0.5, 0, 0.5, 0)
         icon.AnchorPoint = Vector2.new(0.5, 0.5)
         icon.Size = UDim2.new(0, 36, 0, 36)
+        
         titleLabel.Visible = false
         leftControls.Visible = false
         rightControls.Visible = false
@@ -527,82 +544,42 @@ function toggleMinimize()
         controls:Disable()
         UserInputService.MouseBehavior = Enum.MouseBehavior.Default
         lastMinimizedPosition = mainFrame.Position
+        
         TweenService:Create(mainCorner, tweenInfo, {CornerRadius = UDim.new(0, 8)}):Play()
         TweenService:Create(blurCorner, tweenInfo, {CornerRadius = UDim.new(0, 8)}):Play()
         TweenService:Create(mainFrame, tweenInfo, {Size = UDim2.new(0.8, 0, 0.7, 0), Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5)}):Play()
+        
         header.Size = UDim2.new(1, 0, 0, 40)
-        icon.Visible = true
         icon.Position = UDim2.new(0, 10, 0.5, 0)
         icon.AnchorPoint = Vector2.new(0, 0.5)
         icon.Size = UDim2.new(0, 24, 0, 24)
+        
         titleLabel.Visible = true
         leftControls.Visible = true
         rightControls.Visible = true
         minimizeButton.Text = "✖️"
-        if not tutorialShown then
-            showTutorial()
-        end
+        
+        if not tutorialShown then showTutorial() end
     end
 end
 
-function updateScrollCanvas()
-    task.wait()
-    if uiListLayout and uiListLayout.Parent then
-        logContainer.CanvasSize = UDim2.new(0, 0, 0, uiListLayout.AbsoluteContentSize.Y)
+local function clearLogs()
+    for _, child in ipairs(activeLogFrames) do
+        if child and child.Parent then child:Destroy() end
     end
+    table.clear(activeLogFrames)
+    requestCanvasUpdate()
 end
 
-function clearLogs()
-    for _, child in ipairs(logContainer:GetChildren()) do
-        if child:IsA("Frame") then
-            child:Destroy()
-        end
-    end
-    updateScrollCanvas()
-end
-
-function refreshLogs()
-    clearLogs()
-    if not isExecuteScriptEnabled then
-        log("Warning: 'execute_script' is not found in getgenv(). Code execution will not work.", "Warning")
-    end
-    for _, entry in ipairs(LogService:GetLogHistory()) do
-        local typeStr = "Output"
-        if entry.messageType == Enum.MessageType.MessageWarning then
-            typeStr = "Warning"
-        elseif entry.messageType == Enum.MessageType.MessageError then
-            typeStr = "Error"
-        elseif entry.messageType == Enum.MessageType.MessageInfo then
-            typeStr = "Info"
-        end
-        log(entry.message, typeStr)
-    end
-    log("Console logs refreshed. Type 'tutorial()' to see the intro again.", "Info")
-end
-
-function log(message, messageType)
+local function log(message, messageType, bulkLoad)
     isLoggingInternally = true
     logCounter += 1
-    local logFrame = Instance.new("Frame", logContainer)
-    logFrame.Name = "LogFrame"
-    logFrame.BackgroundTransparency = 1
-    logFrame.Size = UDim2.new(1, 0, 0, 0)
-    logFrame.AutomaticSize = Enum.AutomaticSize.Y
+
+    local logFrame = templateLog:Clone()
     logFrame.LayoutOrder = logCounter
-    local logLayout = Instance.new("UIListLayout", logFrame)
-    logLayout.FillDirection = Enum.FillDirection.Horizontal
-    logLayout.VerticalAlignment = Enum.VerticalAlignment.Top
-    local logEntry = Instance.new("TextLabel", logFrame)
-    logEntry.Name = "LogEntry"
-    logEntry.BackgroundTransparency = 1
-    logEntry.Font = CONFIG.Font
-    logEntry.TextSize = 14
-    logEntry.TextWrapped = true
-    logEntry.TextXAlignment = Enum.TextXAlignment.Left
-    logEntry.Size = UDim2.new(1, -60, 0, 0)
-    logEntry.AutomaticSize = Enum.AutomaticSize.Y
-    logEntry.RichText = true
+    local logEntry = logFrame.LogEntry
     local messageStr = tostring(message)
+
     if messageType == "Error" then
         logEntry.TextColor3 = CONFIG.Colors.Error
         logEntry.Text = "<b>" .. messageStr .. "</b>"
@@ -619,142 +596,147 @@ function log(message, messageType)
         logEntry.TextColor3 = CONFIG.Colors.Text
         logEntry.Text = messageStr
     end
-    local actionsFrame = Instance.new("Frame", logFrame)
-    actionsFrame.Name = "Actions"
-    actionsFrame.Size = UDim2.new(0, 60, 1, 0)
-    actionsFrame.BackgroundTransparency = 1
-    actionsFrame.Visible = false
-    local actionsLayout = Instance.new("UIListLayout", actionsFrame)
-    actionsLayout.FillDirection = Enum.FillDirection.Horizontal
-    actionsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
-    actionsLayout.Padding = UDim.new(0, 4)
-    local copyLogButton = createIconButton(actionsFrame, "📋", 22, CONFIG.Colors.UtilButton)
-    local deleteLogButton = createIconButton(actionsFrame, "🗑️", 22, CONFIG.Colors.UtilButton)
-    table.insert(connections, copyLogButton.MouseButton1Click:Connect(function()
-        local textToCopy = messageStr
-        if messageType == "Input" then
-            textToCopy = "> " .. messageStr
-        end
-        local success, err = pcall(function()
-            setclipboard(textToCopy)
-        end)
-        if success then
-            log("Copied: " .. string.sub(textToCopy, 1, 40) .. "...", "Output")
-        else
-            log("Clipboard write failed: " .. tostring(err), "Error")
-        end
+
+    local actionsFrame = logFrame.Actions
+    table.insert(connections, actionsFrame.CopyBtn.MouseButton1Click:Connect(function()
+        local textToCopy = (messageType == "Input") and "> " .. messageStr or messageStr
+        local success, err = pcall(function() setclipboard(textToCopy) end)
+        if success then log("Copied to clipboard.", "Output") else log("Clipboard write failed: " .. tostring(err), "Error") end
     end))
-    table.insert(connections, deleteLogButton.MouseButton1Click:Connect(function()
+
+    table.insert(connections, actionsFrame.DelBtn.MouseButton1Click:Connect(function()
         createClickParticles(logFrame, CONFIG.Colors.Error)
         local tween = TweenService:Create(logFrame, TweenInfo.new(0.3), {Size = UDim2.new(1, 0, 0, 0), Transparency = 1})
         tween:Play()
         tween.Completed:Wait()
-        if logFrame.Parent then
-            logFrame:Destroy()
-        end
-        updateScrollCanvas()
+        if logFrame.Parent then logFrame:Destroy() end
+        
+        local idx = table.find(activeLogFrames, logFrame)
+        if idx then table.remove(activeLogFrames, idx) end
+        requestCanvasUpdate()
     end))
-    table.insert(connections, logFrame.MouseEnter:Connect(function()
-        actionsFrame.Visible = true
-    end))
-    table.insert(connections, logFrame.MouseLeave:Connect(function()
-        actionsFrame.Visible = false
-    end))
-    logFrame.Position = UDim2.new(0, 0, 0, 20)
-    logEntry.TextTransparency = 1
-    TweenService:Create(logFrame, TweenInfo.new(0.3), {Position = UDim2.new(0, 0, 0, 0)}):Play()
-    TweenService:Create(logEntry, TweenInfo.new(0.3), {TextTransparency = 0}):Play()
-    updateScrollCanvas()
-    if #logContainer:GetChildren() > 1 then
-        logContainer.CanvasPosition = Vector2.new(0, logContainer.CanvasSize.Y.Offset)
+
+    table.insert(connections, logFrame.MouseEnter:Connect(function() actionsFrame.Visible = true end))
+    table.insert(connections, logFrame.MouseLeave:Connect(function() actionsFrame.Visible = false end))
+
+    logFrame.Parent = logContainer
+    table.insert(activeLogFrames, logFrame)
+
+    if #activeLogFrames > CONFIG.MaxLogs then
+        local oldest = table.remove(activeLogFrames, 1)
+        if oldest and oldest.Parent then oldest:Destroy() end
     end
+
+    if not bulkLoad then
+        logFrame.Position = UDim2.new(0, 0, 0, 20)
+        logEntry.TextTransparency = 1
+        TweenService:Create(logFrame, TweenInfo.new(0.3), {Position = UDim2.new(0, 0, 0, 0)}):Play()
+        TweenService:Create(logEntry, TweenInfo.new(0.3), {TextTransparency = 0}):Play()
+        requestCanvasUpdate()
+        task.defer(function()
+            if #activeLogFrames > 1 then
+                logContainer.CanvasPosition = Vector2.new(0, logContainer.CanvasSize.Y.Offset + 100)
+            end
+        end)
+    end
+
     isLoggingInternally = false
 end
 
-function executeCommand()
-    local command = inputBox.Text
-    if command:gsub("%s", "") == "" then
-        return
+local function refreshLogs()
+    clearLogs()
+    if not isExecuteScriptEnabled then
+        log("Warning: 'execute_script' is not found in getgenv(). Code execution will not work.", "Warning", true)
     end
+    
+    local history = LogService:GetLogHistory()
+    for _, entry in ipairs(history) do
+        local typeStr = "Output"
+        if entry.messageType == Enum.MessageType.MessageWarning then typeStr = "Warning"
+        elseif entry.messageType == Enum.MessageType.MessageError then typeStr = "Error"
+        elseif entry.messageType == Enum.MessageType.MessageInfo then typeStr = "Info" end
+        log(entry.message, typeStr, true)
+    end
+    log("Console logs refreshed. Type 'tutorial()' to see the intro again.", "Info", true)
+    requestCanvasUpdate()
+end
+
+local function executeCommand()
+    local command = inputBox.Text
+    if command:gsub("%s", "") == "" then return end
+    
     createClickParticles(runButton, CONFIG.Colors.Text)
     table.insert(commandHistory, 1, command)
-    if #commandHistory > 50 then
-        table.remove(commandHistory)
-    end
+    if #commandHistory > 50 then table.remove(commandHistory) end
     historyIndex = 0
+    
     if command:lower():gsub("%s", "") == "tutorial()" then
         showTutorial()
         return
     end
+    
     if not isExecuteScriptEnabled then
-        log("Execution failed: 'execute_script' is not available in the current environment.", "Error")
+        log("Execution failed: 'execute_script' is not available.", "Error")
         return
     end
     
-    local success, err = pcall(function()
-        getgenv().execute_script(command)
-    end)
-    
-    if not success then
-        log("Runtime Error: " .. tostring(err), "Error")
-    end
+    local success, err = pcall(function() getgenv().execute_script(command) end)
+    if not success then log("Runtime Error: " .. tostring(err), "Error") end
 end
 
 local collapseButtonConnection
 local clearInputButtonConnection
 
-function toggleScriptView()
+local function toggleScriptView()
     isInputMaximized = not isInputMaximized
     local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-    if collapseButtonConnection then
-        collapseButtonConnection:Disconnect()
-        collapseButtonConnection = nil
-    end
-    if clearInputButtonConnection then
-        clearInputButtonConnection:Disconnect()
-        clearInputButtonConnection = nil
-    end
+    
+    if collapseButtonConnection then collapseButtonConnection:Disconnect() collapseButtonConnection = nil end
+    if clearInputButtonConnection then clearInputButtonConnection:Disconnect() clearInputButtonConnection = nil end
+    
     local collapseButton = footer:FindFirstChild("CollapseButton")
-    if collapseButton then
-        collapseButton:Destroy()
-    end
+    if collapseButton then collapseButton:Destroy() end
     local clearInputButton = footer:FindFirstChild("ClearInputButton")
-    if clearInputButton then
-        clearInputButton:Destroy()
-    end
+    if clearInputButton then clearInputButton:Destroy() end
+
     if isInputMaximized then
         header.Visible = false
         logContainer.Visible = false
         footer.ZIndex = 5
         TweenService:Create(footer, tweenInfo, {Size = UDim2.new(1, 0, 1, 0), Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5)}):Play()
+        
         local newCollapseButton = createIconButton(footer, "↙️", 24, CONFIG.Colors.UtilButton)
         newCollapseButton.Name = "CollapseButton"
         newCollapseButton.AnchorPoint = Vector2.new(1, 0)
         newCollapseButton.Position = UDim2.new(1, -95, 0, 5)
+        
         local newClearButton = createIconButton(footer, "🧹", 24, CONFIG.Colors.UtilButton)
         newClearButton.Name = "ClearInputButton"
         newClearButton.AnchorPoint = Vector2.new(1, 0)
         newClearButton.Position = UDim2.new(1, -124, 0, 5)
+        
         runButton.Parent = footer
         runButton.Size = UDim2.new(0, 80, 0, 30)
         runButton.AnchorPoint = Vector2.new(1, 0)
         runButton.Position = UDim2.new(1, -5, 0, 5)
+        
         inputContainer.Size = UDim2.new(1, -10, 1, -45)
         inputContainer.Position = UDim2.new(0.5, 0, 1, -5)
         inputContainer.AnchorPoint = Vector2.new(0.5, 1)
+        
         collapseButtonConnection = newCollapseButton.MouseButton1Click:Connect(toggleScriptView)
-        clearInputButtonConnection = newClearButton.MouseButton1Click:Connect(function()
-            inputBox.Text = ""
-        end)
+        clearInputButtonConnection = newClearButton.MouseButton1Click:Connect(function() inputBox.Text = "" end)
     else
         header.Visible = true
         logContainer.Visible = true
         footer.ZIndex = 3
         TweenService:Create(footer, tweenInfo, {Size = UDim2.new(1, 0, 0, 80), Position = UDim2.new(0, 0, 1, -80), AnchorPoint = Vector2.new(0, 0)}):Play()
+        
         runButton.Parent = footer
         runButton.Size = UDim2.new(0, 80, 1, -10)
         runButton.Position = UDim2.new(1, -5, 0.5, 0)
         runButton.AnchorPoint = Vector2.new(1, 0.5)
+        
         inputContainer.Size = UDim2.new(1, -100, 1, -10)
         inputContainer.Position = UDim2.new(0, 5, 0.5, 0)
         inputContainer.AnchorPoint = Vector2.new(0, 0.5)
@@ -762,20 +744,12 @@ function toggleScriptView()
     updateInputControlsVisibility()
 end
 
-table.insert(connections, mainFrame:GetPropertyChangedSignal("Size"):Connect(function()
-    blurFrame.Size = mainFrame.Size
-end))
-table.insert(connections, mainFrame:GetPropertyChangedSignal("Position"):Connect(function()
-    blurFrame.Position = mainFrame.Position
-end))
-table.insert(connections, mainFrame:GetPropertyChangedSignal("AnchorPoint"):Connect(function()
-    blurFrame.AnchorPoint = mainFrame.AnchorPoint
-end))
+table.insert(connections, mainFrame:GetPropertyChangedSignal("Size"):Connect(function() blurFrame.Size = mainFrame.Size end))
+table.insert(connections, mainFrame:GetPropertyChangedSignal("Position"):Connect(function() blurFrame.Position = mainFrame.Position end))
+table.insert(connections, mainFrame:GetPropertyChangedSignal("AnchorPoint"):Connect(function() blurFrame.AnchorPoint = mainFrame.AnchorPoint end))
 
 table.insert(connections, header.InputBegan:Connect(function(input)
-    if not isMinimized then
-        return
-    end
+    if not isMinimized then return end
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         isDragging = true
         dragStart = UserInputService:GetMouseLocation()
@@ -783,14 +757,13 @@ table.insert(connections, header.InputBegan:Connect(function(input)
         targetPosition = mainFrame.Position
         targetSize = mainFrame.Size
         dragStartTime = tick()
+        
         local changedConn
         changedConn = input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then
                 isDragging = false
                 local delta = (UserInputService:GetMouseLocation() - dragStart).Magnitude
-                if delta < 10 then
-                    toggleMinimize()
-                end
+                if delta < 10 then toggleMinimize() end
                 changedConn:Disconnect()
             end
         end)
@@ -803,29 +776,28 @@ table.insert(connections, RunService.RenderStepped:Connect(function(dt)
         local mouseDelta = UserInputService:GetMouseLocation() - dragStart
         local targetPixelX = (frameStartPos.X.Scale * viewportSize.X) + frameStartPos.X.Offset + mouseDelta.X
         local targetPixelY = (frameStartPos.Y.Scale * viewportSize.Y) + frameStartPos.Y.Offset + mouseDelta.Y
+        
         local frameSize = mainFrame.AbsoluteSize
         local frameAnchor = mainFrame.AnchorPoint
-        local minX = frameSize.X * frameAnchor.X
-        local maxX = viewportSize.X - (frameSize.X * (1 - frameAnchor.X))
-        local minY = frameSize.Y * frameAnchor.Y
-        local maxY = viewportSize.Y - (frameSize.Y * (1 - frameAnchor.Y))
+        
+        local minX, maxX = frameSize.X * frameAnchor.X, viewportSize.X - (frameSize.X * (1 - frameAnchor.X))
+        local minY, maxY = frameSize.Y * frameAnchor.Y, viewportSize.Y - (frameSize.Y * (1 - frameAnchor.Y))
+        
         local clampedPixelX = math.clamp(targetPixelX, minX, maxX)
         local clampedPixelY = math.clamp(targetPixelY, minY, maxY)
+        
         local timeElapsed = tick() - dragStartTime
-        local wobbleOffsetX = math.sin(timeElapsed * 12) * 1.5
-        local wobbleOffsetY = math.cos(timeElapsed * 15) * 1.2
-        clampedPixelX = clampedPixelX + wobbleOffsetX
-        clampedPixelY = clampedPixelY + wobbleOffsetY
+        clampedPixelX += math.sin(timeElapsed * 12) * 1.5
+        clampedPixelY += math.cos(timeElapsed * 15) * 1.2
+        
         targetPosition = UDim2.new(
-            frameStartPos.X.Scale,
-            clampedPixelX - (frameStartPos.X.Scale * viewportSize.X),
-            frameStartPos.Y.Scale,
-            clampedPixelY - (frameStartPos.Y.Scale * viewportSize.Y)
+            frameStartPos.X.Scale, clampedPixelX - (frameStartPos.X.Scale * viewportSize.X),
+            frameStartPos.Y.Scale, clampedPixelY - (frameStartPos.Y.Scale * viewportSize.Y)
         )
+        
         mainFrame.Position = mainFrame.Position:Lerp(targetPosition, dt * 8)
         local wobbleScale = 1 + math.sin(timeElapsed * 10) * 0.08
-        targetSize = UDim2.new(0, 60 * wobbleScale, 0, 60 * wobbleScale)
-        mainFrame.Size = mainFrame.Size:Lerp(targetSize, dt * 8)
+        mainFrame.Size = mainFrame.Size:Lerp(UDim2.new(0, 60 * wobbleScale, 0, 60 * wobbleScale), dt * 8)
     end
 end))
 
@@ -838,35 +810,19 @@ end))
 table.insert(connections, runButton.MouseButton1Click:Connect(executeCommand))
 
 table.insert(connections, inputBox.InputBegan:Connect(function(input)
-    if not isVisible then
-        return
-    end
+    if not isVisible then return end
     if input.KeyCode == Enum.KeyCode.Up then
         historyIndex = math.min(historyIndex + 1, #commandHistory)
-        if commandHistory[historyIndex] then
-            inputBox.Text = commandHistory[historyIndex]
-        end
+        if commandHistory[historyIndex] then inputBox.Text = commandHistory[historyIndex] end
     elseif input.KeyCode == Enum.KeyCode.Down then
         historyIndex = math.max(historyIndex - 1, 0)
         inputBox.Text = historyIndex == 0 and "" or commandHistory[historyIndex]
     end
 end))
 
-table.insert(connections, scriptHubButton.MouseButton1Click:Connect(function()
-    pcall(setclipboard, "https://world-script-hub.netlify.app/")
-    log("Script Hub link copied to clipboard!", "Output")
-end))
-
-table.insert(connections, siteButton.MouseButton1Click:Connect(function()
-    pcall(setclipboard, "https://useworld.xyz")
-    log("Website link copied to clipboard!", "Output")
-end))
-
-table.insert(connections, discordButton.MouseButton1Click:Connect(function()
-    pcall(setclipboard, "https://dsc.gg/globes")
-    log("Discord link copied to clipboard!", "Output")
-end))
-
+table.insert(connections, scriptHubButton.MouseButton1Click:Connect(function() pcall(setclipboard, "https://world-script-hub.netlify.app/") log("Script Hub link copied.", "Output") end))
+table.insert(connections, siteButton.MouseButton1Click:Connect(function() pcall(setclipboard, "https://useworld.xyz") log("Website link copied.", "Output") end))
+table.insert(connections, discordButton.MouseButton1Click:Connect(function() pcall(setclipboard, "https://dsc.gg/globes") log("Discord link copied.", "Output") end))
 table.insert(connections, expandInputButton.MouseButton1Click:Connect(toggleScriptView))
 table.insert(connections, minimizeButton.MouseButton1Click:Connect(toggleMinimize))
 table.insert(connections, clearButton.MouseButton1Click:Connect(clearLogs))
@@ -874,34 +830,22 @@ table.insert(connections, refreshButton.MouseButton1Click:Connect(refreshLogs))
 
 table.insert(connections, copyButton.MouseButton1Click:Connect(function()
     local t = {}
-    for _, c in ipairs(logContainer:GetChildren()) do
-        if c:IsA("Frame") and c:FindFirstChild("LogEntry") then
-            table.insert(t, c.LogEntry.Text)
-        end
-    end
-    local fullLogText = table.concat(t, "\n")
-    local success, err = pcall(function()
-        setclipboard(fullLogText)
-    end)
-    if success then
-        log("All logs copied to clipboard.", "Output")
-    else
-        log("Clipboard write failed: " .. tostring(err), "Error")
-    end
+    for _, c in ipairs(activeLogFrames) do table.insert(t, c.LogEntry.Text) end
+    local success, err = pcall(function() setclipboard(table.concat(t, "\n")) end)
+    if success then log("All logs copied.", "Output") else log("Clipboard write failed: " .. tostring(err), "Error") end
 end))
 
 table.insert(connections, LogService.MessageOut:Connect(function(message, messageType)
-    if isLoggingInternally then
-        return
-    end
+    if isLoggingInternally then return end
+    
+    local msgLower = message:lower()
+    if msgLower:find("overlay is not a valid member") or msgLower:find("consoleelements") then return end
+
     local typeStr = "Output"
-    if messageType == Enum.MessageType.MessageWarning then
-        typeStr = "Warning"
-    elseif messageType == Enum.MessageType.MessageError then
-        typeStr = "Error"
-    elseif messageType == Enum.MessageType.MessageInfo then
-        typeStr = "Info"
-    end
+    if messageType == Enum.MessageType.MessageWarning then typeStr = "Warning"
+    elseif messageType == Enum.MessageType.MessageError then typeStr = "Error"
+    elseif messageType == Enum.MessageType.MessageInfo then typeStr = "Info" end
+    
     log(message, typeStr)
 end))
 
@@ -940,18 +884,10 @@ local function loopGlow()
 end
 
 screenGui.Destroying:Connect(function()
-    if blur and blur.Parent then
-        blur:Destroy()
-    end
-    if blurGui and blurGui.Parent then
-        blurGui:Destroy()
-    end
-    for _, tween in pairs(activeTweens) do
-        tween:Cancel()
-    end
-    for _, connection in ipairs(connections) do
-        connection:Disconnect()
-    end
+    if blur and blur.Parent then blur:Destroy() end
+    if blurGui and blurGui.Parent then blurGui:Destroy() end
+    for _, tween in pairs(activeTweens) do tween:Cancel() end
+    for _, connection in ipairs(connections) do connection:Disconnect() end
     controls:Enable()
     UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
 end)
@@ -961,4 +897,3 @@ toggleMinimize()
 loopGlow()
 updateInputControlsVisibility()
 onInsetsChanged()
-
