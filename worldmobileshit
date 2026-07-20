@@ -1560,6 +1560,7 @@ editorLineGutter.Position = UDim2.new(0, 0, 0, 5)
 editorLineGutter.Visible = uiSettings.editorLineNumbers == true
 editorLineGutter.Text = "1"
 local function updateEditorLines()
+	if not inputBox then return end
 	local text = inputBox.Text
 	local lines = 1
 	for _ in string.gmatch(text, "\n") do lines = lines + 1 end
@@ -1568,8 +1569,6 @@ local function updateEditorLines()
 	editorLineGutter.Text = table.concat(t, "\n")
 	editorLineGutter.Size = UDim2.new(0, 24, 0, lines * (CONFIG.TextSize + 4))
 end
-inputBox:GetPropertyChangedSignal("Text"):Connect(updateEditorLines)
-updateEditorLines()
 
 local inputFocusStroke = Instance.new("UIStroke", inputContainer)
 inputFocusStroke.Color = CONFIG.Colors.PrimaryAccent
@@ -1596,6 +1595,9 @@ Instance.new("UIPadding", inputBox, {
 	PaddingTop = UDim.new(0, 5),
 	PaddingBottom = UDim.new(0, 5),
 })
+
+inputBox:GetPropertyChangedSignal("Text"):Connect(updateEditorLines)
+updateEditorLines()
 
 registerLocalizedString("Execute Luau code...")
 registerLocalizedRefresher(function()
