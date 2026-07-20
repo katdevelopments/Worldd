@@ -232,6 +232,31 @@ icon.BackgroundTransparency = 1
 icon.Image = CONFIG.IconID
 icon.ZIndex = 3
 
+local iconScale = Instance.new("UIScale", icon)
+iconScale.Scale = 1
+
+-- A gentle looping pulse + sway that only runs while the client is minimized,
+-- so the bubble feels alive instead of static.
+local function startIconIdle()
+    if activeTweens.iconIdleScale then activeTweens.iconIdleScale:Cancel() end
+    if activeTweens.iconIdleRot then activeTweens.iconIdleRot:Cancel() end
+    iconScale.Scale = 1
+    icon.Rotation = 0
+    local pulseInfo = TweenInfo.new(1.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
+    local swayInfo = TweenInfo.new(2.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
+    activeTweens.iconIdleScale = TweenService:Create(iconScale, pulseInfo, {Scale = 1.12})
+    activeTweens.iconIdleRot = TweenService:Create(icon, swayInfo, {Rotation = 6})
+    activeTweens.iconIdleScale:Play()
+    activeTweens.iconIdleRot:Play()
+end
+
+local function stopIconIdle()
+    if activeTweens.iconIdleScale then activeTweens.iconIdleScale:Cancel() activeTweens.iconIdleScale = nil end
+    if activeTweens.iconIdleRot then activeTweens.iconIdleRot:Cancel() activeTweens.iconIdleRot = nil end
+    TweenService:Create(iconScale, TweenInfo.new(0.2), {Scale = 1}):Play()
+    TweenService:Create(icon, TweenInfo.new(0.2), {Rotation = 0}):Play()
+end
+
 local titleLabel = Instance.new("TextLabel", header)
 titleLabel.Name = "Title"
 titleLabel.Size = UDim2.new(1, -400, 1, 0)
@@ -720,6 +745,13 @@ closeSettingsBtn.TextSize = 16
 closeSettingsBtn.Text = "Close"
 Instance.new("UICorner", closeSettingsBtn).CornerRadius = UDim.new(0, 6)
 
+local themeTweenInfo = TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+local function tintTween(obj, props)
+    if obj and obj.Parent then
+        TweenService:Create(obj, themeTweenInfo, props):Play()
+    end
+end
+
 local function applySettings()
     local theme = themes[currentThemeIndex].Colors
     local fontData = fontsList[currentFontIndex]
@@ -728,24 +760,27 @@ local function applySettings()
     CONFIG.Font = fontData.Font
     CONFIG.BoldFont = fontData.Bold
 
-    blurFrame.BackgroundColor3 = theme.Background
-    blurStroke.Color = theme.PrimaryAccent
-    titleLabel.TextColor3 = theme.Text
+    -- Fonts can't be tweened, so apply those instantly; every color property
+    -- is eased so theme/font switches glide instead of snapping.
     titleLabel.Font = fontData.Bold
-    logContainer.ScrollBarImageColor3 = theme.PrimaryAccent
-    runButton.BackgroundColor3 = theme.SecondaryAccent
     runButton.Font = fontData.Bold
-    inputContainer.ScrollBarImageColor3 = theme.Text
     inputBox.Font = fontData.Font
-    inputBox.TextColor3 = theme.Text
-    
+
+    tintTween(blurFrame, {BackgroundColor3 = theme.Background})
+    tintTween(blurStroke, {Color = theme.PrimaryAccent})
+    tintTween(titleLabel, {TextColor3 = theme.Text})
+    tintTween(logContainer, {ScrollBarImageColor3 = theme.PrimaryAccent})
+    tintTween(runButton, {BackgroundColor3 = runButtonHovered and theme.PrimaryAccent or theme.SecondaryAccent})
+    tintTween(inputContainer, {ScrollBarImageColor3 = theme.Text})
+    tintTween(inputBox, {TextColor3 = theme.Text})
+
     local tutFrame = screenGui:FindFirstChild("TutorialFrame")
     if tutFrame then
-        tutFrame.BackgroundColor3 = theme.Background
+        tintTween(tutFrame, {BackgroundColor3 = theme.Background})
         local tStroke = tutFrame:FindFirstChildOfClass("UIStroke")
-        if tStroke then tStroke.Color = theme.PrimaryAccent end
+        if tStroke then tintTween(tStroke, {Color = theme.PrimaryAccent}) end
         local tTitle = tutFrame:FindFirstChild("TextLabel")
-        if tTitle then tTitle.TextColor3 = theme.Text tTitle.Font = fontData.Bold end
+        if tTitle then tintTween(tTitle, {TextColor3 = theme.Text}) tTitle.Font = fontData.Bold end
     end
 
     for i = #utilButtons, 1, -1 do
@@ -753,7 +788,7 @@ local function applySettings()
         if not btn.Parent then
             table.remove(utilButtons, i)
         else
-            btn.BackgroundColor3 = theme[btn:GetAttribute("ColorType")]
+            tintTween(btn, {BackgroundColor3 = theme[btn:GetAttribute("ColorType")]})
         end
     end
 
@@ -763,33 +798,32 @@ local function applySettings()
             if entry then
                 entry.Font = fontData.Font
                 local typeAttr = entry:GetAttribute("LogType")
-                if typeAttr == "Error" then entry.TextColor3 = theme.Error
-                elseif typeAttr == "Warning" then entry.TextColor3 = theme.Warning
-                elseif typeAttr == "Input" then entry.TextColor3 = theme.InputEcho
-                elseif typeAttr == "Info" then entry.TextColor3 = theme.Info
-                else entry.TextColor3 = theme.Text end
+                local target
+                if typeAttr == "Error" then target = theme.Error
+                elseif typeAttr == "Warning" then target = theme.Warning
+                elseif typeAttr == "Input" then target = theme.InputEcho
+                elseif typeAttr == "Info" then target = theme.Info
+                else target = theme.Text end
+                tintTween(entry, {TextColor3 = target})
             end
         end
     end
 
-    settingsFrame.BackgroundColor3 = theme.Background
-    settingsStroke.Color = theme.PrimaryAccent
-    settingsTitle.TextColor3 = theme.Text
+    tintTween(settingsFrame, {BackgroundColor3 = theme.Background})
+    tintTween(settingsStroke, {Color = theme.PrimaryAccent})
+    tintTween(settingsTitle, {TextColor3 = theme.Text})
     settingsTitle.Font = fontData.Bold
-    
-    themeBtn.BackgroundColor3 = theme.UtilButton
-    themeBtn.TextColor3 = theme.Text
+
+    tintTween(themeBtn, {BackgroundColor3 = theme.UtilButton, TextColor3 = theme.Text})
     themeBtn.Font = fontData.Font
-    
-    fontBtn.BackgroundColor3 = theme.UtilButton
-    fontBtn.TextColor3 = theme.Text
+
+    tintTween(fontBtn, {BackgroundColor3 = theme.UtilButton, TextColor3 = theme.Text})
     fontBtn.Font = fontData.Font
-    
-    consoleBtn.BackgroundColor3 = theme.SecondaryAccent
+
+    tintTween(consoleBtn, {BackgroundColor3 = theme.SecondaryAccent})
     consoleBtn.Font = fontData.Bold
-    
-    closeSettingsBtn.BackgroundColor3 = theme.UtilButton
-    closeSettingsBtn.TextColor3 = theme.Text
+
+    tintTween(closeSettingsBtn, {BackgroundColor3 = theme.UtilButton, TextColor3 = theme.Text})
     closeSettingsBtn.Font = fontData.Bold
 
     templateEntry.Font = fontData.Font
@@ -878,8 +912,10 @@ local function toggleMinimize()
         titleLabel.Visible = false
         leftControls.Visible = false
         rightControls.Visible = false
+        startIconIdle()
     else
         controls:Disable()
+        stopIconIdle()
         UserInputService.MouseBehavior = Enum.MouseBehavior.Default
         lastMinimizedPosition = mainFrame.Position
         
@@ -1023,8 +1059,12 @@ local function executeCommand()
         return
     end
 
-    local success, err = pcall(executeScript, command)
-    if not success then log("Runtime Error: " .. tostring(err), "Error") end
+    -- Run on a separate thread so a long-running or yielding script never
+    -- freezes the console's input handler.
+    task.spawn(function()
+        local success, err = pcall(executeScript, command)
+        if not success then log("Runtime Error: " .. tostring(err), "Error") end
+    end)
 end
 
 local collapseButtonConnection
