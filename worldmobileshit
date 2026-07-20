@@ -468,6 +468,10 @@ local uiSettings = {
 	autoScroll = true,
 	fpsBooster = false,
 	antiAfk = false,
+	editorWordWrap = false,
+	consoleWordWrap = true,
+	editorLineNumbers = false,
+	consoleLineNumbers = false,
 }
 
 -- Assigned by the log filter block; lets the settings panel drive auto-scroll.
@@ -750,6 +754,10 @@ local function saveSettings()
 				autoScroll = uiSettings.autoScroll,
 				fpsBooster = uiSettings.fpsBooster,
 				antiAfk = uiSettings.antiAfk,
+				editorWordWrap = uiSettings.editorWordWrap,
+				consoleWordWrap = uiSettings.consoleWordWrap,
+				editorLineNumbers = uiSettings.editorLineNumbers,
+				consoleLineNumbers = uiSettings.consoleLineNumbers,
 				customTheme = customTheme,
 			})
 		)
@@ -800,6 +808,18 @@ local function loadSettings()
 	end
 	if type(data.antiAfk) == "boolean" then
 		uiSettings.antiAfk = data.antiAfk
+	end
+	if type(data.editorWordWrap) == "boolean" then
+		uiSettings.editorWordWrap = data.editorWordWrap
+	end
+	if type(data.consoleWordWrap) == "boolean" then
+		uiSettings.consoleWordWrap = data.consoleWordWrap
+	end
+	if type(data.editorLineNumbers) == "boolean" then
+		uiSettings.editorLineNumbers = data.editorLineNumbers
+	end
+	if type(data.consoleLineNumbers) == "boolean" then
+		uiSettings.consoleLineNumbers = data.consoleLineNumbers
 	end
 	if type(data.customTheme) == "table" then
 		for key, v in pairs(data.customTheme) do
@@ -1224,6 +1244,7 @@ safeSetCursor(logContainer, "rbxasset://SystemCursor/Arrow")
 local uiListLayout = Instance.new("UIListLayout", logContainer)
 uiListLayout.Padding = UDim.new(0, 5)
 uiListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+logContainer.AutomaticCanvasSize = uiSettings.consoleWordWrap == true and Enum.AutomaticSize.Y or Enum.AutomaticSize.XY
 
 -- === Log filter bar: search, type chips, and an auto-scroll pin ===
 local filterBar
@@ -1466,7 +1487,8 @@ end)
 
 -- Run whatever is on the clipboard (executor must expose a clipboard getter)
 local clipboardRunButton = Instance.new("TextButton", footer)
-clipboardRunButton.Size = UDim2.new(0, 58, 0, FOOTER_H - EDITOR_ROW_Y - 6)
+clipboardRunButton.Size = UDim2.new(0, 130, 0, FOOTER_H - EDITOR_ROW_Y - 6)
+	clipboardRunButton.TextWrapped = true
 clipboardRunButton.Position = UDim2.new(1, -81, 1, -6)
 clipboardRunButton.AnchorPoint = Vector2.new(1, 1)
 clipboardRunButton.BackgroundColor3 = CONFIG.Colors.UtilButton
@@ -1519,10 +1541,36 @@ inputContainer.BorderSizePixel = 0
 inputContainer.ScrollBarImageColor3 = Color3.new(255, 255, 255)
 inputContainer.ScrollBarThickness = 8
 inputContainer.ScrollingDirection = Enum.ScrollingDirection.XY
+inputContainer.AutomaticCanvasSize = uiSettings.editorWordWrap == true and Enum.AutomaticSize.Y or Enum.AutomaticSize.XY
 Instance.new("UICorner", inputContainer).CornerRadius = UDim.new(0, 6)
 safeSetCursor(inputContainer, "rbxasset://SystemCursor/Arrow")
 
 -- Accent ring that lights up while the code box is focused
+
+local editorLineGutter = Instance.new("TextLabel", inputContainer)
+editorLineGutter.Name = "LineGutter"
+editorLineGutter.BackgroundTransparency = 1
+editorLineGutter.Font = CONFIG.Font
+editorLineGutter.TextSize = CONFIG.TextSize
+editorLineGutter.TextColor3 = Color3.fromRGB(120, 120, 120)
+editorLineGutter.TextXAlignment = Enum.TextXAlignment.Right
+editorLineGutter.TextYAlignment = Enum.TextYAlignment.Top
+editorLineGutter.Size = UDim2.new(0, 24, 1, 0)
+editorLineGutter.Position = UDim2.new(0, 0, 0, 5)
+editorLineGutter.Visible = uiSettings.editorLineNumbers == true
+editorLineGutter.Text = "1"
+local function updateEditorLines()
+	local text = inputBox.Text
+	local lines = 1
+	for _ in string.gmatch(text, "\n") do lines = lines + 1 end
+	local t = {}
+	for i = 1, lines do table.insert(t, tostring(i)) end
+	editorLineGutter.Text = table.concat(t, "\n")
+	editorLineGutter.Size = UDim2.new(0, 24, 0, lines * (CONFIG.TextSize + 4))
+end
+inputBox:GetPropertyChangedSignal("Text"):Connect(updateEditorLines)
+updateEditorLines()
+
 local inputFocusStroke = Instance.new("UIStroke", inputContainer)
 inputFocusStroke.Color = CONFIG.Colors.PrimaryAccent
 inputFocusStroke.Thickness = 1.5
@@ -1539,11 +1587,11 @@ inputBox.TextSize = CONFIG.TextSize
 safeSetCursor(inputBox, "rbxasset://SystemCursor/Arrow")
 inputBox.MultiLine = true
 inputBox.Text = ""
-inputBox.TextWrapped = false
+inputBox.TextWrapped = uiSettings.editorWordWrap == true
 inputBox.TextXAlignment = Enum.TextXAlignment.Left
 inputBox.TextYAlignment = Enum.TextYAlignment.Top
 Instance.new("UIPadding", inputBox, {
-	PaddingLeft = UDim.new(0, 10),
+	PaddingLeft = UDim.new(0, uiSettings.editorLineNumbers == true and 32 or 10),
 	PaddingRight = UDim.new(0, 10),
 	PaddingTop = UDim.new(0, 5),
 	PaddingBottom = UDim.new(0, 5),
@@ -1657,14 +1705,14 @@ do
 	highlightLabel.Font = CONFIG.Font
 	highlightLabel.TextColor3 = CONFIG.Colors.Text
 	highlightLabel.TextSize = CONFIG.TextSize
-	highlightLabel.TextWrapped = false
+	highlightLabel.TextWrapped = uiSettings.editorWordWrap == true
 	highlightLabel.TextXAlignment = Enum.TextXAlignment.Left
 	highlightLabel.TextYAlignment = Enum.TextYAlignment.Top
 	highlightLabel.RichText = true
 	highlightLabel.Visible = false
 	highlightLabel.ZIndex = 2
 	local hlPad = Instance.new("UIPadding", highlightLabel)
-	hlPad.PaddingLeft = UDim.new(0, 10)
+	hlPad.PaddingLeft = UDim.new(0, uiSettings.editorLineNumbers == true and 32 or 10)
 	hlPad.PaddingRight = UDim.new(0, 10)
 	hlPad.PaddingTop = UDim.new(0, 5)
 	hlPad.PaddingBottom = UDim.new(0, 5)
@@ -1816,18 +1864,33 @@ templateLog.AutomaticSize = Enum.AutomaticSize.Y
 local templateLayout = Instance.new("UIListLayout", templateLog)
 templateLayout.FillDirection = Enum.FillDirection.Horizontal
 templateLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+templateLayout.SortOrder = Enum.SortOrder.LayoutOrder
+local templateLineNumber = Instance.new("TextLabel", templateLog)
+templateLineNumber.Name = "LineNumber"
+templateLineNumber.BackgroundTransparency = 1
+templateLineNumber.Font = CONFIG.Font
+templateLineNumber.TextSize = CONFIG.TextSize
+templateLineNumber.TextColor3 = Color3.fromRGB(120, 120, 120)
+templateLineNumber.TextXAlignment = Enum.TextXAlignment.Right
+templateLineNumber.TextYAlignment = Enum.TextYAlignment.Top
+templateLineNumber.Size = UDim2.new(0, 26, 0, 0)
+templateLineNumber.AutomaticSize = Enum.AutomaticSize.Y
+templateLineNumber.Visible = uiSettings.consoleLineNumbers == true
+templateLineNumber.LayoutOrder = 1
 local templateEntry = Instance.new("TextLabel", templateLog)
 templateEntry.Name = "LogEntry"
+templateEntry.LayoutOrder = 2
 templateEntry.BackgroundTransparency = 1
 templateEntry.Font = CONFIG.Font
 templateEntry.TextSize = CONFIG.TextSize
-templateEntry.TextWrapped = true
+templateEntry.TextWrapped = uiSettings.consoleWordWrap == true
 templateEntry.TextXAlignment = Enum.TextXAlignment.Left
-templateEntry.Size = UDim2.new(1, -60, 0, 0)
+templateEntry.Size = UDim2.new(1, uiSettings.consoleLineNumbers == true and -90 or -60, 0, 0)
 templateEntry.AutomaticSize = Enum.AutomaticSize.Y
 templateEntry.RichText = true
 local templateActions = Instance.new("Frame", templateLog)
 templateActions.Name = "Actions"
+templateActions.LayoutOrder = 3
 templateActions.Size = UDim2.new(0, 60, 1, 0)
 templateActions.BackgroundTransparency = 1
 templateActions.Visible = false
@@ -3537,6 +3600,59 @@ createToggleRow("Background Blur", uiSettings.blur, function(on)
 	saveSettings()
 end)
 
+
+createToggleRow("Editor Word Wrap", uiSettings.editorWordWrap == true, function(on)
+	uiSettings.editorWordWrap = on
+	inputBox.TextWrapped = on
+	local hl = inputContainer:FindFirstChild("HighlightLayer")
+	if hl then hl.TextWrapped = on end
+	inputContainer.AutomaticCanvasSize = on and Enum.AutomaticSize.Y or Enum.AutomaticSize.XY
+	saveSettings()
+end)
+
+createToggleRow("Console Word Wrap", uiSettings.consoleWordWrap == true, function(on)
+	uiSettings.consoleWordWrap = on
+	templateEntry.TextWrapped = on
+	for _, child in ipairs(logContainer:GetChildren()) do
+		if child:IsA("Frame") and child.Name == "LogFrame" then
+			local entry = child:FindFirstChild("LogEntry")
+			if entry then entry.TextWrapped = on end
+		end
+	end
+	logContainer.AutomaticCanvasSize = on and Enum.AutomaticSize.Y or Enum.AutomaticSize.XY
+	saveSettings()
+end)
+
+createToggleRow("Editor Line Numbers", uiSettings.editorLineNumbers == true, function(on)
+	uiSettings.editorLineNumbers = on
+	local eg = inputContainer:FindFirstChild("LineGutter")
+	if eg then eg.Visible = on end
+	local pad = on and 32 or 10
+	local ibp = inputBox:FindFirstChildOfClass("UIPadding")
+	if ibp then ibp.PaddingLeft = UDim.new(0, pad) end
+	local hl = inputContainer:FindFirstChild("HighlightLayer")
+	if hl then
+		local hlp = hl:FindFirstChildOfClass("UIPadding")
+		if hlp then hlp.PaddingLeft = UDim.new(0, pad) end
+	end
+	saveSettings()
+end)
+
+createToggleRow("Console Line Numbers", uiSettings.consoleLineNumbers == true, function(on)
+	uiSettings.consoleLineNumbers = on
+	templateLineNumber.Visible = on
+	templateEntry.Size = UDim2.new(1, on and -90 or -60, 0, 0)
+	for _, child in ipairs(logContainer:GetChildren()) do
+		if child:IsA("Frame") and child.Name == "LogFrame" then
+			local ln = child:FindFirstChild("LineNumber")
+			local entry = child:FindFirstChild("LogEntry")
+			if ln then ln.Visible = on end
+			if entry then entry.Size = UDim2.new(1, on and -90 or -60, 0, 0) end
+		end
+	end
+	saveSettings()
+end)
+
 createToggleRow("Auto-Scroll Logs", uiSettings.autoScroll, function(on)
 	if setAutoScroll then
 		setAutoScroll(on)
@@ -4182,6 +4298,7 @@ do
 	end)
 
 	local aeNameBox = Instance.new("TextBox", aeFrame)
+aeNameBox.Visible = false
 	aeNameBox.Size = UDim2.new(1, -140, 0, 30)
 	aeNameBox.Position = UDim2.new(0, 12, 0, 78)
 	aeNameBox.BackgroundColor3 = CONFIG.Colors.UtilButton
@@ -4206,6 +4323,7 @@ do
 	liftPanelWhileTyping(aeFrame, aeNameBox)
 
 	local aeAddBtn = Instance.new("TextButton", aeFrame)
+aeAddBtn.Visible = false
 	aeAddBtn.Size = UDim2.new(0, 120, 0, 30)
 	aeAddBtn.Position = UDim2.new(1, -12, 0, 78)
 	aeAddBtn.AnchorPoint = Vector2.new(1, 0)
@@ -4224,8 +4342,8 @@ do
 	end)
 
 	local aeListScroll = Instance.new("ScrollingFrame", aeFrame)
-	aeListScroll.Position = UDim2.new(0, 12, 0, 116)
-	aeListScroll.Size = UDim2.new(1, -24, 1, -128)
+	aeListScroll.Position = UDim2.new(0, 12, 0, 78)
+	aeListScroll.Size = UDim2.new(1, -24, 1, -90)
 	aeListScroll.BackgroundTransparency = 1
 	aeListScroll.BorderSizePixel = 0
 	aeListScroll.ScrollBarThickness = 4
@@ -4379,6 +4497,27 @@ do
 		if settingsFrame.Visible then
 			toggleSettings()
 		end
+		
+		-- Auto-detect open tabs and add to AE list if not present
+		local existing = {}
+		for _, v in ipairs(autoExecScripts) do
+			existing[v.Name] = v
+		end
+		local updated = false
+		for _, tab in ipairs(editorTabs) do
+			if tab.name and tab.name ~= "" and not existing[tab.name] then
+				table.insert(autoExecScripts, { Name = tab.name, Source = tab.content, Enabled = false })
+				existing[tab.name] = autoExecScripts[#autoExecScripts]
+				updated = true
+			elseif tab.name and tab.name ~= "" and existing[tab.name] then
+				-- Optionally update the source to latest editor content (maybe risky but makes sense for "detected tabs")
+				-- existing[tab.name].Source = tab.content
+			end
+		end
+		if updated then
+			saveAutoExecFile()
+		end
+
 		refreshAeList()
 		aeIsOpen = true
 		aeOverlay.Visible = true
@@ -4542,6 +4681,8 @@ function log(message, messageType, bulkLoad)
 	local logFrame = templateLog:Clone()
 	logFrame.LayoutOrder = logCounter
 	local logEntry = logFrame.LogEntry
+	local logLine = logFrame:FindFirstChild("LineNumber")
+	if logLine then logLine.Text = tostring(logCounter) end
 	local messageStr = tostring(message)
 
 	logEntry:SetAttribute("LogType", messageType)
