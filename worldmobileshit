@@ -1329,13 +1329,19 @@ do
             end
         end
 
+        -- Built by concatenation so this file's own source never contains a
+        -- long-bracket sequence: loaders that wrap the script inside a
+        -- long-bracket string would be terminated early by a raw one.
+        local LONG_OPEN = "[" .. "["
+        local LONG_CLOSE = "]" .. "]"
+
         while i <= n do
             local two = src:sub(i, i + 1)
             local c = src:sub(i, i)
             if two == "--" then
                 local j
-                if src:sub(i + 2, i + 3) == "[[" then
-                    local close = src:find("]]", i + 4, true)
+                if src:sub(i + 2, i + 3) == LONG_OPEN then
+                    local close = src:find(LONG_CLOSE, i + 4, true)
                     j = close and (close + 1) or n
                 else
                     local nl = src:find("\n", i, true)
@@ -1358,8 +1364,8 @@ do
                 if j > n then j = n end
                 push(src:sub(i, j), strColor)
                 i = j + 1
-            elseif two == "[[" then
-                local close = src:find("]]", i + 2, true)
+            elseif two == LONG_OPEN then
+                local close = src:find(LONG_CLOSE, i + 2, true)
                 local j = close and (close + 1) or n
                 push(src:sub(i, j), strColor)
                 i = j + 1
