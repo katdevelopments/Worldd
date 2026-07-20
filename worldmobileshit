@@ -1198,13 +1198,19 @@ end))
 registerLocalizedString("Run")
 registerLocalizedRefresher(function() runButton.Text = tr("Run") end)
 
+-- Run whatever is on the clipboard (executor must expose a clipboard getter)
+local clipboardRunButton = createIconButton(footer, "📥", 34, "UtilButton")
+clipboardRunButton.Position = UDim2.new(1, -95, 0.5, 0)
+clipboardRunButton.AnchorPoint = Vector2.new(1, 0.5)
+clipboardRunButton.ZIndex = 3
+
 local expandInputButton = createIconButton(footer, "↗️", 24, "UtilButton")
-expandInputButton.Position = UDim2.new(1, -110, 0.15, 0)
+expandInputButton.Position = UDim2.new(1, -150, 0.15, 0)
 expandInputButton.ZIndex = 3
 expandInputButton.Visible = false
 
 local inputContainer = Instance.new("ScrollingFrame", footer)
-inputContainer.Size = UDim2.new(1, -100, 1, -10)
+inputContainer.Size = UDim2.new(1, -140, 1, -10)
 inputContainer.Position = UDim2.new(0, 5, 0.5, 0)
 inputContainer.AnchorPoint = Vector2.new(0, 0.5)
 inputContainer.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
@@ -3035,6 +3041,9 @@ local function toggleScriptView()
         runButton.Size = UDim2.new(0, 80, 0, 30)
         runButton.AnchorPoint = Vector2.new(1, 0)
         runButton.Position = UDim2.new(1, -5, 0, 5)
+
+        clipboardRunButton.AnchorPoint = Vector2.new(1, 0)
+        clipboardRunButton.Position = UDim2.new(1, -153, 0, 5)
         
         inputContainer.Size = UDim2.new(1, -10, 1, -45)
         inputContainer.Position = UDim2.new(0.5, 0, 1, -5)
@@ -3053,8 +3062,11 @@ local function toggleScriptView()
         runButton.Size = UDim2.new(0, 80, 1, -10)
         runButton.Position = UDim2.new(1, -5, 0.5, 0)
         runButton.AnchorPoint = Vector2.new(1, 0.5)
-        
-        inputContainer.Size = UDim2.new(1, -100, 1, -10)
+
+        clipboardRunButton.AnchorPoint = Vector2.new(1, 0.5)
+        clipboardRunButton.Position = UDim2.new(1, -95, 0.5, 0)
+
+        inputContainer.Size = UDim2.new(1, -140, 1, -10)
         inputContainer.Position = UDim2.new(0, 5, 0.5, 0)
         inputContainer.AnchorPoint = Vector2.new(0, 0.5)
     end
@@ -3125,6 +3137,42 @@ table.insert(connections, inputBox.FocusLost:Connect(function(enterPressed)
 end))
 
 table.insert(connections, runButton.MouseButton1Click:Connect(executeCommand))
+
+-- Clipboard reading is executor-specific; try the known getter names.
+local function readClipboard()
+    local getter = (type(getclipboard) == "function" and getclipboard)
+        or (type(get_clipboard) == "function" and get_clipboard)
+        or (type(getrbxclipboard) == "function" and getrbxclipboard)
+    if not getter then
+        return nil, "unsupported"
+    end
+    local ok, result = pcall(getter)
+    if ok and type(result) == "string" then
+        return result
+    end
+    return nil, "failed"
+end
+
+table.insert(connections, clipboardRunButton.MouseButton1Click:Connect(function()
+    local content, reason = readClipboard()
+    if not content then
+        if reason == "unsupported" then
+            log("Your executor does not expose a clipboard getter (getclipboard), so Run from Clipboard is unavailable. Paste into the editor instead.", "Warning")
+        else
+            log("Could not read the clipboard.", "Error")
+        end
+        return
+    end
+    if content:gsub("%s", "") == "" then
+        log("Clipboard is empty.", "Warning")
+        return
+    end
+    -- Load into the editor (visible + highlighted) and run through the
+    -- normal path so it lands in command history too.
+    inputBox.Text = content
+    log("Running script from clipboard (" .. #content .. " chars)...", "Info")
+    executeCommand()
+end))
 
 table.insert(connections, inputBox.InputBegan:Connect(function(input)
     if not isVisible then return end
