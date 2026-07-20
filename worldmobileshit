@@ -1472,7 +1472,7 @@ clipboardRunButton.AnchorPoint = Vector2.new(1, 1)
 clipboardRunButton.BackgroundColor3 = CONFIG.Colors.UtilButton
 clipboardRunButton:SetAttribute("ColorType", "UtilButton")
 clipboardRunButton.Font = CONFIG.BoldFont
-clipboardRunButton.Text = "Clip"
+clipboardRunButton.Text = "Run from Clipboard"
 clipboardRunButton.TextColor3 = Color3.new(1, 1, 1)
 clipboardRunButton.TextSize = 14
 clipboardRunButton.ZIndex = 4
