@@ -4076,7 +4076,7 @@ do
 
 			local runBtn = Instance.new("TextButton", row)
 			runBtn.Size = UDim2.new(0, 32, 1, 0)
-			runBtn.Position = UDim2.new(1, -36, 0, 0)
+			runBtn.Position = UDim2.new(1, -68, 0, 0)
 			runBtn.AnchorPoint = Vector2.new(0, 0)
 			runBtn.BackgroundColor3 = CONFIG.Colors.SecondaryAccent
 			runBtn.Font = Enum.Font.SourceSans
