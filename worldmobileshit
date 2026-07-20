@@ -14,12 +14,35 @@ if playerGui:FindFirstChild("WorldClientGui") then
     return
 end
 
-local isExecuteScriptEnabled = false
+-- Resolve an execution backend. Prefer the environment's custom
+-- execute_script (if one was injected into getgenv), otherwise fall back to
+-- the executor's normal execute path via loadstring.
+local executeScript = nil
+local executorType = nil
+
 pcall(function()
     if getgenv and getgenv().execute_script then
-        isExecuteScriptEnabled = true
+        executeScript = getgenv().execute_script
+        executorType = "execute_script"
     end
 end)
+
+if not executeScript then
+    pcall(function()
+        if loadstring then
+            executeScript = function(source)
+                local fn, compileErr = loadstring(source)
+                if not fn then
+                    error(compileErr, 0)
+                end
+                return fn()
+            end
+            executorType = "loadstring"
+        end
+    end)
+end
+
+local isExecuteScriptEnabled = executeScript ~= nil
 
 local themes = {
     {
@@ -246,19 +269,29 @@ local function createIconButton(parent, emoji, size, colorType)
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
     safeSetCursor(btn, "rbxasset://SystemCursor/Arrow")
     
-    local originalSize = btn.Size
+    local scale = Instance.new("UIScale", btn)
+    scale.Scale = 1
+    local isHovered = false
+    local hoverInfo = TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local pressInfo = TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local springInfo = TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+
     table.insert(connections, btn.MouseEnter:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = CONFIG.Colors.UtilButtonHover}):Play()
+        isHovered = true
+        TweenService:Create(btn, hoverInfo, {BackgroundColor3 = CONFIG.Colors.UtilButtonHover}):Play()
+        TweenService:Create(scale, hoverInfo, {Scale = 1.12}):Play()
     end))
     table.insert(connections, btn.MouseLeave:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = CONFIG.Colors[btn:GetAttribute("ColorType")]}):Play()
+        isHovered = false
+        TweenService:Create(btn, hoverInfo, {BackgroundColor3 = CONFIG.Colors[btn:GetAttribute("ColorType")]}):Play()
+        TweenService:Create(scale, hoverInfo, {Scale = 1}):Play()
     end))
     table.insert(connections, btn.MouseButton1Down:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.1), {Size = UDim2.fromOffset(originalSize.X.Offset * 0.9, originalSize.Y.Offset * 0.9)}):Play()
+        TweenService:Create(scale, pressInfo, {Scale = 0.86}):Play()
         createClickParticles(btn)
     end))
     table.insert(connections, btn.MouseButton1Up:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.1), {Size = originalSize}):Play()
+        TweenService:Create(scale, springInfo, {Scale = isHovered and 1.12 or 1}):Play()
     end))
     table.insert(utilButtons, btn)
     return btn
@@ -296,7 +329,6 @@ rightControlsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
 rightControlsLayout.VerticalAlignment = Enum.VerticalAlignment.Center
 rightControlsLayout.Padding = UDim.new(0, 8)
 
-local scriptHubButton = createIconButton(leftControls, "📜", 28, "UtilButton")
 local siteButton = createIconButton(leftControls, "🌐", 28, "UtilButton")
 local discordButton = createIconButton(leftControls, "💬", 28, "UtilButton")
 local settingsButton = createIconButton(leftControls, "⚙️", 28, "UtilButton")
@@ -338,6 +370,26 @@ runButton.TextColor3 = Color3.new(1, 1, 1)
 runButton.TextSize = 16
 Instance.new("UICorner", runButton).CornerRadius = UDim.new(0, 6)
 safeSetCursor(runButton, "rbxasset://SystemCursor/Arrow")
+
+local runButtonScale = Instance.new("UIScale", runButton)
+runButtonScale.Scale = 1
+local runButtonHovered = false
+table.insert(connections, runButton.MouseEnter:Connect(function()
+    runButtonHovered = true
+    TweenService:Create(runButton, TweenInfo.new(0.18, Enum.EasingStyle.Quad), {BackgroundColor3 = CONFIG.Colors.PrimaryAccent}):Play()
+    TweenService:Create(runButtonScale, TweenInfo.new(0.18, Enum.EasingStyle.Quad), {Scale = 1.06}):Play()
+end))
+table.insert(connections, runButton.MouseLeave:Connect(function()
+    runButtonHovered = false
+    TweenService:Create(runButton, TweenInfo.new(0.18, Enum.EasingStyle.Quad), {BackgroundColor3 = CONFIG.Colors.SecondaryAccent}):Play()
+    TweenService:Create(runButtonScale, TweenInfo.new(0.18, Enum.EasingStyle.Quad), {Scale = 1}):Play()
+end))
+table.insert(connections, runButton.MouseButton1Down:Connect(function()
+    TweenService:Create(runButtonScale, TweenInfo.new(0.1, Enum.EasingStyle.Quad), {Scale = 0.93}):Play()
+end))
+table.insert(connections, runButton.MouseButton1Up:Connect(function()
+    TweenService:Create(runButtonScale, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Scale = runButtonHovered and 1.06 or 1}):Play()
+end))
 
 local expandInputButton = createIconButton(footer, "↗️", 24, "UtilButton")
 expandInputButton.Position = UDim2.new(1, -110, 0.15, 0)
@@ -537,7 +589,7 @@ local function showTutorial()
         {Title = "Minimizing", Text = "Click the ('✖️') button to minimize the client. Click the icon again to maximize it."},
         {Title = "Dragging", Text = "When minimized, you can drag the icon anywhere on your screen."},
         {Title = "Player Input", Text = "When the client is open, character movement is disabled. Minimizing restores it."},
-        {Title = "Header Buttons", Text = "Quick access to our Hub (📜), Website (🌐), and Discord (💬)."},
+        {Title = "Header Buttons", Text = "Quick access to our Website (🌐) and Discord (💬)."},
         {Title = "Log Controls", Text = "Clear logs (🗑️), refresh (🔄), or copy all to clipboard (📋)."},
         {Title = "Executing Code", Text = "Type Luau code and press 'Run'. Use Up/Down arrow keys for history."},
         {Title = "Script Editor", Text = "For large scripts, click '↗️' to expand the editor to a full-screen view."},
@@ -916,10 +968,11 @@ local function log(message, messageType, bulkLoad)
     end
 
     if not bulkLoad then
-        logFrame.Position = UDim2.new(0, 0, 0, 20)
+        logFrame.Position = UDim2.new(0, 0, 0, 24)
         logEntry.TextTransparency = 1
-        TweenService:Create(logFrame, TweenInfo.new(0.3), {Position = UDim2.new(0, 0, 0, 0)}):Play()
-        TweenService:Create(logEntry, TweenInfo.new(0.3), {TextTransparency = 0}):Play()
+        local entranceInfo = TweenInfo.new(0.35, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+        TweenService:Create(logFrame, entranceInfo, {Position = UDim2.new(0, 0, 0, 0)}):Play()
+        TweenService:Create(logEntry, entranceInfo, {TextTransparency = 0}):Play()
         requestCanvasUpdate()
         task.defer(function()
             if #activeLogFrames > 1 then
@@ -934,7 +987,9 @@ end
 local function refreshLogs()
     clearLogs()
     if not isExecuteScriptEnabled then
-        log("Warning: 'execute_script' is not found in getgenv(). Code execution will not work.", "Warning", true)
+        log("Warning: No executor found ('execute_script' or 'loadstring'). Code execution will not work.", "Warning", true)
+    elseif executorType == "loadstring" then
+        log("Note: 'execute_script' not found; falling back to the executor's default 'loadstring'.", "Info", true)
     end
     
     local history = LogService:GetLogHistory()
@@ -964,11 +1019,11 @@ local function executeCommand()
     end
     
     if not isExecuteScriptEnabled then
-        log("Execution failed: 'execute_script' is not available.", "Error")
+        log("Execution failed: no executor available (missing 'execute_script' and 'loadstring').", "Error")
         return
     end
-    
-    local success, err = pcall(function() getgenv().execute_script(command) end)
+
+    local success, err = pcall(executeScript, command)
     if not success then log("Runtime Error: " .. tostring(err), "Error") end
 end
 
@@ -1108,9 +1163,8 @@ table.insert(connections, inputBox.InputBegan:Connect(function(input)
     end
 end))
 
-table.insert(connections, scriptHubButton.MouseButton1Click:Connect(function() pcall(setclipboard, "https://world-script-hub.netlify.app/") log("Script Hub link copied.", "Output") end))
 table.insert(connections, siteButton.MouseButton1Click:Connect(function() pcall(setclipboard, "https://useworld.xyz") log("Website link copied.", "Output") end))
-table.insert(connections, discordButton.MouseButton1Click:Connect(function() pcall(setclipboard, "https://dsc.gg/globes") log("Discord link copied.", "Output") end))
+table.insert(connections, discordButton.MouseButton1Click:Connect(function() pcall(setclipboard, "https://discord.gg/worldclient") log("Discord link copied.", "Output") end))
 table.insert(connections, expandInputButton.MouseButton1Click:Connect(toggleScriptView))
 table.insert(connections, minimizeButton.MouseButton1Click:Connect(toggleMinimize))
 table.insert(connections, clearButton.MouseButton1Click:Connect(clearLogs))
