@@ -465,7 +465,17 @@ local uiSettings = {
 	glow = true,
 	blur = true,
 	autoTranslate = false,
+	autoScroll = true,
+	fpsBooster = false,
+	antiAfk = false,
 }
+
+-- Assigned by the log filter block; lets the settings panel drive auto-scroll.
+local setAutoScroll
+-- Assigned by the auto-execute block; opens its panel from a settings button.
+local openAutoExec
+-- Assigned by the auto-execute block; runs enabled scripts at startup.
+local runAutoExecScripts
 
 -- === Google Translate integration ===
 -- Works across executors: prefers the executor's request function, falls
@@ -737,6 +747,9 @@ local function saveSettings()
 				glow = uiSettings.glow,
 				blur = uiSettings.blur,
 				autoTranslate = uiSettings.autoTranslate,
+				autoScroll = uiSettings.autoScroll,
+				fpsBooster = uiSettings.fpsBooster,
+				antiAfk = uiSettings.antiAfk,
 				customTheme = customTheme,
 			})
 		)
@@ -778,6 +791,15 @@ local function loadSettings()
 	end
 	if type(data.autoTranslate) == "boolean" then
 		uiSettings.autoTranslate = data.autoTranslate
+	end
+	if type(data.autoScroll) == "boolean" then
+		uiSettings.autoScroll = data.autoScroll
+	end
+	if type(data.fpsBooster) == "boolean" then
+		uiSettings.fpsBooster = data.fpsBooster
+	end
+	if type(data.antiAfk) == "boolean" then
+		uiSettings.antiAfk = data.antiAfk
 	end
 	if type(data.customTheme) == "table" then
 		for key, v in pairs(data.customTheme) do
@@ -1179,16 +1201,18 @@ local clearButton = createIconButton(leftControls, "🗑️", 28, "UtilButton")
 local refreshButton = createIconButton(leftControls, "🔄", 28, "UtilButton")
 local minimizeButton = createIconButton(rightControls, "✖️", 28, "MinimizeButton")
 
+-- Footer holds the tab bar (top strip) and the editor row (input + buttons).
+local FOOTER_H = 112
 local footer = Instance.new("Frame", mainFrame)
 footer.Name = "Footer"
-footer.Size = UDim2.new(1, 0, 0, 80)
-footer.Position = UDim2.new(0, 0, 1, -80)
+footer.Size = UDim2.new(1, 0, 0, FOOTER_H)
+footer.Position = UDim2.new(0, 0, 1, -FOOTER_H)
 footer.BackgroundTransparency = 1
 footer.ZIndex = 3
 
 local logContainer = Instance.new("ScrollingFrame", mainFrame)
 logContainer.Name = "LogContainer"
-logContainer.Size = UDim2.new(1, 0, 1, -152)
+logContainer.Size = UDim2.new(1, 0, 1, -72 - FOOTER_H)
 logContainer.Position = UDim2.new(0, 0, 0, 72)
 logContainer.BackgroundTransparency = 1
 logContainer.BorderSizePixel = 0
@@ -1311,35 +1335,19 @@ do
 	end
 	updateChipVisuals()
 
-	local pinButton = Instance.new("TextButton", filterBar)
-	pinButton.LayoutOrder = 6
-	pinButton.Size = UDim2.new(0, 26, 1, 0)
-	pinButton.BackgroundColor3 = CONFIG.Colors.SecondaryAccent
-	pinButton:SetAttribute("ColorType", "SecondaryAccent")
-	pinButton.Font = Enum.Font.SourceSans
-	pinButton.Text = "📌"
-	pinButton.TextColor3 = Color3.new(1, 1, 1)
-	pinButton.TextSize = 14
-	pinButton.ZIndex = 2
-	Instance.new("UICorner", pinButton).CornerRadius = UDim.new(0, 6)
-	addDepthGradient(pinButton)
-	safeSetCursor(pinButton, "rbxasset://SystemCursor/Arrow")
-
-	local pinned = true
+	-- Auto-scroll is a master switch in Settings; scrolling up still
+	-- temporarily suspends the follow until you return to the bottom.
+	local followingBottom = uiSettings.autoScroll
 	local suppressScrollDetect = false
 
-	local function updatePinVisual()
-		local colorType = pinned and "SecondaryAccent" or "UtilButton"
-		pinButton:SetAttribute("ColorType", colorType)
-		TweenService:Create(pinButton, TweenInfo.new(0.15), { BackgroundColor3 = CONFIG.Colors[colorType] }):Play()
-	end
-
 	function scrollLogsToBottom(force)
-		if force and not pinned then
-			pinned = true
-			updatePinVisual()
+		if not uiSettings.autoScroll and not force then
+			return
 		end
-		if not pinned then
+		if force then
+			followingBottom = true
+		end
+		if not followingBottom then
 			return
 		end
 		suppressScrollDetect = true
@@ -1351,33 +1359,26 @@ do
 		end)
 	end
 
-	table.insert(
-		connections,
-		pinButton.MouseButton1Click:Connect(function()
-			pinned = not pinned
-			updatePinVisual()
-			if pinned then
-				scrollLogsToBottom(true)
-			end
-		end)
-	)
+	function setAutoScroll(on)
+		uiSettings.autoScroll = on
+		followingBottom = on
+		if on then
+			scrollLogsToBottom(true)
+		end
+	end
 
 	-- Scrolling up suspends auto-scroll; returning to the bottom re-arms it
 	table.insert(
 		connections,
 		logContainer:GetPropertyChangedSignal("CanvasPosition"):Connect(function()
-			if suppressScrollDetect then
+			if suppressScrollDetect or not uiSettings.autoScroll then
 				return
 			end
 			local maxScroll = logContainer.AbsoluteCanvasSize.Y - logContainer.AbsoluteSize.Y
 			if maxScroll <= 0 then
 				return
 			end
-			local nearBottom = logContainer.CanvasPosition.Y >= maxScroll - 40
-			if nearBottom ~= pinned then
-				pinned = nearBottom
-				updatePinVisual()
-			end
+			followingBottom = logContainer.CanvasPosition.Y >= maxScroll - 40
 		end)
 	)
 
@@ -1395,19 +1396,21 @@ do
 		for _, chip in pairs(chipButtons) do
 			tintTween(chip, { BackgroundColor3 = theme[chip:GetAttribute("ColorType")] })
 		end
-		tintTween(pinButton, { BackgroundColor3 = theme[pinButton:GetAttribute("ColorType")] })
 	end)
 end
 
+-- Bottom editor row sits below the tab bar (top 34px of the footer).
+local EDITOR_ROW_Y = 36
 local runButton = Instance.new("TextButton", footer)
-runButton.Size = UDim2.new(0, 80, 1, -10)
-runButton.Position = UDim2.new(1, -5, 0.5, 0)
-runButton.AnchorPoint = Vector2.new(1, 0.5)
+runButton.Size = UDim2.new(0, 72, 0, FOOTER_H - EDITOR_ROW_Y - 6)
+runButton.Position = UDim2.new(1, -5, 1, -6)
+runButton.AnchorPoint = Vector2.new(1, 1)
 runButton.BackgroundColor3 = CONFIG.Colors.SecondaryAccent
 runButton.Font = CONFIG.BoldFont
 runButton.Text = "Run"
 runButton.TextColor3 = Color3.new(1, 1, 1)
 runButton.TextSize = 16
+runButton.ZIndex = 4
 Instance.new("UICorner", runButton).CornerRadius = UDim.new(0, 6)
 addDepthGradient(runButton)
 safeSetCursor(runButton, "rbxasset://SystemCursor/Arrow")
@@ -1462,20 +1465,54 @@ registerLocalizedRefresher(function()
 end)
 
 -- Run whatever is on the clipboard (executor must expose a clipboard getter)
-local clipboardRunButton = createIconButton(footer, "📥", 34, "UtilButton")
-clipboardRunButton.Position = UDim2.new(1, -95, 0.5, 0)
-clipboardRunButton.AnchorPoint = Vector2.new(1, 0.5)
-clipboardRunButton.ZIndex = 3
+local clipboardRunButton = Instance.new("TextButton", footer)
+clipboardRunButton.Size = UDim2.new(0, 58, 0, FOOTER_H - EDITOR_ROW_Y - 6)
+clipboardRunButton.Position = UDim2.new(1, -81, 1, -6)
+clipboardRunButton.AnchorPoint = Vector2.new(1, 1)
+clipboardRunButton.BackgroundColor3 = CONFIG.Colors.UtilButton
+clipboardRunButton:SetAttribute("ColorType", "UtilButton")
+clipboardRunButton.Font = CONFIG.BoldFont
+clipboardRunButton.Text = "Clip"
+clipboardRunButton.TextColor3 = Color3.new(1, 1, 1)
+clipboardRunButton.TextSize = 14
+clipboardRunButton.ZIndex = 4
+Instance.new("UICorner", clipboardRunButton).CornerRadius = UDim.new(0, 6)
+addDepthGradient(clipboardRunButton)
+safeSetCursor(clipboardRunButton, "rbxasset://SystemCursor/Arrow")
+registerLocalizedString("Clip")
+registerLocalizedRefresher(function()
+	clipboardRunButton.Text = tr("Clip")
+end)
+table.insert(
+	connections,
+	clipboardRunButton.MouseEnter:Connect(function()
+		TweenService
+			:Create(clipboardRunButton, TweenInfo.new(0.15), { BackgroundColor3 = CONFIG.Colors.UtilButtonHover })
+			:Play()
+	end)
+)
+table.insert(
+	connections,
+	clipboardRunButton.MouseLeave:Connect(function()
+		TweenService:Create(clipboardRunButton, TweenInfo.new(0.15), { BackgroundColor3 = CONFIG.Colors.UtilButton })
+			:Play()
+	end)
+)
+table.insert(themedUpdaters, function(theme, fontData)
+	tintTween(clipboardRunButton, { BackgroundColor3 = theme.UtilButton })
+	clipboardRunButton.Font = fontData.Bold
+end)
 
-local expandInputButton = createIconButton(footer, "↗️", 24, "UtilButton")
-expandInputButton.Position = UDim2.new(1, -150, 0.15, 0)
-expandInputButton.ZIndex = 3
+local expandInputButton = createIconButton(footer, "↗️", 22, "UtilButton")
+expandInputButton.Position = UDim2.new(1, -143, 1, -6)
+expandInputButton.AnchorPoint = Vector2.new(1, 1)
+expandInputButton.ZIndex = 4
 expandInputButton.Visible = false
 
 local inputContainer = Instance.new("ScrollingFrame", footer)
-inputContainer.Size = UDim2.new(1, -140, 1, -10)
-inputContainer.Position = UDim2.new(0, 5, 0.5, 0)
-inputContainer.AnchorPoint = Vector2.new(0, 0.5)
+inputContainer.Size = UDim2.new(1, -148, 0, FOOTER_H - EDITOR_ROW_Y - 6)
+inputContainer.Position = UDim2.new(0, 5, 1, -6)
+inputContainer.AnchorPoint = Vector2.new(0, 1)
 inputContainer.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 inputContainer.BackgroundTransparency = 0.4
 inputContainer.BorderSizePixel = 0
@@ -1837,6 +1874,679 @@ end
 local debouncedUpdate = debounce(updateInputCanvas, 0.1)
 table.insert(connections, inputBox:GetPropertyChangedSignal("Text"):Connect(debouncedUpdate))
 table.insert(connections, inputContainer:GetPropertyChangedSignal("AbsoluteSize"):Connect(debouncedUpdate))
+
+-- ============================================================================
+-- Editor tabs: multiple named scripts, drag to reorder, pin, close, hold for
+-- a context menu, and persistence to disk. The single inputBox shows the
+-- active tab's content; switching tabs swaps the text in and out.
+-- ============================================================================
+-- Exposed to the auto-execute panel and startup; the rest of the tab system
+-- is scoped inside the do-block below to keep the main chunk's local count low.
+local editorTabs, activeTabIndex, switchToTab, newTab
+
+do
+	local TABS_FILE = "WorldClient_Tabs.json"
+	editorTabs = {}
+	activeTabIndex = 1
+	local switchingTabs = false
+	local nextTabId = 1
+	local tabButtons = {}
+	local saveTabs
+	local refreshTabBar
+
+	function newTab(name, content, pinned)
+		local tab = {
+			id = nextTabId,
+			name = name or ("Script " .. nextTabId),
+			content = content or "",
+			pinned = pinned or false,
+		}
+		nextTabId += 1
+		return tab
+	end
+
+	-- Load persisted tabs (or start with one empty tab)
+	do
+		local ok, data = pcall(function()
+			return HttpService:JSONDecode(readfile(TABS_FILE))
+		end)
+		if ok and type(data) == "table" and type(data.tabs) == "table" then
+			for _, item in ipairs(data.tabs) do
+				if type(item) == "table" and type(item.c) == "string" then
+					table.insert(editorTabs, newTab(type(item.n) == "string" and item.n or nil, item.c, item.p == true))
+				end
+			end
+			if type(data.active) == "number" and editorTabs[data.active] then
+				activeTabIndex = data.active
+			end
+		end
+	end
+	if #editorTabs == 0 then
+		table.insert(editorTabs, newTab("Script 1", "", false))
+		activeTabIndex = 1
+	end
+
+	function saveTabs()
+		pcall(function()
+			local out = {}
+			for _, tab in ipairs(editorTabs) do
+				table.insert(out, { n = tab.name, c = tab.content, p = tab.pinned })
+			end
+			writefile(TABS_FILE, HttpService:JSONEncode({ active = activeTabIndex, tabs = out }))
+		end)
+	end
+	local debouncedSaveTabs = debounce(saveTabs, 0.6)
+
+	-- Tab bar: horizontal scroller across the top strip of the footer
+	local tabBar = Instance.new("ScrollingFrame", footer)
+	tabBar.Name = "TabBar"
+	tabBar.Position = UDim2.new(0, 5, 0, 4)
+	tabBar.Size = UDim2.new(1, -46, 0, 28)
+	tabBar.BackgroundTransparency = 1
+	tabBar.BorderSizePixel = 0
+	tabBar.ScrollBarThickness = 3
+	tabBar.ScrollBarImageColor3 = CONFIG.Colors.PrimaryAccent
+	tabBar.ScrollingDirection = Enum.ScrollingDirection.X
+	tabBar.CanvasSize = UDim2.new(0, 0, 0, 0)
+	tabBar.AutomaticCanvasSize = Enum.AutomaticSize.X
+	tabBar.ZIndex = 4
+	local tabBarLayout = Instance.new("UIListLayout", tabBar)
+	tabBarLayout.FillDirection = Enum.FillDirection.Horizontal
+	tabBarLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+	tabBarLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	tabBarLayout.Padding = UDim.new(0, 4)
+
+	local addTabButton = Instance.new("TextButton", footer)
+	addTabButton.Name = "AddTab"
+	addTabButton.Size = UDim2.new(0, 30, 0, 28)
+	addTabButton.Position = UDim2.new(1, -5, 0, 4)
+	addTabButton.AnchorPoint = Vector2.new(1, 0)
+	addTabButton.BackgroundColor3 = CONFIG.Colors.UtilButton
+	addTabButton.Font = CONFIG.BoldFont
+	addTabButton.Text = "＋"
+	addTabButton.TextColor3 = Color3.new(1, 1, 1)
+	addTabButton.TextSize = 20
+	addTabButton.ZIndex = 4
+	Instance.new("UICorner", addTabButton).CornerRadius = UDim.new(0, 6)
+	addDepthGradient(addTabButton)
+	safeSetCursor(addTabButton, "rbxasset://SystemCursor/Arrow")
+
+	-- Long-press context menu (shared by all tabs)
+	local tabMenu = Instance.new("Frame", screenGui)
+	tabMenu.Name = "TabMenu"
+	tabMenu.Size = UDim2.new(0, 150, 0, 0)
+	tabMenu.AutomaticSize = Enum.AutomaticSize.Y
+	tabMenu.BackgroundColor3 = CONFIG.Colors.Background
+	tabMenu.BackgroundTransparency = 0.02
+	tabMenu.Visible = false
+	tabMenu.ZIndex = 60
+	Instance.new("UICorner", tabMenu).CornerRadius = UDim.new(0, 8)
+	local tabMenuStroke = Instance.new("UIStroke", tabMenu)
+	tabMenuStroke.Color = CONFIG.Colors.SecondaryAccent
+	tabMenuStroke.Thickness = 1.5
+	local tabMenuPad = Instance.new("UIPadding", tabMenu)
+	tabMenuPad.PaddingTop = UDim.new(0, 6)
+	tabMenuPad.PaddingBottom = UDim.new(0, 6)
+	tabMenuPad.PaddingLeft = UDim.new(0, 6)
+	tabMenuPad.PaddingRight = UDim.new(0, 6)
+	local tabMenuLayout = Instance.new("UIListLayout", tabMenu)
+	tabMenuLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	tabMenuLayout.Padding = UDim.new(0, 4)
+	local tabMenuScale = Instance.new("UIScale", tabMenu)
+	tabMenuScale.Scale = 0
+
+	local tabMenuBackdrop = Instance.new("TextButton", screenGui)
+	tabMenuBackdrop.Name = "TabMenuBackdrop"
+	tabMenuBackdrop.Size = UDim2.new(1, 0, 1, 0)
+	tabMenuBackdrop.BackgroundTransparency = 1
+	tabMenuBackdrop.Text = ""
+	tabMenuBackdrop.AutoButtonColor = false
+	tabMenuBackdrop.Visible = false
+	tabMenuBackdrop.ZIndex = 59
+
+	local function hideTabMenu()
+		tabMenuBackdrop.Visible = false
+		local tw = TweenService:Create(
+			tabMenuScale,
+			TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+			{ Scale = 0 }
+		)
+		tw:Play()
+		tw.Completed:Once(function()
+			tabMenu.Visible = false
+		end)
+	end
+	table.insert(connections, tabMenuBackdrop.MouseButton1Click:Connect(hideTabMenu))
+
+	local function countUnpinned()
+		local n = 0
+		for _, t in ipairs(editorTabs) do
+			if not t.pinned then
+				n += 1
+			end
+		end
+		return n
+	end
+
+	local addTabFn, closeTab, closeAllTabs, beginRenameTab
+
+	local function openTabMenu(tab)
+		for _, child in ipairs(tabMenu:GetChildren()) do
+			if child:IsA("TextButton") then
+				child:Destroy()
+			end
+		end
+		local items = {
+			{
+				Label = tab.pinned and "📌 Unpin" or "📌 Pin",
+				Action = function()
+					tab.pinned = not tab.pinned
+					refreshTabBar()
+					saveTabs()
+				end,
+			},
+			{
+				Label = "✏️ Rename",
+				Action = function()
+					beginRenameTab(tab)
+				end,
+			},
+			{
+				Label = "🗑️ Close",
+				Action = function()
+					closeTab(tab)
+				end,
+			},
+			{
+				Label = "🧹 Close Others",
+				Action = function()
+					for i = #editorTabs, 1, -1 do
+						local t = editorTabs[i]
+						if t ~= tab and not t.pinned then
+							table.remove(editorTabs, i)
+						end
+					end
+					activeTabIndex = table.find(editorTabs, tab) or 1
+					switchToTab(activeTabIndex, true)
+					refreshTabBar()
+					saveTabs()
+				end,
+			},
+			{
+				Label = "❌ Close All",
+				Action = function()
+					closeAllTabs()
+				end,
+			},
+		}
+		for order, item in ipairs(items) do
+			local opt = Instance.new("TextButton", tabMenu)
+			opt.Size = UDim2.new(1, 0, 0, 30)
+			opt.LayoutOrder = order
+			opt.BackgroundColor3 = CONFIG.Colors.UtilButton
+			opt.Font = CONFIG.Font
+			opt.Text = "  " .. item.Label
+			opt.TextColor3 = CONFIG.Colors.Text
+			opt.TextSize = 14
+			opt.TextXAlignment = Enum.TextXAlignment.Left
+			opt.ZIndex = 61
+			Instance.new("UICorner", opt).CornerRadius = UDim.new(0, 5)
+			safeSetCursor(opt, "rbxasset://SystemCursor/Arrow")
+			opt.MouseButton1Click:Connect(function()
+				hideTabMenu()
+				item.Action()
+			end)
+		end
+
+		-- Position near the tab button, clamped to the screen
+		local btn = tabButtons[tab.id]
+		local vp = workspace.CurrentCamera.ViewportSize
+		local px = btn and btn.AbsolutePosition.X or vp.X * 0.5
+		local py = btn and (btn.AbsolutePosition.Y + btn.AbsoluteSize.Y + 4) or vp.Y * 0.5
+		px = math.clamp(px, 8, vp.X - 158)
+		tabMenu.Position = UDim2.fromOffset(px, py)
+		tabMenu.Visible = true
+		tabMenuBackdrop.Visible = true
+		tabMenuScale.Scale = 0
+		TweenService
+			:Create(tabMenuScale, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 })
+			:Play()
+	end
+
+	-- Rename dialog
+	local renameOverlay = Instance.new("TextButton", screenGui)
+	renameOverlay.Name = "RenameOverlay"
+	renameOverlay.Size = UDim2.new(1, 0, 1, 0)
+	renameOverlay.BackgroundColor3 = Color3.new(0, 0, 0)
+	renameOverlay.BackgroundTransparency = 1
+	renameOverlay.Text = ""
+	renameOverlay.AutoButtonColor = false
+	renameOverlay.Visible = false
+	renameOverlay.ZIndex = 62
+
+	local renameFrame = Instance.new("Frame", screenGui)
+	renameFrame.Name = "RenameFrame"
+	renameFrame.Size = UDim2.new(0, 260, 0, 108)
+	renameFrame.Position = UDim2.new(0.5, 0, 0.4, 0)
+	renameFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+	renameFrame.BackgroundColor3 = CONFIG.Colors.Background
+	renameFrame.Visible = false
+	renameFrame.ZIndex = 63
+	Instance.new("UICorner", renameFrame).CornerRadius = UDim.new(0, 10)
+	local renameStroke = Instance.new("UIStroke", renameFrame)
+	renameStroke.Color = CONFIG.Colors.SecondaryAccent
+	renameStroke.Thickness = 1.5
+	local renameScale = Instance.new("UIScale", renameFrame)
+	renameScale.Scale = 0
+
+	local renameTitle = Instance.new("TextLabel", renameFrame)
+	renameTitle.Size = UDim2.new(1, -20, 0, 26)
+	renameTitle.Position = UDim2.new(0, 12, 0, 8)
+	renameTitle.BackgroundTransparency = 1
+	renameTitle.Font = CONFIG.BoldFont
+	renameTitle.Text = tr("Rename Tab")
+	renameTitle.TextColor3 = CONFIG.Colors.Text
+	renameTitle.TextSize = 16
+	renameTitle.TextXAlignment = Enum.TextXAlignment.Left
+	renameTitle.ZIndex = 63
+	registerLocalizedString("Rename Tab")
+	registerLocalizedRefresher(function()
+		renameTitle.Text = tr("Rename Tab")
+	end)
+
+	local renameBox = Instance.new("TextBox", renameFrame)
+	renameBox.Size = UDim2.new(1, -24, 0, 32)
+	renameBox.Position = UDim2.new(0, 12, 0, 38)
+	renameBox.BackgroundColor3 = CONFIG.Colors.UtilButton
+	renameBox.Font = CONFIG.Font
+	renameBox.Text = ""
+	renameBox.PlaceholderText = tr("Tab name...")
+	renameBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+	renameBox.TextColor3 = CONFIG.Colors.Text
+	renameBox.TextSize = 14
+	renameBox.ClearTextOnFocus = false
+	renameBox.ZIndex = 63
+	Instance.new("UICorner", renameBox).CornerRadius = UDim.new(0, 6)
+	local renameBoxPad = Instance.new("UIPadding", renameBox)
+	renameBoxPad.PaddingLeft = UDim.new(0, 8)
+	safeSetCursor(renameBox, "rbxasset://SystemCursor/Arrow")
+	registerLocalizedString("Tab name...")
+	registerLocalizedRefresher(function()
+		renameBox.PlaceholderText = tr("Tab name...")
+	end)
+
+	local renameConfirm = Instance.new("TextButton", renameFrame)
+	renameConfirm.Size = UDim2.new(0.5, -16, 0, 28)
+	renameConfirm.Position = UDim2.new(0, 12, 1, -8)
+	renameConfirm.AnchorPoint = Vector2.new(0, 1)
+	renameConfirm.BackgroundColor3 = CONFIG.Colors.SecondaryAccent
+	renameConfirm.Font = CONFIG.BoldFont
+	renameConfirm.Text = tr("Save")
+	renameConfirm.TextColor3 = Color3.new(1, 1, 1)
+	renameConfirm.TextSize = 14
+	renameConfirm.ZIndex = 63
+	Instance.new("UICorner", renameConfirm).CornerRadius = UDim.new(0, 6)
+	addDepthGradient(renameConfirm)
+	safeSetCursor(renameConfirm, "rbxasset://SystemCursor/Arrow")
+
+	local renameCancel = Instance.new("TextButton", renameFrame)
+	renameCancel.Size = UDim2.new(0.5, -16, 0, 28)
+	renameCancel.Position = UDim2.new(1, -12, 1, -8)
+	renameCancel.AnchorPoint = Vector2.new(1, 1)
+	renameCancel.BackgroundColor3 = CONFIG.Colors.UtilButton
+	renameCancel.Font = CONFIG.BoldFont
+	renameCancel.Text = tr("Cancel")
+	renameCancel.TextColor3 = CONFIG.Colors.Text
+	renameCancel.TextSize = 14
+	renameCancel.ZIndex = 63
+	Instance.new("UICorner", renameCancel).CornerRadius = UDim.new(0, 6)
+	addDepthGradient(renameCancel)
+	safeSetCursor(renameCancel, "rbxasset://SystemCursor/Arrow")
+	registerLocalizedString("Save")
+	registerLocalizedString("Cancel")
+	registerLocalizedRefresher(function()
+		renameConfirm.Text = tr("Save")
+		renameCancel.Text = tr("Cancel")
+	end)
+
+	local renameTarget = nil
+	local function closeRename()
+		renameOverlay.Visible = false
+		local tw = TweenService:Create(
+			renameScale,
+			TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+			{ Scale = 0 }
+		)
+		tw:Play()
+		tw.Completed:Once(function()
+			renameFrame.Visible = false
+		end)
+	end
+	function beginRenameTab(tab)
+		renameTarget = tab
+		renameBox.Text = tab.name
+		renameOverlay.Visible = true
+		renameFrame.Visible = true
+		renameScale.Scale = 0
+		TweenService
+			:Create(renameScale, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 })
+			:Play()
+	end
+	local function commitRename()
+		if renameTarget then
+			local name = renameBox.Text:gsub("^%s+", ""):gsub("%s+$", "")
+			if name ~= "" then
+				renameTarget.name = name:sub(1, 24)
+				refreshTabBar()
+				saveTabs()
+			end
+		end
+		closeRename()
+	end
+	table.insert(connections, renameConfirm.MouseButton1Click:Connect(commitRename))
+	table.insert(connections, renameCancel.MouseButton1Click:Connect(closeRename))
+	table.insert(connections, renameOverlay.MouseButton1Click:Connect(closeRename))
+	table.insert(
+		connections,
+		renameBox.FocusLost:Connect(function(enter)
+			if enter then
+				commitRename()
+			end
+		end)
+	)
+
+	-- Drag-to-reorder state (one active drag at a time)
+	local activeDrag = nil
+
+	local function relayoutTabs()
+		for i, tab in ipairs(editorTabs) do
+			local btn = tabButtons[tab.id]
+			if btn then
+				btn.LayoutOrder = i
+			end
+		end
+	end
+
+	function switchToTab(index, instant)
+		if not editorTabs[index] then
+			return
+		end
+		-- Save whatever is on screen back into the outgoing tab. Skipped for
+		-- close operations (instant), where the outgoing text is being
+		-- discarded and must not overwrite the newly-shown tab.
+		if not instant and editorTabs[activeTabIndex] and not switchingTabs then
+			editorTabs[activeTabIndex].content = inputBox.Text
+		end
+		activeTabIndex = index
+		switchingTabs = true
+		inputBox.Text = editorTabs[index].content
+		switchingTabs = false
+		if refreshInputHighlight then
+			task.defer(refreshInputHighlight)
+		end
+		refreshTabBar()
+		saveTabs()
+	end
+
+	local TAB_WIDTH = 106
+
+	function refreshTabBar()
+		for id, btn in pairs(tabButtons) do
+			btn:Destroy()
+			tabButtons[id] = nil
+		end
+		for i, tab in ipairs(editorTabs) do
+			local isActive = (i == activeTabIndex)
+			local btn = Instance.new("TextButton", tabBar)
+			btn.Name = "Tab_" .. tab.id
+			btn.Size = UDim2.new(0, TAB_WIDTH, 0, 26)
+			btn.LayoutOrder = i
+			btn.AutoButtonColor = false
+			btn.BackgroundColor3 = isActive and CONFIG.Colors.SecondaryAccent or CONFIG.Colors.UtilButton
+			btn.Font = isActive and CONFIG.BoldFont or CONFIG.Font
+			btn.Text = (tab.pinned and "📌 " or "") .. tab.name
+			btn.TextColor3 = isActive and Color3.new(1, 1, 1) or CONFIG.Colors.Text
+			btn.TextSize = 13
+			btn.TextTruncate = Enum.TextTruncate.AtEnd
+			btn.TextXAlignment = Enum.TextXAlignment.Left
+			btn.ZIndex = 5
+			Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+			addDepthGradient(btn)
+			safeSetCursor(btn, "rbxasset://SystemCursor/Arrow")
+			local btnPad = Instance.new("UIPadding", btn)
+			btnPad.PaddingLeft = UDim.new(0, 8)
+			btnPad.PaddingRight = UDim.new(0, 22)
+
+			local closeX = Instance.new("TextButton", btn)
+			closeX.Size = UDim2.new(0, 18, 0, 18)
+			closeX.Position = UDim2.new(1, -2, 0.5, 0)
+			closeX.AnchorPoint = Vector2.new(1, 0.5)
+			closeX.BackgroundTransparency = 1
+			closeX.Font = Enum.Font.SourceSansBold
+			closeX.Text = "✕"
+			closeX.TextColor3 = isActive and Color3.new(1, 1, 1) or CONFIG.Colors.InputEcho
+			closeX.TextSize = 14
+			closeX.ZIndex = 6
+			safeSetCursor(closeX, "rbxasset://SystemCursor/Arrow")
+			closeX.MouseButton1Click:Connect(function()
+				closeTab(tab)
+			end)
+
+			-- A UIScale used for the add-tab entrance pop and active bounce
+			local sc = Instance.new("UIScale", btn)
+			sc.Scale = 1
+			if isActive then
+				-- Small bounce on the tab that just became active
+				sc.Scale = 0.9
+				TweenService
+					:Create(sc, TweenInfo.new(0.22, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 })
+					:Play()
+			end
+
+			-- Tap = switch, drag = reorder, hold = context menu
+			btn.InputBegan:Connect(function(input)
+				if
+					input.UserInputType ~= Enum.UserInputType.MouseButton1
+					and input.UserInputType ~= Enum.UserInputType.Touch
+				then
+					return
+				end
+				local drag = {
+					tab = tab,
+					button = btn,
+					pointerStart = UserInputService:GetMouseLocation().X,
+					startTime = tick(),
+					moved = false,
+					consumed = false,
+				}
+				drag.holdTimer = task.delay(0.4, function()
+					if activeDrag == drag and not drag.moved then
+						drag.consumed = true
+						openTabMenu(tab)
+					end
+				end)
+				activeDrag = drag
+				local endConn
+				endConn = input.Changed:Connect(function()
+					if input.UserInputState ~= Enum.UserInputState.End then
+						return
+					end
+					endConn:Disconnect()
+					if drag.holdTimer then
+						task.cancel(drag.holdTimer)
+						drag.holdTimer = nil
+					end
+					if activeDrag == drag then
+						activeDrag = nil
+					end
+					btn.ZIndex = 5
+					if drag.consumed then
+						return
+					end
+					if not drag.moved and (tick() - drag.startTime) < 0.4 then
+						local idx = table.find(editorTabs, tab)
+						if idx then
+							switchToTab(idx)
+						end
+					else
+						relayoutTabs()
+						saveTabs()
+					end
+				end)
+			end)
+
+			tabButtons[tab.id] = btn
+		end
+		tabBar.CanvasSize = UDim2.new(0, 0, 0, 0)
+	end
+
+	-- Live reorder while dragging
+	table.insert(
+		connections,
+		RunService.RenderStepped:Connect(function()
+			if not activeDrag then
+				return
+			end
+			local pointerX = UserInputService:GetMouseLocation().X
+			if math.abs(pointerX - activeDrag.pointerStart) > 8 then
+				activeDrag.moved = true
+				if activeDrag.holdTimer then
+					task.cancel(activeDrag.holdTimer)
+					activeDrag.holdTimer = nil
+				end
+			end
+			if not activeDrag.moved then
+				return
+			end
+			activeDrag.button.ZIndex = 8
+			local dragIdx = table.find(editorTabs, activeDrag.tab)
+			if not dragIdx then
+				return
+			end
+			local activeTab = editorTabs[activeTabIndex]
+			for i, tab in ipairs(editorTabs) do
+				if i ~= dragIdx then
+					local b = tabButtons[tab.id]
+					if b then
+						local mid = b.AbsolutePosition.X + b.AbsoluteSize.X * 0.5
+						if (dragIdx < i and pointerX > mid) or (dragIdx > i and pointerX < mid) then
+							table.remove(editorTabs, dragIdx)
+							table.insert(editorTabs, i, activeDrag.tab)
+							-- keep the active index pointing at the same tab object
+							activeTabIndex = table.find(editorTabs, activeTab) or activeTabIndex
+							relayoutTabs()
+							break
+						end
+					end
+				end
+			end
+		end)
+	)
+
+	function addTabFn()
+		if editorTabs[activeTabIndex] then
+			editorTabs[activeTabIndex].content = inputBox.Text
+		end
+		local tab = newTab("Script " .. (#editorTabs + 1), "", false)
+		table.insert(editorTabs, tab)
+		switchToTab(#editorTabs)
+		task.defer(function()
+			tabBar.CanvasPosition = Vector2.new(math.huge, 0)
+		end)
+	end
+
+	function closeTab(tab)
+		local idx = table.find(editorTabs, tab)
+		if not idx then
+			return
+		end
+		table.remove(editorTabs, idx)
+		if #editorTabs == 0 then
+			table.insert(editorTabs, newTab("Script 1", "", false))
+		end
+		if activeTabIndex >= idx then
+			activeTabIndex = math.max(1, math.min(activeTabIndex - 1, #editorTabs))
+		end
+		if activeTabIndex < 1 then
+			activeTabIndex = 1
+		end
+		switchToTab(activeTabIndex, true)
+		refreshTabBar()
+		saveTabs()
+	end
+
+	function closeAllTabs()
+		for i = #editorTabs, 1, -1 do
+			if not editorTabs[i].pinned then
+				table.remove(editorTabs, i)
+			end
+		end
+		if #editorTabs == 0 then
+			table.insert(editorTabs, newTab("Script 1", "", false))
+		end
+		activeTabIndex = 1
+		switchToTab(1, true)
+		refreshTabBar()
+		saveTabs()
+	end
+
+	table.insert(
+		connections,
+		addTabButton.MouseButton1Click:Connect(function()
+			createClickParticles(addTabButton)
+			addTabFn()
+		end)
+	)
+	table.insert(
+		connections,
+		addTabButton.MouseEnter:Connect(function()
+			TweenService:Create(addTabButton, TweenInfo.new(0.15), { BackgroundColor3 = CONFIG.Colors.UtilButtonHover })
+				:Play()
+		end)
+	)
+	table.insert(
+		connections,
+		addTabButton.MouseLeave:Connect(function()
+			TweenService:Create(addTabButton, TweenInfo.new(0.15), { BackgroundColor3 = CONFIG.Colors.UtilButton })
+				:Play()
+		end)
+	)
+
+	-- Mirror typing into the active tab (debounced disk save)
+	table.insert(
+		connections,
+		inputBox:GetPropertyChangedSignal("Text"):Connect(function()
+			if switchingTabs then
+				return
+			end
+			if editorTabs[activeTabIndex] then
+				editorTabs[activeTabIndex].content = inputBox.Text
+				debouncedSaveTabs()
+			end
+		end)
+	)
+
+	table.insert(themedUpdaters, function(theme, fontData)
+		tintTween(addTabButton, { BackgroundColor3 = theme.UtilButton })
+		addTabButton.Font = fontData.Bold
+		tintTween(tabBar, { ScrollBarImageColor3 = theme.PrimaryAccent })
+		tintTween(tabMenu, { BackgroundColor3 = theme.Background })
+		tintTween(tabMenuStroke, { Color = theme.SecondaryAccent })
+		tintTween(renameFrame, { BackgroundColor3 = theme.Background })
+		tintTween(renameStroke, { Color = theme.SecondaryAccent })
+		tintTween(renameTitle, { TextColor3 = theme.Text })
+		tintTween(renameBox, { BackgroundColor3 = theme.UtilButton, TextColor3 = theme.Text })
+		tintTween(renameConfirm, { BackgroundColor3 = theme.SecondaryAccent })
+		tintTween(renameCancel, { BackgroundColor3 = theme.UtilButton, TextColor3 = theme.Text })
+		refreshTabBar()
+	end)
+
+	-- Load the active tab's content into the editor at startup
+	switchingTabs = true
+	inputBox.Text = editorTabs[activeTabIndex] and editorTabs[activeTabIndex].content or ""
+	switchingTabs = false
+	refreshTabBar()
+end
 
 local function showTutorial()
 	tutorialShown = true
@@ -2377,6 +3087,106 @@ local function createToggleRow(labelText, initial, onChanged)
 	return row
 end
 
+-- === FPS booster & Anti-AFK ===
+local applyFpsBooster, applyAntiAfk
+do
+	local Lighting = game:GetService("Lighting")
+	local fpsConnection
+	local antiAfkConnection
+
+	local function stripForFps(inst)
+		pcall(function()
+			if
+				inst:IsA("ParticleEmitter")
+				or inst:IsA("Trail")
+				or inst:IsA("Smoke")
+				or inst:IsA("Fire")
+				or inst:IsA("Sparkles")
+				or inst:IsA("Explosion")
+			then
+				inst.Enabled = false
+			elseif inst:IsA("Texture") or inst:IsA("Decal") then
+				inst.Transparency = 1
+			elseif inst:IsA("MeshPart") or inst:IsA("BasePart") then
+				inst.Material = Enum.Material.Plastic
+				inst.Reflectance = 0
+				if inst:IsA("MeshPart") then
+					inst.RenderFidelity = Enum.RenderFidelity.Performance
+				end
+			end
+		end)
+	end
+
+	function applyFpsBooster(on)
+		if on then
+			pcall(function()
+				Lighting.GlobalShadows = false
+				Lighting.FogEnd = 9e9
+				Lighting.Brightness = 1
+				if sethiddenproperty then
+					sethiddenproperty(Lighting, "Technology", 1)
+				end
+				local terrain = workspace:FindFirstChildOfClass("Terrain")
+				if terrain then
+					terrain.WaterWaveSize = 0
+					terrain.WaterWaveSpeed = 0
+					terrain.WaterReflectance = 0
+					terrain.WaterTransparency = 0
+				end
+			end)
+			pcall(function()
+				if setfpscap then
+					setfpscap(0)
+				end
+			end)
+			for _, inst in ipairs(workspace:GetDescendants()) do
+				stripForFps(inst)
+			end
+			if fpsConnection then
+				fpsConnection:Disconnect()
+			end
+			fpsConnection = workspace.DescendantAdded:Connect(stripForFps)
+			table.insert(connections, fpsConnection)
+			log("FPS Booster enabled. (Stripped effects/textures; some visuals won't restore until rejoin.)", "Info")
+		else
+			if fpsConnection then
+				fpsConnection:Disconnect()
+				fpsConnection = nil
+			end
+			log("FPS Booster disabled. Rejoin to fully restore stripped visuals.", "Info")
+		end
+	end
+
+	function applyAntiAfk(on)
+		if on then
+			if antiAfkConnection then
+				antiAfkConnection:Disconnect()
+			end
+			local ok = pcall(function()
+				local VirtualUser = game:GetService("VirtualUser")
+				antiAfkConnection = player.Idled:Connect(function()
+					pcall(function()
+						VirtualUser:CaptureController()
+						VirtualUser:ClickButton2(Vector2.new())
+					end)
+				end)
+			end)
+			if ok and antiAfkConnection then
+				table.insert(connections, antiAfkConnection)
+				log("Anti-AFK enabled. You won't be kicked for being idle.", "Info")
+			else
+				log("Anti-AFK could not hook the idle signal in this environment.", "Warning")
+			end
+		else
+			if antiAfkConnection then
+				antiAfkConnection:Disconnect()
+				antiAfkConnection = nil
+			end
+			log("Anti-AFK disabled.", "Info")
+		end
+	end
+end
+
 -- === Rows ===
 createDropdownRow("Theme", function()
 	local entries = {}
@@ -2726,6 +3536,55 @@ createToggleRow("Background Blur", uiSettings.blur, function(on)
 	TweenService:Create(blurFrame, TweenInfo.new(0.3), { BackgroundTransparency = on and 0.3 or 0.1 }):Play()
 	saveSettings()
 end)
+
+createToggleRow("Auto-Scroll Logs", uiSettings.autoScroll, function(on)
+	if setAutoScroll then
+		setAutoScroll(on)
+	end
+	saveSettings()
+end)
+
+createToggleRow("FPS Booster", uiSettings.fpsBooster, function(on)
+	uiSettings.fpsBooster = on
+	applyFpsBooster(on)
+	saveSettings()
+end)
+
+createToggleRow("Anti-AFK", uiSettings.antiAfk, function(on)
+	uiSettings.antiAfk = on
+	applyAntiAfk(on)
+	saveSettings()
+end)
+
+local autoExecBtn = Instance.new("TextButton", settingsScroll)
+autoExecBtn.Name = "AutoExecBtn"
+autoExecBtn.Size = UDim2.new(1, -6, 0, 36)
+autoExecBtn.LayoutOrder = nextOrder()
+autoExecBtn.BackgroundColor3 = CONFIG.Colors.UtilButton
+autoExecBtn.Font = CONFIG.Font
+autoExecBtn.TextColor3 = CONFIG.Colors.Text
+autoExecBtn.TextSize = 15
+autoExecBtn.Text = "⚡  " .. tr("Auto-Execute Scripts")
+autoExecBtn.ZIndex = 11
+Instance.new("UICorner", autoExecBtn).CornerRadius = UDim.new(0, 6)
+addDepthGradient(autoExecBtn)
+safeSetCursor(autoExecBtn, "rbxasset://SystemCursor/Arrow")
+registerLocalizedString("Auto-Execute Scripts")
+registerLocalizedRefresher(function()
+	autoExecBtn.Text = "⚡  " .. tr("Auto-Execute Scripts")
+end)
+table.insert(themedUpdaters, function(theme, fontData)
+	tintTween(autoExecBtn, { BackgroundColor3 = theme.UtilButton, TextColor3 = theme.Text })
+	autoExecBtn.Font = fontData.Font
+end)
+table.insert(
+	connections,
+	autoExecBtn.MouseButton1Click:Connect(function()
+		if openAutoExec then
+			openAutoExec()
+		end
+	end)
+)
 
 local consoleBtn = Instance.new("TextButton", settingsScroll)
 consoleBtn.Name = "ConsoleBtn"
@@ -3213,6 +4072,367 @@ do
 	end)
 end
 
+-- === Auto-Execute panel (⚡) ===
+-- Scripts added here run automatically once the World UI has loaded.
+do
+	local AUTOEXEC_FILE = "WorldClient_AutoExec.json"
+	local autoExecScripts = {}
+
+	pcall(function()
+		local data = HttpService:JSONDecode(readfile(AUTOEXEC_FILE))
+		if type(data) == "table" then
+			for _, item in ipairs(data) do
+				if type(item) == "table" and type(item.s) == "string" then
+					table.insert(autoExecScripts, {
+						Name = type(item.n) == "string" and item.n or "Script",
+						Source = item.s,
+						Enabled = item.e ~= false,
+					})
+				end
+			end
+		end
+	end)
+
+	local function saveAutoExecFile()
+		pcall(function()
+			local out = {}
+			for _, item in ipairs(autoExecScripts) do
+				table.insert(out, { n = item.Name, s = item.Source, e = item.Enabled })
+			end
+			writefile(AUTOEXEC_FILE, HttpService:JSONEncode(out))
+		end)
+	end
+
+	function runAutoExecScripts()
+		for _, item in ipairs(autoExecScripts) do
+			if item.Enabled and item.Source:gsub("%s", "") ~= "" then
+				if not isExecuteScriptEnabled then
+					log("Auto-Execute skipped '" .. item.Name .. "': no executor available.", "Warning")
+				else
+					log("Auto-Executing '" .. item.Name .. "'...", "Info")
+					task.spawn(function()
+						local ok, err = pcall(executeScript, item.Source)
+						if not ok then
+							log("Auto-Exec error in '" .. item.Name .. "': " .. tostring(err), "Error")
+						end
+					end)
+				end
+			end
+		end
+	end
+
+	local aeOverlay = Instance.new("TextButton", screenGui)
+	aeOverlay.Name = "AutoExecOverlay"
+	aeOverlay.Size = UDim2.new(1, 0, 1, 0)
+	aeOverlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	aeOverlay.BackgroundTransparency = 1
+	aeOverlay.Text = ""
+	aeOverlay.AutoButtonColor = false
+	aeOverlay.Visible = false
+	aeOverlay.ZIndex = 14
+
+	local aeFrame = Instance.new("Frame", screenGui)
+	aeFrame.Name = "AutoExecFrame"
+	aeFrame.Size = UDim2.new(0, 340, 0.78, 0)
+	aeFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+	aeFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+	aeFrame.BackgroundColor3 = CONFIG.Colors.Background
+	aeFrame.BackgroundTransparency = 0.05
+	aeFrame.ZIndex = 15
+	aeFrame.Visible = false
+	Instance.new("UICorner", aeFrame).CornerRadius = UDim.new(0, 10)
+	local aeSizeLimit = Instance.new("UISizeConstraint", aeFrame)
+	aeSizeLimit.MaxSize = Vector2.new(340, 460)
+	aeSizeLimit.MinSize = Vector2.new(340, 260)
+	local aeScale = Instance.new("UIScale", aeFrame)
+	aeScale.Scale = 0
+	local aeStroke = Instance.new("UIStroke", aeFrame)
+	aeStroke.Color = CONFIG.Colors.PrimaryAccent
+	aeStroke.Thickness = 2
+
+	local aeTitle = Instance.new("TextLabel", aeFrame)
+	aeTitle.Size = UDim2.new(1, -20, 0, 34)
+	aeTitle.Position = UDim2.new(0, 12, 0, 8)
+	aeTitle.BackgroundTransparency = 1
+	aeTitle.Font = CONFIG.BoldFont
+	aeTitle.TextColor3 = CONFIG.Colors.Text
+	aeTitle.TextSize = 18
+	aeTitle.Text = "⚡ " .. tr("Auto-Execute")
+	aeTitle.TextXAlignment = Enum.TextXAlignment.Left
+	aeTitle.ZIndex = 15
+	registerLocalizedString("Auto-Execute")
+	registerLocalizedRefresher(function()
+		aeTitle.Text = "⚡ " .. tr("Auto-Execute")
+	end)
+
+	local aeHint = Instance.new("TextLabel", aeFrame)
+	aeHint.Size = UDim2.new(1, -24, 0, 30)
+	aeHint.Position = UDim2.new(0, 12, 0, 42)
+	aeHint.BackgroundTransparency = 1
+	aeHint.Font = CONFIG.Font
+	aeHint.TextColor3 = CONFIG.Colors.InputEcho
+	aeHint.TextSize = 12
+	aeHint.TextWrapped = true
+	aeHint.TextXAlignment = Enum.TextXAlignment.Left
+	aeHint.Text = tr("Enabled scripts run automatically after the UI loads.")
+	aeHint.ZIndex = 15
+	registerLocalizedString("Enabled scripts run automatically after the UI loads.")
+	registerLocalizedRefresher(function()
+		aeHint.Text = tr("Enabled scripts run automatically after the UI loads.")
+	end)
+
+	local aeNameBox = Instance.new("TextBox", aeFrame)
+	aeNameBox.Size = UDim2.new(1, -140, 0, 30)
+	aeNameBox.Position = UDim2.new(0, 12, 0, 78)
+	aeNameBox.BackgroundColor3 = CONFIG.Colors.UtilButton
+	aeNameBox.BackgroundTransparency = 0.25
+	aeNameBox.Font = CONFIG.Font
+	aeNameBox.PlaceholderText = tr("Name...")
+	aeNameBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+	aeNameBox.Text = ""
+	aeNameBox.TextColor3 = CONFIG.Colors.Text
+	aeNameBox.TextSize = 14
+	aeNameBox.ClearTextOnFocus = false
+	aeNameBox.TextXAlignment = Enum.TextXAlignment.Left
+	aeNameBox.ZIndex = 16
+	Instance.new("UICorner", aeNameBox).CornerRadius = UDim.new(0, 6)
+	local aeNamePad = Instance.new("UIPadding", aeNameBox)
+	aeNamePad.PaddingLeft = UDim.new(0, 8)
+	safeSetCursor(aeNameBox, "rbxasset://SystemCursor/Arrow")
+	registerLocalizedString("Name...")
+	registerLocalizedRefresher(function()
+		aeNameBox.PlaceholderText = tr("Name...")
+	end)
+	liftPanelWhileTyping(aeFrame, aeNameBox)
+
+	local aeAddBtn = Instance.new("TextButton", aeFrame)
+	aeAddBtn.Size = UDim2.new(0, 120, 0, 30)
+	aeAddBtn.Position = UDim2.new(1, -12, 0, 78)
+	aeAddBtn.AnchorPoint = Vector2.new(1, 0)
+	aeAddBtn.BackgroundColor3 = CONFIG.Colors.SecondaryAccent
+	aeAddBtn.Font = CONFIG.BoldFont
+	aeAddBtn.Text = tr("Add Editor Tab")
+	aeAddBtn.TextColor3 = Color3.new(1, 1, 1)
+	aeAddBtn.TextSize = 13
+	aeAddBtn.ZIndex = 16
+	Instance.new("UICorner", aeAddBtn).CornerRadius = UDim.new(0, 6)
+	addDepthGradient(aeAddBtn)
+	safeSetCursor(aeAddBtn, "rbxasset://SystemCursor/Arrow")
+	registerLocalizedString("Add Editor Tab")
+	registerLocalizedRefresher(function()
+		aeAddBtn.Text = tr("Add Editor Tab")
+	end)
+
+	local aeListScroll = Instance.new("ScrollingFrame", aeFrame)
+	aeListScroll.Position = UDim2.new(0, 12, 0, 116)
+	aeListScroll.Size = UDim2.new(1, -24, 1, -128)
+	aeListScroll.BackgroundTransparency = 1
+	aeListScroll.BorderSizePixel = 0
+	aeListScroll.ScrollBarThickness = 4
+	aeListScroll.ScrollBarImageColor3 = CONFIG.Colors.PrimaryAccent
+	aeListScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+	aeListScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	aeListScroll.ScrollingDirection = Enum.ScrollingDirection.Y
+	aeListScroll.ZIndex = 15
+	local aeListLayout = Instance.new("UIListLayout", aeListScroll)
+	aeListLayout.Padding = UDim.new(0, 6)
+	aeListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+	registerLocalizedString("No auto-execute scripts yet.")
+
+	local refreshAeList
+	function refreshAeList()
+		for _, child in ipairs(aeListScroll:GetChildren()) do
+			if child:IsA("Frame") or child:IsA("TextLabel") then
+				child:Destroy()
+			end
+		end
+		if #autoExecScripts == 0 then
+			local empty = Instance.new("TextLabel", aeListScroll)
+			empty.Size = UDim2.new(1, -6, 0, 30)
+			empty.BackgroundTransparency = 1
+			empty.Font = CONFIG.Font
+			empty.Text = tr("No auto-execute scripts yet.")
+			empty.TextColor3 = CONFIG.Colors.InputEcho
+			empty.TextSize = 13
+			empty.ZIndex = 15
+			return
+		end
+		for index, item in ipairs(autoExecScripts) do
+			local row = Instance.new("Frame", aeListScroll)
+			row.Size = UDim2.new(1, -6, 0, 34)
+			row.LayoutOrder = index
+			row.BackgroundTransparency = 1
+
+			-- Enable toggle
+			local toggle = Instance.new("TextButton", row)
+			toggle.Size = UDim2.new(0, 40, 0, 22)
+			toggle.Position = UDim2.new(0, 0, 0.5, 0)
+			toggle.AnchorPoint = Vector2.new(0, 0.5)
+			toggle.Text = ""
+			toggle.BackgroundColor3 = item.Enabled and CONFIG.Colors.SecondaryAccent or CONFIG.Colors.UtilButton
+			toggle.ZIndex = 15
+			Instance.new("UICorner", toggle).CornerRadius = UDim.new(1, 0)
+			safeSetCursor(toggle, "rbxasset://SystemCursor/Arrow")
+			local knob = Instance.new("Frame", toggle)
+			knob.Size = UDim2.new(0, 16, 0, 16)
+			knob.AnchorPoint = Vector2.new(0, 0.5)
+			knob.Position = item.Enabled and UDim2.new(1, -19, 0.5, 0) or UDim2.new(0, 3, 0.5, 0)
+			knob.BackgroundColor3 = Color3.new(1, 1, 1)
+			knob.ZIndex = 16
+			Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
+
+			local nameLabel = Instance.new("TextLabel", row)
+			nameLabel.Size = UDim2.new(1, -122, 1, 0)
+			nameLabel.Position = UDim2.new(0, 48, 0, 0)
+			nameLabel.BackgroundTransparency = 1
+			nameLabel.Font = CONFIG.Font
+			nameLabel.Text = item.Name
+			nameLabel.TextColor3 = CONFIG.Colors.Text
+			nameLabel.TextSize = 14
+			nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+			nameLabel.TextTruncate = Enum.TextTruncate.AtEnd
+			nameLabel.ZIndex = 15
+
+			local editBtn = Instance.new("TextButton", row)
+			editBtn.Size = UDim2.new(0, 32, 1, 0)
+			editBtn.Position = UDim2.new(1, -68, 0, 0)
+			editBtn.BackgroundColor3 = CONFIG.Colors.UtilButton
+			editBtn.Font = Enum.Font.SourceSans
+			editBtn.Text = "✏️"
+			editBtn.TextColor3 = Color3.new(1, 1, 1)
+			editBtn.TextSize = 14
+			editBtn.ZIndex = 15
+			Instance.new("UICorner", editBtn).CornerRadius = UDim.new(0, 6)
+			addDepthGradient(editBtn)
+			safeSetCursor(editBtn, "rbxasset://SystemCursor/Arrow")
+
+			local delBtn = Instance.new("TextButton", row)
+			delBtn.Size = UDim2.new(0, 32, 1, 0)
+			delBtn.Position = UDim2.new(1, 0, 0, 0)
+			delBtn.AnchorPoint = Vector2.new(1, 0)
+			delBtn.BackgroundColor3 = CONFIG.Colors.UtilButton
+			delBtn.Font = Enum.Font.SourceSans
+			delBtn.Text = "🗑️"
+			delBtn.TextColor3 = Color3.new(1, 1, 1)
+			delBtn.TextSize = 14
+			delBtn.ZIndex = 15
+			Instance.new("UICorner", delBtn).CornerRadius = UDim.new(0, 6)
+			addDepthGradient(delBtn)
+			safeSetCursor(delBtn, "rbxasset://SystemCursor/Arrow")
+
+			toggle.MouseButton1Click:Connect(function()
+				item.Enabled = not item.Enabled
+				TweenService:Create(
+					toggle,
+					TweenInfo.new(0.2),
+					{ BackgroundColor3 = item.Enabled and CONFIG.Colors.SecondaryAccent or CONFIG.Colors.UtilButton }
+				):Play()
+				TweenService:Create(
+					knob,
+					TweenInfo.new(0.2, Enum.EasingStyle.Back),
+					{ Position = item.Enabled and UDim2.new(1, -19, 0.5, 0) or UDim2.new(0, 3, 0.5, 0) }
+				):Play()
+				saveAutoExecFile()
+			end)
+
+			editBtn.MouseButton1Click:Connect(function()
+				if editorTabs then
+					if editorTabs[activeTabIndex] then
+						editorTabs[activeTabIndex].content = inputBox.Text
+					end
+					local tab = newTab(item.Name, item.Source, false)
+					table.insert(editorTabs, tab)
+					switchToTab(#editorTabs)
+				end
+				if openAutoExec then
+					aeOverlay.Visible = false
+					aeFrame.Visible = false
+				end
+				log("Loaded '" .. item.Name .. "' into a new editor tab.", "Info")
+			end)
+
+			delBtn.MouseButton1Click:Connect(function()
+				table.remove(autoExecScripts, index)
+				saveAutoExecFile()
+				refreshAeList()
+			end)
+		end
+	end
+
+	local aeIsOpen = false
+	local function closeAe()
+		aeIsOpen = false
+		aeOverlay.Visible = false
+		local tw = TweenService:Create(
+			aeScale,
+			TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.In),
+			{ Scale = 0 }
+		)
+		tw:Play()
+		tw.Completed:Once(function()
+			aeFrame.Visible = false
+		end)
+	end
+
+	function openAutoExec()
+		if settingsFrame.Visible then
+			toggleSettings()
+		end
+		refreshAeList()
+		aeIsOpen = true
+		aeOverlay.Visible = true
+		aeFrame.Visible = true
+		aeScale.Scale = 0
+		TweenService:Create(aeOverlay, TweenInfo.new(0.3), { BackgroundTransparency = 0.6 }):Play()
+		TweenService:Create(aeScale, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 })
+			:Play()
+	end
+
+	table.insert(
+		connections,
+		aeOverlay.MouseButton1Click:Connect(function()
+			if aeIsOpen then
+				closeAe()
+			end
+		end)
+	)
+
+	table.insert(
+		connections,
+		aeAddBtn.MouseButton1Click:Connect(function()
+			local source = inputBox.Text
+			if source:gsub("%s", "") == "" then
+				log("The current editor tab is empty - nothing to add.", "Warning")
+				return
+			end
+			local name = aeNameBox.Text:gsub("^%s+", ""):gsub("%s+$", "")
+			if name == "" then
+				name = editorTabs and editorTabs[activeTabIndex] and editorTabs[activeTabIndex].name
+					or ("Script " .. (#autoExecScripts + 1))
+			end
+			table.insert(autoExecScripts, { Name = name, Source = source, Enabled = true })
+			aeNameBox.Text = ""
+			saveAutoExecFile()
+			refreshAeList()
+			log("Added '" .. name .. "' to Auto-Execute.", "Info")
+		end)
+	)
+
+	table.insert(themedUpdaters, function(theme, fontData)
+		tintTween(aeFrame, { BackgroundColor3 = theme.Background })
+		tintTween(aeStroke, { Color = theme.PrimaryAccent })
+		tintTween(aeTitle, { TextColor3 = theme.Text })
+		aeTitle.Font = fontData.Bold
+		tintTween(aeHint, { TextColor3 = theme.InputEcho })
+		tintTween(aeNameBox, { BackgroundColor3 = theme.UtilButton, TextColor3 = theme.Text })
+		aeNameBox.Font = fontData.Font
+		tintTween(aeAddBtn, { BackgroundColor3 = theme.SecondaryAccent })
+		aeAddBtn.Font = fontData.Bold
+		tintTween(aeListScroll, { ScrollBarImageColor3 = theme.PrimaryAccent })
+	end)
+end
+
 table.insert(
 	connections,
 	consoleBtn.MouseButton1Click:Connect(function()
@@ -3283,15 +4503,11 @@ local function toggleMinimize()
 
 		TweenService:Create(mainCorner, tweenInfo, { CornerRadius = UDim.new(0, 8) }):Play()
 		TweenService:Create(blurCorner, tweenInfo, { CornerRadius = UDim.new(0, 8) }):Play()
-		TweenService:Create(
-			mainFrame,
-			tweenInfo,
-			{
-				Size = UDim2.new(0.8, 0, 0.7, 0),
-				Position = UDim2.new(0.5, 0, 0.5, 0),
-				AnchorPoint = Vector2.new(0.5, 0.5),
-			}
-		):Play()
+		TweenService:Create(mainFrame, tweenInfo, {
+			Size = UDim2.new(0.8, 0, 0.7, 0),
+			Position = UDim2.new(0.5, 0, 0.5, 0),
+			AnchorPoint = Vector2.new(0.5, 0.5),
+		}):Play()
 
 		header.Size = UDim2.new(1, 0, 0, 40)
 		icon.Position = UDim2.new(0, 10, 0.5, 0)
@@ -3547,17 +4763,18 @@ local function enterTypingMode()
 	isTypingMode = true
 	local tweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
 	if isInputMaximized then
-		inputContainer.AnchorPoint = Vector2.new(0.5, 0)
+		-- Shrink the editing area into the upper half so the keyboard clears it
 		TweenService:Create(inputContainer, tweenInfo, {
-			Position = UDim2.new(0.5, 0, 0, 40),
-			Size = UDim2.new(1, -10, 0.5, -45),
+			Position = UDim2.new(0.5, 0, 0, 72),
+			Size = UDim2.new(1, -10, 0.5, -40),
 		}):Play()
 	else
+		-- Slide the whole footer (tabs + editor) to just below the header
 		filterBar.Visible = false
 		TweenService:Create(footer, tweenInfo, { Position = UDim2.new(0, 0, 0, 42) }):Play()
 		TweenService:Create(logContainer, tweenInfo, {
-			Position = UDim2.new(0, 0, 0, 126),
-			Size = UDim2.new(1, 0, 1, -126),
+			Position = UDim2.new(0, 0, 0, 42 + FOOTER_H + 6),
+			Size = UDim2.new(1, 0, 1, -(42 + FOOTER_H + 6)),
 		}):Play()
 	end
 end
@@ -3569,17 +4786,16 @@ local function exitTypingMode()
 	isTypingMode = false
 	local tweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
 	if isInputMaximized then
-		inputContainer.AnchorPoint = Vector2.new(0.5, 1)
 		TweenService:Create(inputContainer, tweenInfo, {
-			Position = UDim2.new(0.5, 0, 1, -5),
-			Size = UDim2.new(1, -10, 1, -45),
+			Position = UDim2.new(0.5, 0, 0, 72),
+			Size = UDim2.new(1, -10, 1, -78),
 		}):Play()
 	else
 		filterBar.Visible = not isMinimized
-		TweenService:Create(footer, tweenInfo, { Position = UDim2.new(0, 0, 1, -80) }):Play()
+		TweenService:Create(footer, tweenInfo, { Position = UDim2.new(0, 0, 1, -FOOTER_H) }):Play()
 		TweenService:Create(logContainer, tweenInfo, {
 			Position = UDim2.new(0, 0, 0, 72),
-			Size = UDim2.new(1, 0, 1, -152),
+			Size = UDim2.new(1, 0, 1, -72 - FOOTER_H),
 		}):Play()
 	end
 end
@@ -3631,27 +4847,30 @@ local function toggleScriptView()
 			{ Size = UDim2.new(1, 0, 1, 0), Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5) }
 		):Play()
 
-		local newCollapseButton = createIconButton(footer, "↙️", 24, "UtilButton")
+		-- Action row sits below the tab bar (which keeps its top strip)
+		local newCollapseButton = createIconButton(footer, "↙️", 26, "UtilButton")
 		newCollapseButton.Name = "CollapseButton"
-		newCollapseButton.AnchorPoint = Vector2.new(1, 0)
-		newCollapseButton.Position = UDim2.new(1, -95, 0, 5)
+		newCollapseButton.AnchorPoint = Vector2.new(0, 0)
+		newCollapseButton.Position = UDim2.new(0, 5, 0, 38)
+		newCollapseButton.ZIndex = 4
 
-		local newClearButton = createIconButton(footer, "🧹", 24, "UtilButton")
+		local newClearButton = createIconButton(footer, "🧹", 26, "UtilButton")
 		newClearButton.Name = "ClearInputButton"
-		newClearButton.AnchorPoint = Vector2.new(1, 0)
-		newClearButton.Position = UDim2.new(1, -124, 0, 5)
+		newClearButton.AnchorPoint = Vector2.new(0, 0)
+		newClearButton.Position = UDim2.new(0, 37, 0, 38)
+		newClearButton.ZIndex = 4
 
 		runButton.Parent = footer
-		runButton.Size = UDim2.new(0, 80, 0, 30)
+		runButton.Size = UDim2.new(0, 72, 0, 30)
 		runButton.AnchorPoint = Vector2.new(1, 0)
-		runButton.Position = UDim2.new(1, -5, 0, 5)
+		runButton.Position = UDim2.new(1, -5, 0, 38)
 
 		clipboardRunButton.AnchorPoint = Vector2.new(1, 0)
-		clipboardRunButton.Position = UDim2.new(1, -153, 0, 5)
+		clipboardRunButton.Position = UDim2.new(1, -81, 0, 38)
 
-		inputContainer.Size = UDim2.new(1, -10, 1, -45)
-		inputContainer.Position = UDim2.new(0.5, 0, 1, -5)
-		inputContainer.AnchorPoint = Vector2.new(0.5, 1)
+		inputContainer.AnchorPoint = Vector2.new(0.5, 0)
+		inputContainer.Size = UDim2.new(1, -10, 1, -78)
+		inputContainer.Position = UDim2.new(0.5, 0, 0, 72)
 
 		collapseButtonConnection = newCollapseButton.MouseButton1Click:Connect(toggleScriptView)
 		clearInputButtonConnection = newClearButton.MouseButton1Click:Connect(function()
@@ -3662,23 +4881,26 @@ local function toggleScriptView()
 		logContainer.Visible = true
 		filterBar.Visible = true
 		footer.ZIndex = 3
-		TweenService:Create(
-			footer,
-			tweenInfo,
-			{ Size = UDim2.new(1, 0, 0, 80), Position = UDim2.new(0, 0, 1, -80), AnchorPoint = Vector2.new(0, 0) }
-		):Play()
+		TweenService:Create(footer, tweenInfo, {
+			Size = UDim2.new(1, 0, 0, FOOTER_H),
+			Position = UDim2.new(0, 0, 1, -FOOTER_H),
+			AnchorPoint = Vector2.new(0, 0),
+		}):Play()
 
 		runButton.Parent = footer
-		runButton.Size = UDim2.new(0, 80, 1, -10)
-		runButton.Position = UDim2.new(1, -5, 0.5, 0)
-		runButton.AnchorPoint = Vector2.new(1, 0.5)
+		runButton.Size = UDim2.new(0, 72, 0, FOOTER_H - EDITOR_ROW_Y - 6)
+		runButton.Position = UDim2.new(1, -5, 1, -6)
+		runButton.AnchorPoint = Vector2.new(1, 1)
 
-		clipboardRunButton.AnchorPoint = Vector2.new(1, 0.5)
-		clipboardRunButton.Position = UDim2.new(1, -95, 0.5, 0)
+		clipboardRunButton.AnchorPoint = Vector2.new(1, 1)
+		clipboardRunButton.Position = UDim2.new(1, -81, 1, -6)
 
-		inputContainer.Size = UDim2.new(1, -140, 1, -10)
-		inputContainer.Position = UDim2.new(0, 5, 0.5, 0)
-		inputContainer.AnchorPoint = Vector2.new(0, 0.5)
+		expandInputButton.AnchorPoint = Vector2.new(1, 1)
+		expandInputButton.Position = UDim2.new(1, -143, 1, -6)
+
+		inputContainer.Size = UDim2.new(1, -148, 0, FOOTER_H - EDITOR_ROW_Y - 6)
+		inputContainer.Position = UDim2.new(0, 5, 1, -6)
+		inputContainer.AnchorPoint = Vector2.new(0, 1)
 	end
 	updateInputControlsVisibility()
 end
@@ -4197,4 +5419,20 @@ onInsetsChanged()
 if languages[currentLanguageIndex].Code ~= "en" then
 	localizeUI()
 end
+
+-- Apply persisted power settings
+if uiSettings.fpsBooster then
+	applyFpsBooster(true)
+end
+if uiSettings.antiAfk then
+	applyAntiAfk(true)
+end
+
 playIntro()
+
+-- Run auto-execute scripts a moment after load so the UI is fully ready
+task.delay(1, function()
+	if runAutoExecScripts then
+		runAutoExecScripts()
+	end
+end)
