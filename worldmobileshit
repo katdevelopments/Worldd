@@ -681,6 +681,26 @@ local function debounce(func, delay)
     end
 end
 
+-- On Android/iOS the on-screen keyboard covers the bottom half of the screen
+-- (and OnScreenKeyboardSize is not reliably reported in every executor), so
+-- centered panels slide to the top of the screen while one of their text
+-- boxes is focused, then glide back on unfocus.
+local liftTweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+local function liftPanelWhileTyping(panel, textBox)
+    table.insert(connections, textBox.Focused:Connect(function()
+        if not UserInputService.TouchEnabled then return end
+        panel:SetAttribute("LiftedForKeyboard", true)
+        panel.AnchorPoint = Vector2.new(0.5, 0)
+        TweenService:Create(panel, liftTweenInfo, {Position = UDim2.new(0.5, 0, 0, 12)}):Play()
+    end))
+    table.insert(connections, textBox.FocusLost:Connect(function()
+        if not panel:GetAttribute("LiftedForKeyboard") then return end
+        panel:SetAttribute("LiftedForKeyboard", false)
+        panel.AnchorPoint = Vector2.new(0.5, 0.5)
+        TweenService:Create(panel, liftTweenInfo, {Position = UDim2.new(0.5, 0, 0.5, 0)}):Play()
+    end))
+end
+
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "WorldClientGui"
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
@@ -1714,6 +1734,7 @@ pickerSearchPad.PaddingLeft = UDim.new(0, 8)
 safeSetCursor(pickerSearch, "rbxasset://SystemCursor/Arrow")
 registerLocalizedString("Search...")
 registerLocalizedRefresher(function() pickerSearch.PlaceholderText = "🔎 " .. tr("Search...") end)
+liftPanelWhileTyping(settingsFrame, pickerSearch)
 
 local pickerScroll = Instance.new("ScrollingFrame", pickerFrame)
 pickerScroll.Name = "PickerScroll"
@@ -2051,6 +2072,7 @@ do
             box.ZIndex = 13
             Instance.new("UICorner", box).CornerRadius = UDim.new(0, 5)
             safeSetCursor(box, "rbxasset://SystemCursor/Arrow")
+            liftPanelWhileTyping(settingsFrame, box)
             boxes[channel] = box
         end
         fields[def.Key] = { boxes = boxes, swatch = swatch }
@@ -2489,6 +2511,7 @@ do
     safeSetCursor(nameBox, "rbxasset://SystemCursor/Arrow")
     registerLocalizedString("Script name...")
     registerLocalizedRefresher(function() nameBox.PlaceholderText = tr("Script name...") end)
+    liftPanelWhileTyping(scriptsFrame, nameBox)
 
     local saveScriptBtn = createIconButton(scriptsFrame, "💾", 30, "SecondaryAccent")
     saveScriptBtn.Position = UDim2.new(1, -12, 0, 46)
@@ -2921,10 +2944,65 @@ local function executeCommand()
     end)
 end
 
+-- === Mobile typing mode ===
+-- While the code editor is focused on a touch device, the whole input row
+-- moves to the top of the window (right under the header) where the
+-- on-screen keyboard can never cover it; logs re-flow underneath. In the
+-- full-screen editor, the editing area shrinks into the top half instead.
+local isTypingMode = false
+
+local function enterTypingMode()
+    if isTypingMode or isMinimized then return end
+    isTypingMode = true
+    local tweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+    if isInputMaximized then
+        inputContainer.AnchorPoint = Vector2.new(0.5, 0)
+        TweenService:Create(inputContainer, tweenInfo, {
+            Position = UDim2.new(0.5, 0, 0, 40),
+            Size = UDim2.new(1, -10, 0.5, -45),
+        }):Play()
+    else
+        filterBar.Visible = false
+        TweenService:Create(footer, tweenInfo, {Position = UDim2.new(0, 0, 0, 42)}):Play()
+        TweenService:Create(logContainer, tweenInfo, {
+            Position = UDim2.new(0, 0, 0, 126),
+            Size = UDim2.new(1, 0, 1, -126),
+        }):Play()
+    end
+end
+
+local function exitTypingMode()
+    if not isTypingMode then return end
+    isTypingMode = false
+    local tweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+    if isInputMaximized then
+        inputContainer.AnchorPoint = Vector2.new(0.5, 1)
+        TweenService:Create(inputContainer, tweenInfo, {
+            Position = UDim2.new(0.5, 0, 1, -5),
+            Size = UDim2.new(1, -10, 1, -45),
+        }):Play()
+    else
+        filterBar.Visible = not isMinimized
+        TweenService:Create(footer, tweenInfo, {Position = UDim2.new(0, 0, 1, -80)}):Play()
+        TweenService:Create(logContainer, tweenInfo, {
+            Position = UDim2.new(0, 0, 0, 72),
+            Size = UDim2.new(1, 0, 1, -152),
+        }):Play()
+    end
+end
+
+table.insert(connections, inputBox.Focused:Connect(function()
+    if UserInputService.TouchEnabled then
+        enterTypingMode()
+    end
+end))
+table.insert(connections, inputBox.FocusLost:Connect(exitTypingMode))
+
 local collapseButtonConnection
 local clearInputButtonConnection
 
 local function toggleScriptView()
+    exitTypingMode()
     isInputMaximized = not isInputMaximized
     local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
     
