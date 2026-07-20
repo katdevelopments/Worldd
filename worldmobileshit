@@ -378,22 +378,13 @@ local function escapeRichText(s)
     return (s:gsub("&", "&amp;"):gsub("<", "&lt;"):gsub(">", "&gt;"))
 end
 
-local translateCache = {}
-local translateCacheCount = 0
+local log -- assigned further down; forward-declared so translation code can warn
 
-local function translateText(text, targetCode)
-    if #text > 450 then return nil end
-    local cacheKey = targetCode .. "\1" .. text
-    local cached = translateCache[cacheKey]
-    if cached ~= nil then
-        return cached ~= false and cached or nil
-    end
-
-    local url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl="
-        .. targetCode .. "&dt=t&q=" .. HttpService:UrlEncode(text)
-    local body = httpGet(url)
-
-    local result = nil
+-- Primary endpoint with a fallback for when gtx is rate-limited (HTTP 429)
+-- or blocked by the executor's HTTP allowlist.
+local function requestGoogleTranslate(text, targetCode)
+    local body = httpGet("https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl="
+        .. targetCode .. "&dt=t&q=" .. HttpService:UrlEncode(text))
     if body then
         local ok, data = pcall(function() return HttpService:JSONDecode(body) end)
         if ok and type(data) == "table" and type(data[1]) == "table" then
@@ -403,7 +394,40 @@ local function translateText(text, targetCode)
                     table.insert(parts, seg[1])
                 end
             end
-            if #parts > 0 then result = table.concat(parts) end
+            if #parts > 0 then return table.concat(parts) end
+        end
+    end
+
+    body = httpGet("https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=auto&tl="
+        .. targetCode .. "&q=" .. HttpService:UrlEncode(text))
+    if body then
+        local ok, data = pcall(function() return HttpService:JSONDecode(body) end)
+        if ok and type(data) == "table" then
+            if type(data[1]) == "string" then return data[1] end
+            if type(data[1]) == "table" and type(data[1][1]) == "string" then return data[1][1] end
+        end
+    end
+    return nil
+end
+
+local translateCache = {}
+local translateCacheCount = 0
+local translateFailWarned = false
+
+local function translateText(text, targetCode)
+    if #text > 450 then return nil end
+    local cacheKey = targetCode .. "\1" .. text
+    local cached = translateCache[cacheKey]
+    if cached ~= nil then
+        return cached ~= false and cached or nil
+    end
+
+    local result = requestGoogleTranslate(text, targetCode)
+
+    if not result and not translateFailWarned then
+        translateFailWarned = true
+        if log then
+            log("Translation request failed - your executor may be blocking Google Translate domains. Logs will stay untranslated.", "Warning")
         end
     end
 
@@ -415,6 +439,178 @@ local function translateText(text, targetCode)
     translateCacheCount += 1
     return result
 end
+
+-- Batches translation requests: bursts of log lines are collected for a
+-- moment and sent as one newline-joined request, which keeps heavy log
+-- volume from hammering the endpoint into rate limits.
+local pendingTranslations = {}
+local translateQueueRunning = false
+
+local function queueTranslation(text, targetCode, callback)
+    local cached = translateCache[targetCode .. "\1" .. text]
+    if cached ~= nil then
+        pcall(callback, cached ~= false and cached or nil)
+        return
+    end
+
+    table.insert(pendingTranslations, { text = text, code = targetCode, callback = callback })
+    if translateQueueRunning then return end
+    translateQueueRunning = true
+
+    task.spawn(function()
+        task.wait(0.25)
+        while #pendingTranslations > 0 do
+            local code = pendingTranslations[1].code
+            local batch = {}
+            local totalLen = 0
+            while #pendingTranslations > 0 do
+                local item = pendingTranslations[1]
+                -- Multi-line messages would corrupt the newline-joined batch,
+                -- so they always travel alone.
+                if item.code ~= code then break end
+                if #batch > 0 and (item.text:find("\n") or totalLen + #item.text + 1 > 400) then break end
+                table.remove(pendingTranslations, 1)
+                table.insert(batch, item)
+                totalLen += #item.text + 1
+                if item.text:find("\n") then break end
+            end
+
+            if #batch == 1 then
+                pcall(batch[1].callback, translateText(batch[1].text, code))
+            else
+                local joined = {}
+                for _, item in ipairs(batch) do table.insert(joined, item.text) end
+                local result = translateText(table.concat(joined, "\n"), code)
+                local lines = result and string.split(result, "\n") or nil
+                if lines and #lines == #batch then
+                    for i, item in ipairs(batch) do
+                        pcall(item.callback, (lines[i]:gsub("^%s+", ""):gsub("%s+$", "")))
+                    end
+                else
+                    -- Line counts diverged (or the batch failed): retry individually
+                    for _, item in ipairs(batch) do
+                        pcall(item.callback, translateText(item.text, code))
+                    end
+                end
+            end
+            task.wait(0.1)
+        end
+        translateQueueRunning = false
+    end)
+end
+
+-- === UI localization ===
+-- Static UI strings are translated once per language pick; tr() resolves a
+-- base English string to its current translation.
+local uiTranslations = {}
+local localizableStrings = {}
+local localizedRefreshers = {}
+local localizeRefreshQueued = false
+
+local function registerLocalizedString(s)
+    if not table.find(localizableStrings, s) then
+        table.insert(localizableStrings, s)
+    end
+end
+
+local function tr(s)
+    return uiTranslations[s] or s
+end
+
+local function refreshLocalizedTexts()
+    if localizeRefreshQueued then return end
+    localizeRefreshQueued = true
+    task.defer(function()
+        localizeRefreshQueued = false
+        for _, fn in ipairs(localizedRefreshers) do pcall(fn) end
+    end)
+end
+
+local function registerLocalizedRefresher(fn)
+    table.insert(localizedRefreshers, fn)
+end
+
+local function localizeUI()
+    table.clear(uiTranslations)
+    refreshLocalizedTexts()
+    local targetCode = languages[currentLanguageIndex].Code
+    if targetCode == "en" then return end
+    for _, s in ipairs(localizableStrings) do
+        queueTranslation(s, targetCode, function(translated)
+            if translated then
+                uiTranslations[s] = translated
+                refreshLocalizedTexts()
+            end
+        end)
+    end
+end
+
+-- === Settings persistence (survives rejoins on executors with file APIs) ===
+local SETTINGS_FILE = "WorldClient_Settings.json"
+
+local function saveSettings()
+    pcall(function()
+        writefile(SETTINGS_FILE, HttpService:JSONEncode({
+            themeIndex = currentThemeIndex,
+            fontIndex = currentFontIndex,
+            textSizeIndex = currentTextSizeIndex,
+            languageCode = languages[currentLanguageIndex].Code,
+            particles = uiSettings.particles,
+            glow = uiSettings.glow,
+            blur = uiSettings.blur,
+            autoTranslate = uiSettings.autoTranslate,
+        }))
+    end)
+end
+
+local function loadSettings()
+    local ok, data = pcall(function() return HttpService:JSONDecode(readfile(SETTINGS_FILE)) end)
+    if not ok or type(data) ~= "table" then return end
+    if type(data.themeIndex) == "number" and themes[data.themeIndex] then
+        currentThemeIndex = data.themeIndex
+    end
+    if type(data.fontIndex) == "number" and fontsList[data.fontIndex] then
+        currentFontIndex = data.fontIndex
+    end
+    if type(data.textSizeIndex) == "number" and textSizes[data.textSizeIndex] then
+        currentTextSizeIndex = data.textSizeIndex
+    end
+    if type(data.languageCode) == "string" then
+        for i, lang in ipairs(languages) do
+            if lang.Code == data.languageCode then
+                currentLanguageIndex = i
+                break
+            end
+        end
+    end
+    if type(data.particles) == "boolean" then uiSettings.particles = data.particles end
+    if type(data.glow) == "boolean" then uiSettings.glow = data.glow end
+    if type(data.blur) == "boolean" then uiSettings.blur = data.blur end
+    if type(data.autoTranslate) == "boolean" then uiSettings.autoTranslate = data.autoTranslate end
+end
+
+loadSettings()
+CONFIG.Colors = themes[currentThemeIndex].Colors
+CONFIG.Font = fontsList[currentFontIndex].Font
+CONFIG.BoldFont = fontsList[currentFontIndex].Bold
+CONFIG.TextSize = textSizes[currentTextSizeIndex].Size
+
+local tutorialPages = {
+    {Title = "Welcome!", Text = "This is the World Client. This short tutorial will guide you through its features."},
+    {Title = "Minimizing", Text = "Click the ('✖️') button to minimize the client. Click the icon again to maximize it."},
+    {Title = "Dragging", Text = "When minimized, you can drag the icon anywhere on your screen."},
+    {Title = "Player Input", Text = "When the client is open, character movement is disabled. Minimizing restores it."},
+    {Title = "Header Buttons", Text = "Quick access to our Website (🌐) and Discord (💬)."},
+    {Title = "Log Controls", Text = "Clear logs (🗑️), refresh (🔄), or copy all to clipboard (📋)."},
+    {Title = "Executing Code", Text = "Type Luau code and press 'Run'. Use Up/Down arrow keys for history."},
+    {Title = "Script Editor", Text = "For large scripts, click '↗️' to expand the editor to a full-screen view."},
+    {Title = "You're set!", Text = "Type 'tutorial()' in the command bar to view this again."}
+}
+for _, page in ipairs(tutorialPages) do
+    registerLocalizedString(page.Title)
+    registerLocalizedString(page.Text)
+end
+registerLocalizedString("Skip")
 
 local function safeSetCursor(object, cursor)
     pcall(function() object.CursorIcon = cursor end)
@@ -471,7 +667,7 @@ mainCorner.CornerRadius = UDim.new(0, 8)
 local blurFrame = Instance.new("Frame", blurGui)
 blurFrame.Name = "BlurFrame"
 blurFrame.BackgroundColor3 = CONFIG.Colors.Background
-blurFrame.BackgroundTransparency = 0.3
+blurFrame.BackgroundTransparency = uiSettings.blur and 0.3 or 0.1
 blurFrame.ZIndex = 0
 blurFrame.Size = mainFrame.Size
 blurFrame.Position = mainFrame.Position
@@ -749,6 +945,9 @@ table.insert(connections, runButton.MouseButton1Up:Connect(function()
     TweenService:Create(runButtonScale, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Scale = runButtonHovered and 1.06 or 1}):Play()
 end))
 
+registerLocalizedString("Run")
+registerLocalizedRefresher(function() runButton.Text = tr("Run") end)
+
 local expandInputButton = createIconButton(footer, "↗️", 24, "UtilButton")
 expandInputButton.Position = UDim2.new(1, -110, 0.15, 0)
 expandInputButton.ZIndex = 3
@@ -793,6 +992,9 @@ Instance.new("UIPadding", inputBox, {
     PaddingTop = UDim.new(0, 5),
     PaddingBottom = UDim.new(0, 5)
 })
+
+registerLocalizedString("Execute Luau code...")
+registerLocalizedRefresher(function() inputBox.PlaceholderText = tr("Execute Luau code...") end)
 
 table.insert(connections, inputBox.Focused:Connect(function()
     TweenService:Create(inputFocusStroke, TweenInfo.new(0.2), {Transparency = 0.2, Thickness = 2}):Play()
@@ -945,7 +1147,7 @@ local function showTutorial()
     skipButton.AnchorPoint = Vector2.new(0.5, 0.5)
     skipButton.BackgroundColor3 = CONFIG.Colors.UtilButton
     skipButton.Font = CONFIG.BoldFont
-    skipButton.Text = "Skip"
+    skipButton.Text = tr("Skip")
     skipButton.TextColor3 = Color3.new(1, 1, 1)
     skipButton.TextSize = 18
     Instance.new("UICorner", skipButton).CornerRadius = UDim.new(0, 6)
@@ -955,30 +1157,25 @@ local function showTutorial()
     TweenService:Create(tutorialFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0, 450, 0, 280)}):Play()
     createClickParticles(tutorialFrame, CONFIG.Colors.PrimaryAccent)
 
-    local pages = {
-        {Title = "Welcome!", Text = "This is the World Client. This short tutorial will guide you through its features."},
-        {Title = "Minimizing", Text = "Click the ('✖️') button to minimize the client. Click the icon again to maximize it."},
-        {Title = "Dragging", Text = "When minimized, you can drag the icon anywhere on your screen."},
-        {Title = "Player Input", Text = "When the client is open, character movement is disabled. Minimizing restores it."},
-        {Title = "Header Buttons", Text = "Quick access to our Website (🌐) and Discord (💬)."},
-        {Title = "Log Controls", Text = "Clear logs (🗑️), refresh (🔄), or copy all to clipboard (📋)."},
-        {Title = "Executing Code", Text = "Type Luau code and press 'Run'. Use Up/Down arrow keys for history."},
-        {Title = "Script Editor", Text = "For large scripts, click '↗️' to expand the editor to a full-screen view."},
-        {Title = "You're set!", Text = "Type 'tutorial()' in the command bar to view this again."}
-    }
+    local pages = tutorialPages
 
     local currentPage = 1
     local function updatePage()
         local pageData = pages[currentPage]
-        tutTitle.Text = pageData.Title
+        tutTitle.Text = tr(pageData.Title)
         pageIndicator.Text = currentPage .. "/" .. #pages
         prevButton.Visible = currentPage > 1
         nextButton.Text = (currentPage == #pages) and "✅" or "➡️"
         skipButton.Visible = (currentPage ~= #pages)
-        
-        for i = 1, #pageData.Text do
+
+        -- Typewriter steps by codepoint so translated UTF-8 text never
+        -- renders a half-cut character
+        local bodyText = tr(pageData.Text)
+        local charCount = utf8.len(bodyText) or #bodyText
+        for i = 1, charCount do
             if not tutBody.Parent then break end
-            tutBody.Text = string.sub(pageData.Text, 1, i)
+            local byteEnd = (utf8.offset(bodyText, i + 1) or (#bodyText + 1)) - 1
+            tutBody.Text = string.sub(bodyText, 1, byteEnd)
             task.wait(0.01)
         end
     end
@@ -1054,6 +1251,8 @@ settingsTitle.Font = CONFIG.BoldFont
 settingsTitle.TextColor3 = CONFIG.Colors.Text
 settingsTitle.TextSize = 20
 settingsTitle.Text = "Settings"
+registerLocalizedString("Settings")
+registerLocalizedRefresher(function() settingsTitle.Text = tr("Settings") end)
 
 local settingsScroll = Instance.new("ScrollingFrame", settingsFrame)
 settingsScroll.Name = "SettingsScroll"
@@ -1137,6 +1336,8 @@ Instance.new("UICorner", pickerSearch).CornerRadius = UDim.new(0, 6)
 local pickerSearchPad = Instance.new("UIPadding", pickerSearch)
 pickerSearchPad.PaddingLeft = UDim.new(0, 8)
 safeSetCursor(pickerSearch, "rbxasset://SystemCursor/Arrow")
+registerLocalizedString("Search...")
+registerLocalizedRefresher(function() pickerSearch.PlaceholderText = "🔎 " .. tr("Search...") end)
 
 local pickerScroll = Instance.new("ScrollingFrame", pickerFrame)
 pickerScroll.Name = "PickerScroll"
@@ -1263,9 +1464,11 @@ local function createDropdownRow(labelText, buildEntries, getIndex, onSelect, se
     safeSetCursor(btn, "rbxasset://SystemCursor/Arrow")
 
     local function refreshText()
-        btn.Text = labelText .. ":  " .. buildEntries()[getIndex()].Name .. "  ▼"
+        btn.Text = tr(labelText) .. ":  " .. buildEntries()[getIndex()].Name .. "  ▼"
     end
     refreshText()
+    registerLocalizedString(labelText)
+    registerLocalizedRefresher(refreshText)
 
     table.insert(themedUpdaters, function(theme, fontData)
         tintTween(btn, {BackgroundColor3 = theme.UtilButton, TextColor3 = theme.Text})
@@ -1273,7 +1476,7 @@ local function createDropdownRow(labelText, buildEntries, getIndex, onSelect, se
     end)
 
     table.insert(connections, btn.MouseButton1Click:Connect(function()
-        openPicker(labelText, buildEntries(), getIndex(), function(i)
+        openPicker(tr(labelText), buildEntries(), getIndex(), function(i)
             onSelect(i)
             refreshText()
         end, searchable)
@@ -1326,6 +1529,8 @@ local function createToggleRow(labelText, initial, onChanged)
         end
     end
     render(false)
+    registerLocalizedString(labelText)
+    registerLocalizedRefresher(function() label.Text = tr(labelText) end)
 
     table.insert(themedUpdaters, function(theme, fontData)
         tintTween(label, {TextColor3 = theme.Text})
@@ -1351,6 +1556,7 @@ createDropdownRow("Theme", function()
 end, function() return currentThemeIndex end, function(i)
     currentThemeIndex = i
     applySettings()
+    saveSettings()
 end)
 
 createDropdownRow("Font", function()
@@ -1362,37 +1568,47 @@ createDropdownRow("Font", function()
 end, function() return currentFontIndex end, function(i)
     currentFontIndex = i
     applySettings()
+    saveSettings()
 end)
 
+registerLocalizedString("Small")
+registerLocalizedString("Medium")
+registerLocalizedString("Large")
 createDropdownRow("Text Size", function()
     local entries = {}
     for _, s in ipairs(textSizes) do
-        table.insert(entries, {Name = s.Name .. " (" .. s.Size .. ")"})
+        table.insert(entries, {Name = tr(s.Name) .. " (" .. s.Size .. ")"})
     end
     return entries
 end, function() return currentTextSizeIndex end, function(i)
     currentTextSizeIndex = i
     CONFIG.TextSize = textSizes[i].Size
     applySettings()
+    saveSettings()
 end)
 
 createDropdownRow("Language", function()
     return languages
 end, function() return currentLanguageIndex end, function(i)
     currentLanguageIndex = i
+    localizeUI()
+    saveSettings()
 end, true)
 
 createToggleRow("Auto-Translate Logs", uiSettings.autoTranslate, function(on)
     uiSettings.autoTranslate = on
+    saveSettings()
 end)
 
 createToggleRow("Click Particles", uiSettings.particles, function(on)
     uiSettings.particles = on
+    saveSettings()
 end)
 
 createToggleRow("Border Glow", uiSettings.glow, function(on)
     uiSettings.glow = on
     if on then startGlow() else stopGlow() end
+    saveSettings()
 end)
 
 createToggleRow("Background Blur", uiSettings.blur, function(on)
@@ -1400,6 +1616,7 @@ createToggleRow("Background Blur", uiSettings.blur, function(on)
     if not isMinimized then blur.Enabled = on end
     -- Solidify the panel slightly when the world isn't blurred behind it
     TweenService:Create(blurFrame, TweenInfo.new(0.3), {BackgroundTransparency = on and 0.3 or 0.1}):Play()
+    saveSettings()
 end)
 
 local consoleBtn = Instance.new("TextButton", settingsScroll)
@@ -1429,6 +1646,13 @@ closeSettingsBtn.ZIndex = 11
 Instance.new("UICorner", closeSettingsBtn).CornerRadius = UDim.new(0, 6)
 addDepthGradient(closeSettingsBtn)
 safeSetCursor(closeSettingsBtn, "rbxasset://SystemCursor/Arrow")
+
+registerLocalizedString("Open Dev Console")
+registerLocalizedString("Close")
+registerLocalizedRefresher(function()
+    consoleBtn.Text = tr("Open Dev Console")
+    closeSettingsBtn.Text = tr("Close")
+end)
 
 table.insert(themedUpdaters, function(theme, fontData)
     tintTween(consoleBtn, {BackgroundColor3 = theme.SecondaryAccent})
@@ -1639,7 +1863,7 @@ local function clearLogs()
     requestCanvasUpdate()
 end
 
-local function log(message, messageType, bulkLoad)
+function log(message, messageType, bulkLoad)
     isLoggingInternally = true
     logCounter += 1
 
@@ -1668,21 +1892,43 @@ local function log(message, messageType, bulkLoad)
     end
 
     -- Asynchronously swap in a Google-translated version (🌐 marks translated
-    -- lines). Skips code echoes and bulk history loads.
+    -- lines; tapping a translated line toggles back to the original text).
+    -- Skips code echoes and bulk history loads.
+    local originalLogText = logEntry.Text
+    local translatedLogText = nil
+    local showingTranslation = false
+
     if uiSettings.autoTranslate and not bulkLoad and messageType ~= "Input" and #messageStr > 1 then
-        local targetCode = languages[currentLanguageIndex].Code
-        task.spawn(function()
-            local translated = translateText(messageStr, targetCode)
+        queueTranslation(messageStr, languages[currentLanguageIndex].Code, function(translated)
             if translated and translated ~= messageStr and logFrame.Parent then
                 local safe = escapeRichText(translated)
                 if messageType == "Error" or messageType == "Warning" then
-                    logEntry.Text = "<b>🌐 " .. safe .. "</b>"
+                    translatedLogText = "<b>🌐 " .. safe .. "</b>"
                 else
-                    logEntry.Text = "🌐 " .. safe
+                    translatedLogText = "🌐 " .. safe
                 end
+                showingTranslation = true
+                logEntry.Text = translatedLogText
             end
         end)
     end
+
+    table.insert(connections, logEntry.InputBegan:Connect(function(input)
+        if not translatedLogText then return end
+        if input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch then return end
+        -- Only toggle on a genuine tap, not a scroll drag
+        local startPos = input.Position
+        local changedConn
+        changedConn = input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                changedConn:Disconnect()
+                if (input.Position - startPos).Magnitude < 10 then
+                    showingTranslation = not showingTranslation
+                    logEntry.Text = showingTranslation and translatedLogText or originalLogText
+                end
+            end
+        end)
+    end))
 
     local actionsFrame = logFrame.Actions
     table.insert(connections, actionsFrame.CopyBtn.MouseButton1Click:Connect(function()
@@ -1979,7 +2225,10 @@ end)
 
 refreshLogs()
 toggleMinimize()
-startGlow()
+if uiSettings.glow then startGlow() end
 activeTweens.titleShimmer:Play()
 updateInputControlsVisibility()
 onInsetsChanged()
+if languages[currentLanguageIndex].Code ~= "en" then
+    localizeUI()
+end
