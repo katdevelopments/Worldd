@@ -1487,8 +1487,9 @@ end)
 
 -- Run whatever is on the clipboard (executor must expose a clipboard getter)
 local clipboardRunButton = Instance.new("TextButton", footer)
-clipboardRunButton.Size = UDim2.new(0, 130, 0, FOOTER_H - EDITOR_ROW_Y - 6)
-	clipboardRunButton.TextWrapped = true
+clipboardRunButton.Size = UDim2.new(0, 58, 0, FOOTER_H - EDITOR_ROW_Y - 6)
+clipboardRunButton.TextWrapped = true
+clipboardRunButton.TextScaled = true
 clipboardRunButton.Position = UDim2.new(1, -81, 1, -6)
 clipboardRunButton.AnchorPoint = Vector2.new(1, 1)
 clipboardRunButton.BackgroundColor3 = CONFIG.Colors.UtilButton
