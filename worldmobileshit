@@ -1,5 +1,6 @@
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
+local HttpService = game:GetService("HttpService")
 local LogService = game:GetService("LogService")
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
@@ -108,6 +109,134 @@ local themes = {
             UtilButton = Color3.fromRGB(68, 71, 90),
             UtilButtonHover = Color3.fromRGB(98, 114, 164),
         }
+    },
+    {
+        Name = "Midnight",
+        Colors = {
+            Background = Color3.fromRGB(13, 17, 33),
+            PrimaryAccent = Color3.fromRGB(99, 102, 241),
+            SecondaryAccent = Color3.fromRGB(129, 140, 248),
+            Text = Color3.fromRGB(224, 231, 255),
+            Error = Color3.fromRGB(248, 113, 113),
+            Warning = Color3.fromRGB(251, 191, 36),
+            Info = Color3.fromRGB(165, 180, 252),
+            InputEcho = Color3.fromRGB(148, 163, 184),
+            MinimizeButton = Color3.fromRGB(49, 46, 129),
+            UtilButton = Color3.fromRGB(49, 46, 129),
+            UtilButtonHover = Color3.fromRGB(67, 56, 202),
+        }
+    },
+    {
+        Name = "Nord",
+        Colors = {
+            Background = Color3.fromRGB(46, 52, 64),
+            PrimaryAccent = Color3.fromRGB(136, 192, 208),
+            SecondaryAccent = Color3.fromRGB(129, 161, 193),
+            Text = Color3.fromRGB(236, 239, 244),
+            Error = Color3.fromRGB(191, 97, 106),
+            Warning = Color3.fromRGB(235, 203, 139),
+            Info = Color3.fromRGB(143, 188, 187),
+            InputEcho = Color3.fromRGB(129, 161, 193),
+            MinimizeButton = Color3.fromRGB(59, 66, 82),
+            UtilButton = Color3.fromRGB(59, 66, 82),
+            UtilButtonHover = Color3.fromRGB(76, 86, 106),
+        }
+    },
+    {
+        Name = "Synthwave",
+        Colors = {
+            Background = Color3.fromRGB(24, 16, 35),
+            PrimaryAccent = Color3.fromRGB(236, 72, 153),
+            SecondaryAccent = Color3.fromRGB(34, 211, 238),
+            Text = Color3.fromRGB(243, 232, 255),
+            Error = Color3.fromRGB(255, 85, 119),
+            Warning = Color3.fromRGB(250, 204, 21),
+            Info = Color3.fromRGB(103, 232, 249),
+            InputEcho = Color3.fromRGB(167, 139, 250),
+            MinimizeButton = Color3.fromRGB(88, 28, 135),
+            UtilButton = Color3.fromRGB(88, 28, 135),
+            UtilButtonHover = Color3.fromRGB(126, 34, 206),
+        }
+    },
+    {
+        Name = "Solarized",
+        Colors = {
+            Background = Color3.fromRGB(0, 43, 54),
+            PrimaryAccent = Color3.fromRGB(38, 139, 210),
+            SecondaryAccent = Color3.fromRGB(42, 161, 152),
+            Text = Color3.fromRGB(238, 232, 213),
+            Error = Color3.fromRGB(220, 50, 47),
+            Warning = Color3.fromRGB(181, 137, 0),
+            Info = Color3.fromRGB(38, 139, 210),
+            InputEcho = Color3.fromRGB(131, 148, 150),
+            MinimizeButton = Color3.fromRGB(7, 54, 66),
+            UtilButton = Color3.fromRGB(7, 54, 66),
+            UtilButtonHover = Color3.fromRGB(88, 110, 117),
+        }
+    },
+    {
+        Name = "Rose",
+        Colors = {
+            Background = Color3.fromRGB(25, 16, 21),
+            PrimaryAccent = Color3.fromRGB(244, 63, 94),
+            SecondaryAccent = Color3.fromRGB(251, 113, 133),
+            Text = Color3.fromRGB(255, 228, 230),
+            Error = Color3.fromRGB(248, 113, 113),
+            Warning = Color3.fromRGB(251, 191, 36),
+            Info = Color3.fromRGB(253, 164, 175),
+            InputEcho = Color3.fromRGB(159, 118, 131),
+            MinimizeButton = Color3.fromRGB(77, 22, 36),
+            UtilButton = Color3.fromRGB(77, 22, 36),
+            UtilButtonHover = Color3.fromRGB(112, 35, 55),
+        }
+    },
+    {
+        Name = "Ocean",
+        Colors = {
+            Background = Color3.fromRGB(8, 24, 33),
+            PrimaryAccent = Color3.fromRGB(20, 184, 166),
+            SecondaryAccent = Color3.fromRGB(45, 212, 191),
+            Text = Color3.fromRGB(204, 251, 241),
+            Error = Color3.fromRGB(239, 68, 68),
+            Warning = Color3.fromRGB(250, 204, 21),
+            Info = Color3.fromRGB(94, 234, 212),
+            InputEcho = Color3.fromRGB(94, 134, 145),
+            MinimizeButton = Color3.fromRGB(15, 60, 68),
+            UtilButton = Color3.fromRGB(15, 60, 68),
+            UtilButtonHover = Color3.fromRGB(17, 94, 89),
+        }
+    },
+    {
+        Name = "Ember",
+        Colors = {
+            Background = Color3.fromRGB(26, 15, 10),
+            PrimaryAccent = Color3.fromRGB(249, 115, 22),
+            SecondaryAccent = Color3.fromRGB(251, 146, 60),
+            Text = Color3.fromRGB(255, 237, 213),
+            Error = Color3.fromRGB(239, 68, 68),
+            Warning = Color3.fromRGB(253, 224, 71),
+            Info = Color3.fromRGB(253, 186, 116),
+            InputEcho = Color3.fromRGB(163, 120, 90),
+            MinimizeButton = Color3.fromRGB(90, 40, 12),
+            UtilButton = Color3.fromRGB(90, 40, 12),
+            UtilButtonHover = Color3.fromRGB(133, 60, 16),
+        }
+    },
+    {
+        Name = "Mono",
+        Colors = {
+            Background = Color3.fromRGB(18, 18, 18),
+            PrimaryAccent = Color3.fromRGB(229, 229, 229),
+            SecondaryAccent = Color3.fromRGB(163, 163, 163),
+            Text = Color3.fromRGB(245, 245, 245),
+            Error = Color3.fromRGB(248, 113, 113),
+            Warning = Color3.fromRGB(234, 179, 8),
+            Info = Color3.fromRGB(212, 212, 212),
+            InputEcho = Color3.fromRGB(115, 115, 115),
+            MinimizeButton = Color3.fromRGB(55, 55, 55),
+            UtilButton = Color3.fromRGB(55, 55, 55),
+            UtilButtonHover = Color3.fromRGB(82, 82, 82),
+        }
     }
 }
 
@@ -115,8 +244,80 @@ local fontsList = {
     { Name = "Source Sans", Font = Enum.Font.SourceSans, Bold = Enum.Font.SourceSansBold },
     { Name = "Code", Font = Enum.Font.Code, Bold = Enum.Font.Code },
     { Name = "Gotham", Font = Enum.Font.Gotham, Bold = Enum.Font.GothamBold },
-    { Name = "Ubuntu", Font = Enum.Font.Ubuntu, Bold = Enum.Font.Ubuntu }
+    { Name = "Ubuntu", Font = Enum.Font.Ubuntu, Bold = Enum.Font.Ubuntu },
+    { Name = "Builder Sans", Font = Enum.Font.BuilderSans, Bold = Enum.Font.BuilderSansBold },
+    { Name = "Roboto", Font = Enum.Font.Roboto, Bold = Enum.Font.Roboto },
+    { Name = "Roboto Mono", Font = Enum.Font.RobotoMono, Bold = Enum.Font.RobotoMono },
+    { Name = "Arial", Font = Enum.Font.Arial, Bold = Enum.Font.ArialBold },
+    { Name = "Nunito", Font = Enum.Font.Nunito, Bold = Enum.Font.Nunito },
+    { Name = "Oswald", Font = Enum.Font.Oswald, Bold = Enum.Font.Oswald },
+    { Name = "Merriweather", Font = Enum.Font.Merriweather, Bold = Enum.Font.Merriweather },
+    { Name = "Sci-Fi", Font = Enum.Font.SciFi, Bold = Enum.Font.SciFi }
 }
+
+local textSizes = {
+    { Name = "Small", Size = 12 },
+    { Name = "Medium", Size = 14 },
+    { Name = "Large", Size = 17 }
+}
+local currentTextSizeIndex = 2
+
+-- Every language supported by the Google Translate gtx endpoint
+local languages = {
+    { Name = "Afrikaans", Code = "af" }, { Name = "Albanian", Code = "sq" }, { Name = "Amharic", Code = "am" },
+    { Name = "Arabic", Code = "ar" }, { Name = "Armenian", Code = "hy" }, { Name = "Assamese", Code = "as" },
+    { Name = "Aymara", Code = "ay" }, { Name = "Azerbaijani", Code = "az" }, { Name = "Bambara", Code = "bm" },
+    { Name = "Basque", Code = "eu" }, { Name = "Belarusian", Code = "be" }, { Name = "Bengali", Code = "bn" },
+    { Name = "Bhojpuri", Code = "bho" }, { Name = "Bosnian", Code = "bs" }, { Name = "Bulgarian", Code = "bg" },
+    { Name = "Catalan", Code = "ca" }, { Name = "Cebuano", Code = "ceb" }, { Name = "Chinese (Simplified)", Code = "zh-CN" },
+    { Name = "Chinese (Traditional)", Code = "zh-TW" }, { Name = "Corsican", Code = "co" }, { Name = "Croatian", Code = "hr" },
+    { Name = "Czech", Code = "cs" }, { Name = "Danish", Code = "da" }, { Name = "Dhivehi", Code = "dv" },
+    { Name = "Dogri", Code = "doi" }, { Name = "Dutch", Code = "nl" }, { Name = "English", Code = "en" },
+    { Name = "Esperanto", Code = "eo" }, { Name = "Estonian", Code = "et" }, { Name = "Ewe", Code = "ee" },
+    { Name = "Filipino (Tagalog)", Code = "tl" }, { Name = "Finnish", Code = "fi" }, { Name = "French", Code = "fr" },
+    { Name = "Frisian", Code = "fy" }, { Name = "Galician", Code = "gl" }, { Name = "Georgian", Code = "ka" },
+    { Name = "German", Code = "de" }, { Name = "Greek", Code = "el" }, { Name = "Guarani", Code = "gn" },
+    { Name = "Gujarati", Code = "gu" }, { Name = "Haitian Creole", Code = "ht" }, { Name = "Hausa", Code = "ha" },
+    { Name = "Hawaiian", Code = "haw" }, { Name = "Hebrew", Code = "iw" }, { Name = "Hindi", Code = "hi" },
+    { Name = "Hmong", Code = "hmn" }, { Name = "Hungarian", Code = "hu" }, { Name = "Icelandic", Code = "is" },
+    { Name = "Igbo", Code = "ig" }, { Name = "Ilocano", Code = "ilo" }, { Name = "Indonesian", Code = "id" },
+    { Name = "Irish", Code = "ga" }, { Name = "Italian", Code = "it" }, { Name = "Japanese", Code = "ja" },
+    { Name = "Javanese", Code = "jw" }, { Name = "Kannada", Code = "kn" }, { Name = "Kazakh", Code = "kk" },
+    { Name = "Khmer", Code = "km" }, { Name = "Kinyarwanda", Code = "rw" }, { Name = "Konkani", Code = "gom" },
+    { Name = "Korean", Code = "ko" }, { Name = "Krio", Code = "kri" }, { Name = "Kurdish (Kurmanji)", Code = "ku" },
+    { Name = "Kurdish (Sorani)", Code = "ckb" }, { Name = "Kyrgyz", Code = "ky" }, { Name = "Lao", Code = "lo" },
+    { Name = "Latin", Code = "la" }, { Name = "Latvian", Code = "lv" }, { Name = "Lingala", Code = "ln" },
+    { Name = "Lithuanian", Code = "lt" }, { Name = "Luganda", Code = "lg" }, { Name = "Luxembourgish", Code = "lb" },
+    { Name = "Macedonian", Code = "mk" }, { Name = "Maithili", Code = "mai" }, { Name = "Malagasy", Code = "mg" },
+    { Name = "Malay", Code = "ms" }, { Name = "Malayalam", Code = "ml" }, { Name = "Maltese", Code = "mt" },
+    { Name = "Maori", Code = "mi" }, { Name = "Marathi", Code = "mr" }, { Name = "Meiteilon (Manipuri)", Code = "mni-Mtei" },
+    { Name = "Mizo", Code = "lus" }, { Name = "Mongolian", Code = "mn" }, { Name = "Myanmar (Burmese)", Code = "my" },
+    { Name = "Nepali", Code = "ne" }, { Name = "Norwegian", Code = "no" }, { Name = "Nyanja (Chichewa)", Code = "ny" },
+    { Name = "Odia (Oriya)", Code = "or" }, { Name = "Oromo", Code = "om" }, { Name = "Pashto", Code = "ps" },
+    { Name = "Persian", Code = "fa" }, { Name = "Polish", Code = "pl" }, { Name = "Portuguese", Code = "pt" },
+    { Name = "Punjabi", Code = "pa" }, { Name = "Quechua", Code = "qu" }, { Name = "Romanian", Code = "ro" },
+    { Name = "Russian", Code = "ru" }, { Name = "Samoan", Code = "sm" }, { Name = "Sanskrit", Code = "sa" },
+    { Name = "Scots Gaelic", Code = "gd" }, { Name = "Sepedi", Code = "nso" }, { Name = "Serbian", Code = "sr" },
+    { Name = "Sesotho", Code = "st" }, { Name = "Shona", Code = "sn" }, { Name = "Sindhi", Code = "sd" },
+    { Name = "Sinhala", Code = "si" }, { Name = "Slovak", Code = "sk" }, { Name = "Slovenian", Code = "sl" },
+    { Name = "Somali", Code = "so" }, { Name = "Spanish", Code = "es" }, { Name = "Sundanese", Code = "su" },
+    { Name = "Swahili", Code = "sw" }, { Name = "Swedish", Code = "sv" }, { Name = "Tajik", Code = "tg" },
+    { Name = "Tamil", Code = "ta" }, { Name = "Tatar", Code = "tt" }, { Name = "Telugu", Code = "te" },
+    { Name = "Thai", Code = "th" }, { Name = "Tigrinya", Code = "ti" }, { Name = "Tsonga", Code = "ts" },
+    { Name = "Turkish", Code = "tr" }, { Name = "Turkmen", Code = "tk" }, { Name = "Twi (Akan)", Code = "ak" },
+    { Name = "Ukrainian", Code = "uk" }, { Name = "Urdu", Code = "ur" }, { Name = "Uyghur", Code = "ug" },
+    { Name = "Uzbek", Code = "uz" }, { Name = "Vietnamese", Code = "vi" }, { Name = "Welsh", Code = "cy" },
+    { Name = "Xhosa", Code = "xh" }, { Name = "Yiddish", Code = "yi" }, { Name = "Yoruba", Code = "yo" },
+    { Name = "Zulu", Code = "zu" },
+}
+
+local currentLanguageIndex = 1
+for i, lang in ipairs(languages) do
+    if lang.Code == "en" then
+        currentLanguageIndex = i
+        break
+    end
+end
 
 local currentThemeIndex = 1
 local currentFontIndex = 1
@@ -128,6 +329,7 @@ local CONFIG = {
     Colors = themes[currentThemeIndex].Colors,
     Font = fontsList[currentFontIndex].Font,
     BoldFont = fontsList[currentFontIndex].Bold,
+    TextSize = textSizes[currentTextSizeIndex].Size,
 }
 
 local commandHistory = {}
@@ -146,6 +348,269 @@ local isInputMaximized = false
 local queuedCanvasUpdate = false
 local dragStart, frameStartPos, targetPosition, targetSize, dragStartTime
 local lastMinimizedPosition = UDim2.new(0.5, 0, 0.05, 0)
+
+-- User-toggleable effects (driven from the Settings panel)
+local uiSettings = {
+    particles = true,
+    glow = true,
+    blur = true,
+    autoTranslate = false,
+}
+
+-- === Google Translate integration ===
+-- Works across executors: prefers the executor's request function, falls
+-- back to game:HttpGet.
+local function httpGet(url)
+    local requester = (syn and syn.request) or (http and http.request) or http_request
+        or (fluxus and fluxus.request) or request
+    if requester then
+        local ok, res = pcall(requester, { Url = url, Method = "GET" })
+        if ok and type(res) == "table" and (res.StatusCode == 200 or res.Success) and type(res.Body) == "string" then
+            return res.Body
+        end
+    end
+    local ok, body = pcall(function() return game:HttpGet(url) end)
+    if ok and type(body) == "string" then return body end
+    return nil
+end
+
+local function escapeRichText(s)
+    return (s:gsub("&", "&amp;"):gsub("<", "&lt;"):gsub(">", "&gt;"))
+end
+
+local log -- assigned further down; forward-declared so translation code can warn
+
+-- Primary endpoint with a fallback for when gtx is rate-limited (HTTP 429)
+-- or blocked by the executor's HTTP allowlist.
+local function requestGoogleTranslate(text, targetCode)
+    local body = httpGet("https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl="
+        .. targetCode .. "&dt=t&q=" .. HttpService:UrlEncode(text))
+    if body then
+        local ok, data = pcall(function() return HttpService:JSONDecode(body) end)
+        if ok and type(data) == "table" and type(data[1]) == "table" then
+            local parts = {}
+            for _, seg in ipairs(data[1]) do
+                if type(seg) == "table" and type(seg[1]) == "string" then
+                    table.insert(parts, seg[1])
+                end
+            end
+            if #parts > 0 then return table.concat(parts) end
+        end
+    end
+
+    body = httpGet("https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=auto&tl="
+        .. targetCode .. "&q=" .. HttpService:UrlEncode(text))
+    if body then
+        local ok, data = pcall(function() return HttpService:JSONDecode(body) end)
+        if ok and type(data) == "table" then
+            if type(data[1]) == "string" then return data[1] end
+            if type(data[1]) == "table" and type(data[1][1]) == "string" then return data[1][1] end
+        end
+    end
+    return nil
+end
+
+local translateCache = {}
+local translateCacheCount = 0
+local translateFailWarned = false
+
+local function translateText(text, targetCode)
+    if #text > 450 then return nil end
+    local cacheKey = targetCode .. "\1" .. text
+    local cached = translateCache[cacheKey]
+    if cached ~= nil then
+        return cached ~= false and cached or nil
+    end
+
+    local result = requestGoogleTranslate(text, targetCode)
+
+    if not result and not translateFailWarned then
+        translateFailWarned = true
+        if log then
+            log("Translation request failed - your executor may be blocking Google Translate domains. Logs will stay untranslated.", "Warning")
+        end
+    end
+
+    if translateCacheCount > 500 then
+        table.clear(translateCache)
+        translateCacheCount = 0
+    end
+    translateCache[cacheKey] = result or false
+    translateCacheCount += 1
+    return result
+end
+
+-- Batches translation requests: bursts of log lines are collected for a
+-- moment and sent as one newline-joined request, which keeps heavy log
+-- volume from hammering the endpoint into rate limits.
+local pendingTranslations = {}
+local translateQueueRunning = false
+
+local function queueTranslation(text, targetCode, callback)
+    local cached = translateCache[targetCode .. "\1" .. text]
+    if cached ~= nil then
+        pcall(callback, cached ~= false and cached or nil)
+        return
+    end
+
+    table.insert(pendingTranslations, { text = text, code = targetCode, callback = callback })
+    if translateQueueRunning then return end
+    translateQueueRunning = true
+
+    task.spawn(function()
+        task.wait(0.25)
+        while #pendingTranslations > 0 do
+            local code = pendingTranslations[1].code
+            local batch = {}
+            local totalLen = 0
+            while #pendingTranslations > 0 do
+                local item = pendingTranslations[1]
+                -- Multi-line messages would corrupt the newline-joined batch,
+                -- so they always travel alone.
+                if item.code ~= code then break end
+                if #batch > 0 and (item.text:find("\n") or totalLen + #item.text + 1 > 400) then break end
+                table.remove(pendingTranslations, 1)
+                table.insert(batch, item)
+                totalLen += #item.text + 1
+                if item.text:find("\n") then break end
+            end
+
+            if #batch == 1 then
+                pcall(batch[1].callback, translateText(batch[1].text, code))
+            else
+                local joined = {}
+                for _, item in ipairs(batch) do table.insert(joined, item.text) end
+                local result = translateText(table.concat(joined, "\n"), code)
+                local lines = result and string.split(result, "\n") or nil
+                if lines and #lines == #batch then
+                    for i, item in ipairs(batch) do
+                        pcall(item.callback, (lines[i]:gsub("^%s+", ""):gsub("%s+$", "")))
+                    end
+                else
+                    -- Line counts diverged (or the batch failed): retry individually
+                    for _, item in ipairs(batch) do
+                        pcall(item.callback, translateText(item.text, code))
+                    end
+                end
+            end
+            task.wait(0.1)
+        end
+        translateQueueRunning = false
+    end)
+end
+
+-- === UI localization ===
+-- Static UI strings are translated once per language pick; tr() resolves a
+-- base English string to its current translation.
+local uiTranslations = {}
+local localizableStrings = {}
+local localizedRefreshers = {}
+local localizeRefreshQueued = false
+
+local function registerLocalizedString(s)
+    if not table.find(localizableStrings, s) then
+        table.insert(localizableStrings, s)
+    end
+end
+
+local function tr(s)
+    return uiTranslations[s] or s
+end
+
+local function refreshLocalizedTexts()
+    if localizeRefreshQueued then return end
+    localizeRefreshQueued = true
+    task.defer(function()
+        localizeRefreshQueued = false
+        for _, fn in ipairs(localizedRefreshers) do pcall(fn) end
+    end)
+end
+
+local function registerLocalizedRefresher(fn)
+    table.insert(localizedRefreshers, fn)
+end
+
+local function localizeUI()
+    table.clear(uiTranslations)
+    refreshLocalizedTexts()
+    local targetCode = languages[currentLanguageIndex].Code
+    if targetCode == "en" then return end
+    for _, s in ipairs(localizableStrings) do
+        queueTranslation(s, targetCode, function(translated)
+            if translated then
+                uiTranslations[s] = translated
+                refreshLocalizedTexts()
+            end
+        end)
+    end
+end
+
+-- === Settings persistence (survives rejoins on executors with file APIs) ===
+local SETTINGS_FILE = "WorldClient_Settings.json"
+
+local function saveSettings()
+    pcall(function()
+        writefile(SETTINGS_FILE, HttpService:JSONEncode({
+            themeIndex = currentThemeIndex,
+            fontIndex = currentFontIndex,
+            textSizeIndex = currentTextSizeIndex,
+            languageCode = languages[currentLanguageIndex].Code,
+            particles = uiSettings.particles,
+            glow = uiSettings.glow,
+            blur = uiSettings.blur,
+            autoTranslate = uiSettings.autoTranslate,
+        }))
+    end)
+end
+
+local function loadSettings()
+    local ok, data = pcall(function() return HttpService:JSONDecode(readfile(SETTINGS_FILE)) end)
+    if not ok or type(data) ~= "table" then return end
+    if type(data.themeIndex) == "number" and themes[data.themeIndex] then
+        currentThemeIndex = data.themeIndex
+    end
+    if type(data.fontIndex) == "number" and fontsList[data.fontIndex] then
+        currentFontIndex = data.fontIndex
+    end
+    if type(data.textSizeIndex) == "number" and textSizes[data.textSizeIndex] then
+        currentTextSizeIndex = data.textSizeIndex
+    end
+    if type(data.languageCode) == "string" then
+        for i, lang in ipairs(languages) do
+            if lang.Code == data.languageCode then
+                currentLanguageIndex = i
+                break
+            end
+        end
+    end
+    if type(data.particles) == "boolean" then uiSettings.particles = data.particles end
+    if type(data.glow) == "boolean" then uiSettings.glow = data.glow end
+    if type(data.blur) == "boolean" then uiSettings.blur = data.blur end
+    if type(data.autoTranslate) == "boolean" then uiSettings.autoTranslate = data.autoTranslate end
+end
+
+loadSettings()
+CONFIG.Colors = themes[currentThemeIndex].Colors
+CONFIG.Font = fontsList[currentFontIndex].Font
+CONFIG.BoldFont = fontsList[currentFontIndex].Bold
+CONFIG.TextSize = textSizes[currentTextSizeIndex].Size
+
+local tutorialPages = {
+    {Title = "Welcome!", Text = "This is the World Client. This short tutorial will guide you through its features."},
+    {Title = "Minimizing", Text = "Click the ('✖️') button to minimize the client. Click the icon again to maximize it."},
+    {Title = "Dragging", Text = "When minimized, you can drag the icon anywhere on your screen."},
+    {Title = "Player Input", Text = "When the client is open, character movement is disabled. Minimizing restores it."},
+    {Title = "Header Buttons", Text = "Quick access to our Website (🌐) and Discord (💬)."},
+    {Title = "Log Controls", Text = "Clear logs (🗑️), refresh (🔄), or copy all to clipboard (📋)."},
+    {Title = "Executing Code", Text = "Type Luau code and press 'Run'. Use Up/Down arrow keys for history."},
+    {Title = "Script Editor", Text = "For large scripts, click '↗️' to expand the editor to a full-screen view."},
+    {Title = "You're set!", Text = "Type 'tutorial()' in the command bar to view this again."}
+}
+for _, page in ipairs(tutorialPages) do
+    registerLocalizedString(page.Title)
+    registerLocalizedString(page.Text)
+end
+registerLocalizedString("Skip")
 
 local function safeSetCursor(object, cursor)
     pcall(function() object.CursorIcon = cursor end)
@@ -202,7 +667,7 @@ mainCorner.CornerRadius = UDim.new(0, 8)
 local blurFrame = Instance.new("Frame", blurGui)
 blurFrame.Name = "BlurFrame"
 blurFrame.BackgroundColor3 = CONFIG.Colors.Background
-blurFrame.BackgroundTransparency = 0.3
+blurFrame.BackgroundTransparency = uiSettings.blur and 0.3 or 0.1
 blurFrame.ZIndex = 0
 blurFrame.Size = mainFrame.Size
 blurFrame.Position = mainFrame.Position
@@ -215,6 +680,41 @@ local blurStroke = Instance.new("UIStroke", blurFrame)
 blurStroke.Color = CONFIG.Colors.PrimaryAccent
 blurStroke.Thickness = 2
 blurStroke.Transparency = 0.2
+
+-- Slowly rotating two-tone gradient inside the border stroke
+local strokeGradient = Instance.new("UIGradient", blurStroke)
+strokeGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, CONFIG.Colors.PrimaryAccent),
+    ColorSequenceKeypoint.new(0.5, CONFIG.Colors.SecondaryAccent),
+    ColorSequenceKeypoint.new(1, CONFIG.Colors.PrimaryAccent),
+})
+
+-- Subtle vertical shading on the panel background for depth
+local bgDepthGradient = Instance.new("UIGradient", blurFrame)
+bgDepthGradient.Rotation = 90
+bgDepthGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.new(1, 1, 1)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 200, 200)),
+})
+
+local function startGlow()
+    local pulseInfo = TweenInfo.new(1.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
+    local spinInfo = TweenInfo.new(6, Enum.EasingStyle.Linear, Enum.EasingDirection.Out, -1)
+    strokeGradient.Rotation = 0
+    activeTweens.glowTransparency = TweenService:Create(blurStroke, pulseInfo, {Transparency = 0.9})
+    activeTweens.glowThickness = TweenService:Create(blurStroke, pulseInfo, {Thickness = 6})
+    activeTweens.strokeSpin = TweenService:Create(strokeGradient, spinInfo, {Rotation = 360})
+    activeTweens.glowTransparency:Play()
+    activeTweens.glowThickness:Play()
+    activeTweens.strokeSpin:Play()
+end
+
+local function stopGlow()
+    for _, key in ipairs({"glowTransparency", "glowThickness", "strokeSpin"}) do
+        if activeTweens[key] then activeTweens[key]:Cancel() activeTweens[key] = nil end
+    end
+    TweenService:Create(blurStroke, TweenInfo.new(0.3), {Transparency = 0.2, Thickness = 2}):Play()
+end
 
 local header = Instance.new("Frame", mainFrame)
 header.Name = "Header"
@@ -268,7 +768,34 @@ titleLabel.TextColor3 = CONFIG.Colors.Text
 titleLabel.TextSize = 18
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 
+-- Recurring shine sweep across the title text
+local titleShimmer = Instance.new("UIGradient", titleLabel)
+titleShimmer.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(210, 210, 210)),
+    ColorSequenceKeypoint.new(0.5, Color3.new(1, 1, 1)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(210, 210, 210)),
+})
+titleShimmer.Offset = Vector2.new(-1, 0)
+activeTweens.titleShimmer = TweenService:Create(
+    titleShimmer,
+    TweenInfo.new(1.6, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, false, 2.5),
+    {Offset = Vector2.new(1, 0)}
+)
+
+-- Multiplies the background color white->grey top-to-bottom, giving every
+-- button a soft 3D depth regardless of theme.
+local function addDepthGradient(obj)
+    local g = Instance.new("UIGradient", obj)
+    g.Rotation = 90
+    g.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.new(1, 1, 1)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(190, 190, 190)),
+    })
+    return g
+end
+
 local function createClickParticles(parent, color)
+    if not uiSettings.particles then return end
     local emitter = Instance.new("ParticleEmitter")
     emitter.Color = ColorSequence.new(color or CONFIG.Colors.SecondaryAccent)
     emitter.LightEmission = 0.8
@@ -292,8 +819,9 @@ local function createIconButton(parent, emoji, size, colorType)
     btn.TextColor3 = Color3.new(1, 1, 1)
     btn.TextSize = math.floor(size * 0.7)
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    addDepthGradient(btn)
     safeSetCursor(btn, "rbxasset://SystemCursor/Arrow")
-    
+
     local scale = Instance.new("UIScale", btn)
     scale.Scale = 1
     local isHovered = false
@@ -394,6 +922,7 @@ runButton.Text = "Run"
 runButton.TextColor3 = Color3.new(1, 1, 1)
 runButton.TextSize = 16
 Instance.new("UICorner", runButton).CornerRadius = UDim.new(0, 6)
+addDepthGradient(runButton)
 safeSetCursor(runButton, "rbxasset://SystemCursor/Arrow")
 
 local runButtonScale = Instance.new("UIScale", runButton)
@@ -416,6 +945,9 @@ table.insert(connections, runButton.MouseButton1Up:Connect(function()
     TweenService:Create(runButtonScale, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Scale = runButtonHovered and 1.06 or 1}):Play()
 end))
 
+registerLocalizedString("Run")
+registerLocalizedRefresher(function() runButton.Text = tr("Run") end)
+
 local expandInputButton = createIconButton(footer, "↗️", 24, "UtilButton")
 expandInputButton.Position = UDim2.new(1, -110, 0.15, 0)
 expandInputButton.ZIndex = 3
@@ -434,6 +966,12 @@ inputContainer.ScrollingDirection = Enum.ScrollingDirection.XY
 Instance.new("UICorner", inputContainer).CornerRadius = UDim.new(0, 6)
 safeSetCursor(inputContainer, "rbxasset://SystemCursor/Arrow")
 
+-- Accent ring that lights up while the code box is focused
+local inputFocusStroke = Instance.new("UIStroke", inputContainer)
+inputFocusStroke.Color = CONFIG.Colors.PrimaryAccent
+inputFocusStroke.Thickness = 1.5
+inputFocusStroke.Transparency = 1
+
 local inputBox = Instance.new("TextBox", inputContainer)
 inputBox.BackgroundTransparency = 1
 inputBox.ClearTextOnFocus = false
@@ -441,7 +979,7 @@ inputBox.Font = CONFIG.Font
 inputBox.PlaceholderText = "Execute Luau code..."
 inputBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
 inputBox.TextColor3 = CONFIG.Colors.Text
-inputBox.TextSize = 14
+inputBox.TextSize = CONFIG.TextSize
 safeSetCursor(inputBox, "rbxasset://SystemCursor/Arrow")
 inputBox.MultiLine = true
 inputBox.Text = ""
@@ -455,6 +993,16 @@ Instance.new("UIPadding", inputBox, {
     PaddingBottom = UDim.new(0, 5)
 })
 
+registerLocalizedString("Execute Luau code...")
+registerLocalizedRefresher(function() inputBox.PlaceholderText = tr("Execute Luau code...") end)
+
+table.insert(connections, inputBox.Focused:Connect(function()
+    TweenService:Create(inputFocusStroke, TweenInfo.new(0.2), {Transparency = 0.2, Thickness = 2}):Play()
+end))
+table.insert(connections, inputBox.FocusLost:Connect(function()
+    TweenService:Create(inputFocusStroke, TweenInfo.new(0.3), {Transparency = 1, Thickness = 1.5}):Play()
+end))
+
 local templateLog = Instance.new("Frame")
 templateLog.Name = "LogFrame"
 templateLog.BackgroundTransparency = 1
@@ -467,7 +1015,7 @@ local templateEntry = Instance.new("TextLabel", templateLog)
 templateEntry.Name = "LogEntry"
 templateEntry.BackgroundTransparency = 1
 templateEntry.Font = CONFIG.Font
-templateEntry.TextSize = 14
+templateEntry.TextSize = CONFIG.TextSize
 templateEntry.TextWrapped = true
 templateEntry.TextXAlignment = Enum.TextXAlignment.Left
 templateEntry.Size = UDim2.new(1, -60, 0, 0)
@@ -599,7 +1147,7 @@ local function showTutorial()
     skipButton.AnchorPoint = Vector2.new(0.5, 0.5)
     skipButton.BackgroundColor3 = CONFIG.Colors.UtilButton
     skipButton.Font = CONFIG.BoldFont
-    skipButton.Text = "Skip"
+    skipButton.Text = tr("Skip")
     skipButton.TextColor3 = Color3.new(1, 1, 1)
     skipButton.TextSize = 18
     Instance.new("UICorner", skipButton).CornerRadius = UDim.new(0, 6)
@@ -609,30 +1157,25 @@ local function showTutorial()
     TweenService:Create(tutorialFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0, 450, 0, 280)}):Play()
     createClickParticles(tutorialFrame, CONFIG.Colors.PrimaryAccent)
 
-    local pages = {
-        {Title = "Welcome!", Text = "This is the World Client. This short tutorial will guide you through its features."},
-        {Title = "Minimizing", Text = "Click the ('✖️') button to minimize the client. Click the icon again to maximize it."},
-        {Title = "Dragging", Text = "When minimized, you can drag the icon anywhere on your screen."},
-        {Title = "Player Input", Text = "When the client is open, character movement is disabled. Minimizing restores it."},
-        {Title = "Header Buttons", Text = "Quick access to our Website (🌐) and Discord (💬)."},
-        {Title = "Log Controls", Text = "Clear logs (🗑️), refresh (🔄), or copy all to clipboard (📋)."},
-        {Title = "Executing Code", Text = "Type Luau code and press 'Run'. Use Up/Down arrow keys for history."},
-        {Title = "Script Editor", Text = "For large scripts, click '↗️' to expand the editor to a full-screen view."},
-        {Title = "You're set!", Text = "Type 'tutorial()' in the command bar to view this again."}
-    }
+    local pages = tutorialPages
 
     local currentPage = 1
     local function updatePage()
         local pageData = pages[currentPage]
-        tutTitle.Text = pageData.Title
+        tutTitle.Text = tr(pageData.Title)
         pageIndicator.Text = currentPage .. "/" .. #pages
         prevButton.Visible = currentPage > 1
         nextButton.Text = (currentPage == #pages) and "✅" or "➡️"
         skipButton.Visible = (currentPage ~= #pages)
-        
-        for i = 1, #pageData.Text do
+
+        -- Typewriter steps by codepoint so translated UTF-8 text never
+        -- renders a half-cut character
+        local bodyText = tr(pageData.Text)
+        local charCount = utf8.len(bodyText) or #bodyText
+        for i = 1, charCount do
             if not tutBody.Parent then break end
-            tutBody.Text = string.sub(pageData.Text, 1, i)
+            local byteEnd = (utf8.offset(bodyText, i + 1) or (#bodyText + 1)) - 1
+            tutBody.Text = string.sub(bodyText, 1, byteEnd)
             task.wait(0.01)
         end
     end
@@ -672,79 +1215,6 @@ settingsOverlay.Text = ""
 settingsOverlay.AutoButtonColor = false
 settingsOverlay.Visible = false
 
-local settingsFrame = Instance.new("Frame", screenGui)
-settingsFrame.Name = "SettingsFrame"
-settingsFrame.Size = UDim2.new(0, 300, 0, 240)
-settingsFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-settingsFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-settingsFrame.BackgroundColor3 = CONFIG.Colors.Background
-settingsFrame.BackgroundTransparency = 0.1
-settingsFrame.ZIndex = 10
-settingsFrame.Visible = false
-Instance.new("UICorner", settingsFrame).CornerRadius = UDim.new(0, 8)
-local settingsStroke = Instance.new("UIStroke", settingsFrame)
-settingsStroke.Color = CONFIG.Colors.PrimaryAccent
-settingsStroke.Thickness = 2
-
-local settingsTitle = Instance.new("TextLabel", settingsFrame)
-settingsTitle.Name = "SettingsTitle"
-settingsTitle.Size = UDim2.new(1, 0, 0, 40)
-settingsTitle.Position = UDim2.new(0.5, 0, 0, 5)
-settingsTitle.AnchorPoint = Vector2.new(0.5, 0)
-settingsTitle.BackgroundTransparency = 1
-settingsTitle.Font = CONFIG.BoldFont
-settingsTitle.TextColor3 = CONFIG.Colors.Text
-settingsTitle.TextSize = 20
-settingsTitle.Text = "Settings"
-
-local themeBtn = Instance.new("TextButton", settingsFrame)
-themeBtn.Name = "ThemeBtn"
-themeBtn.Size = UDim2.new(1, -40, 0, 35)
-themeBtn.Position = UDim2.new(0.5, 0, 0, 50)
-themeBtn.AnchorPoint = Vector2.new(0.5, 0)
-themeBtn.BackgroundColor3 = CONFIG.Colors.UtilButton
-themeBtn.Font = CONFIG.Font
-themeBtn.TextColor3 = CONFIG.Colors.Text
-themeBtn.TextSize = 16
-themeBtn.Text = "Theme: " .. themes[currentThemeIndex].Name
-Instance.new("UICorner", themeBtn).CornerRadius = UDim.new(0, 6)
-
-local fontBtn = Instance.new("TextButton", settingsFrame)
-fontBtn.Name = "FontBtn"
-fontBtn.Size = UDim2.new(1, -40, 0, 35)
-fontBtn.Position = UDim2.new(0.5, 0, 0, 95)
-fontBtn.AnchorPoint = Vector2.new(0.5, 0)
-fontBtn.BackgroundColor3 = CONFIG.Colors.UtilButton
-fontBtn.Font = CONFIG.Font
-fontBtn.TextColor3 = CONFIG.Colors.Text
-fontBtn.TextSize = 16
-fontBtn.Text = "Font: " .. fontsList[currentFontIndex].Name
-Instance.new("UICorner", fontBtn).CornerRadius = UDim.new(0, 6)
-
-local consoleBtn = Instance.new("TextButton", settingsFrame)
-consoleBtn.Name = "ConsoleBtn"
-consoleBtn.Size = UDim2.new(1, -40, 0, 35)
-consoleBtn.Position = UDim2.new(0.5, 0, 0, 140)
-consoleBtn.AnchorPoint = Vector2.new(0.5, 0)
-consoleBtn.BackgroundColor3 = CONFIG.Colors.SecondaryAccent
-consoleBtn.Font = CONFIG.BoldFont
-consoleBtn.TextColor3 = Color3.new(1, 1, 1)
-consoleBtn.TextSize = 16
-consoleBtn.Text = "Open Dev Console"
-Instance.new("UICorner", consoleBtn).CornerRadius = UDim.new(0, 6)
-
-local closeSettingsBtn = Instance.new("TextButton", settingsFrame)
-closeSettingsBtn.Name = "CloseBtn"
-closeSettingsBtn.Size = UDim2.new(0, 100, 0, 35)
-closeSettingsBtn.Position = UDim2.new(0.5, 0, 0, 190)
-closeSettingsBtn.AnchorPoint = Vector2.new(0.5, 0)
-closeSettingsBtn.BackgroundColor3 = CONFIG.Colors.UtilButton
-closeSettingsBtn.Font = CONFIG.BoldFont
-closeSettingsBtn.TextColor3 = CONFIG.Colors.Text
-closeSettingsBtn.TextSize = 16
-closeSettingsBtn.Text = "Close"
-Instance.new("UICorner", closeSettingsBtn).CornerRadius = UDim.new(0, 6)
-
 local themeTweenInfo = TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 local function tintTween(obj, props)
     if obj and obj.Parent then
@@ -752,7 +1222,456 @@ local function tintTween(obj, props)
     end
 end
 
-local function applySettings()
+local settingsFrame = Instance.new("Frame", screenGui)
+settingsFrame.Name = "SettingsFrame"
+settingsFrame.Size = UDim2.new(0, 320, 0.75, 0)
+settingsFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+settingsFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+settingsFrame.BackgroundColor3 = CONFIG.Colors.Background
+settingsFrame.BackgroundTransparency = 0.05
+settingsFrame.ZIndex = 10
+settingsFrame.Visible = false
+Instance.new("UICorner", settingsFrame).CornerRadius = UDim.new(0, 10)
+local settingsSizeLimit = Instance.new("UISizeConstraint", settingsFrame)
+settingsSizeLimit.MaxSize = Vector2.new(320, 440)
+settingsSizeLimit.MinSize = Vector2.new(320, 240)
+local settingsScale = Instance.new("UIScale", settingsFrame)
+settingsScale.Scale = 0
+local settingsStroke = Instance.new("UIStroke", settingsFrame)
+settingsStroke.Color = CONFIG.Colors.PrimaryAccent
+settingsStroke.Thickness = 2
+
+local settingsTitle = Instance.new("TextLabel", settingsFrame)
+settingsTitle.Name = "SettingsTitle"
+settingsTitle.Size = UDim2.new(1, 0, 0, 36)
+settingsTitle.Position = UDim2.new(0.5, 0, 0, 8)
+settingsTitle.AnchorPoint = Vector2.new(0.5, 0)
+settingsTitle.BackgroundTransparency = 1
+settingsTitle.Font = CONFIG.BoldFont
+settingsTitle.TextColor3 = CONFIG.Colors.Text
+settingsTitle.TextSize = 20
+settingsTitle.Text = "Settings"
+registerLocalizedString("Settings")
+registerLocalizedRefresher(function() settingsTitle.Text = tr("Settings") end)
+
+local settingsScroll = Instance.new("ScrollingFrame", settingsFrame)
+settingsScroll.Name = "SettingsScroll"
+settingsScroll.Position = UDim2.new(0, 12, 0, 48)
+settingsScroll.Size = UDim2.new(1, -24, 1, -60)
+settingsScroll.BackgroundTransparency = 1
+settingsScroll.BorderSizePixel = 0
+settingsScroll.ScrollBarThickness = 4
+settingsScroll.ScrollBarImageColor3 = CONFIG.Colors.PrimaryAccent
+settingsScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+settingsScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+settingsScroll.ScrollingDirection = Enum.ScrollingDirection.Y
+local settingsListLayout = Instance.new("UIListLayout", settingsScroll)
+settingsListLayout.Padding = UDim.new(0, 8)
+settingsListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+-- Widgets that must be restyled on every theme/font change register a
+-- function here; applySettings runs them all.
+local themedUpdaters = {}
+local applySettings
+
+-- === Shared option picker (the "dropdown" panel) ===
+local pickerFrame = Instance.new("Frame", settingsFrame)
+pickerFrame.Name = "PickerFrame"
+pickerFrame.Size = UDim2.new(1, -16, 1, -16)
+pickerFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+pickerFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+pickerFrame.BackgroundColor3 = CONFIG.Colors.Background
+pickerFrame.ZIndex = 12
+pickerFrame.Visible = false
+Instance.new("UICorner", pickerFrame).CornerRadius = UDim.new(0, 10)
+local pickerStroke = Instance.new("UIStroke", pickerFrame)
+pickerStroke.Color = CONFIG.Colors.SecondaryAccent
+pickerStroke.Thickness = 1.5
+local pickerScale = Instance.new("UIScale", pickerFrame)
+pickerScale.Scale = 0
+
+local pickerTitle = Instance.new("TextLabel", pickerFrame)
+pickerTitle.Name = "PickerTitle"
+pickerTitle.Size = UDim2.new(1, -50, 0, 34)
+pickerTitle.Position = UDim2.new(0, 12, 0, 4)
+pickerTitle.BackgroundTransparency = 1
+pickerTitle.Font = CONFIG.BoldFont
+pickerTitle.TextColor3 = CONFIG.Colors.Text
+pickerTitle.TextSize = 17
+pickerTitle.TextXAlignment = Enum.TextXAlignment.Left
+pickerTitle.ZIndex = 13
+
+local pickerClose = Instance.new("TextButton", pickerFrame)
+pickerClose.Name = "PickerClose"
+pickerClose.Size = UDim2.new(0, 26, 0, 26)
+pickerClose.Position = UDim2.new(1, -8, 0, 8)
+pickerClose.AnchorPoint = Vector2.new(1, 0)
+pickerClose.BackgroundColor3 = CONFIG.Colors.UtilButton
+pickerClose.Font = Enum.Font.SourceSans
+pickerClose.Text = "✖️"
+pickerClose.TextColor3 = Color3.new(1, 1, 1)
+pickerClose.TextSize = 14
+pickerClose.ZIndex = 13
+Instance.new("UICorner", pickerClose).CornerRadius = UDim.new(0, 6)
+addDepthGradient(pickerClose)
+
+-- Search bar, shown for long option lists (e.g. languages)
+local pickerSearch = Instance.new("TextBox", pickerFrame)
+pickerSearch.Name = "PickerSearch"
+pickerSearch.Size = UDim2.new(1, -20, 0, 30)
+pickerSearch.Position = UDim2.new(0, 10, 0, 40)
+pickerSearch.BackgroundColor3 = CONFIG.Colors.UtilButton
+pickerSearch.BackgroundTransparency = 0.25
+pickerSearch.Font = CONFIG.Font
+pickerSearch.PlaceholderText = "🔎 Search..."
+pickerSearch.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+pickerSearch.Text = ""
+pickerSearch.TextColor3 = CONFIG.Colors.Text
+pickerSearch.TextSize = 14
+pickerSearch.ClearTextOnFocus = false
+pickerSearch.TextXAlignment = Enum.TextXAlignment.Left
+pickerSearch.ZIndex = 13
+pickerSearch.Visible = false
+Instance.new("UICorner", pickerSearch).CornerRadius = UDim.new(0, 6)
+local pickerSearchPad = Instance.new("UIPadding", pickerSearch)
+pickerSearchPad.PaddingLeft = UDim.new(0, 8)
+safeSetCursor(pickerSearch, "rbxasset://SystemCursor/Arrow")
+registerLocalizedString("Search...")
+registerLocalizedRefresher(function() pickerSearch.PlaceholderText = "🔎 " .. tr("Search...") end)
+
+local pickerScroll = Instance.new("ScrollingFrame", pickerFrame)
+pickerScroll.Name = "PickerScroll"
+pickerScroll.Position = UDim2.new(0, 10, 0, 40)
+pickerScroll.Size = UDim2.new(1, -20, 1, -50)
+pickerScroll.BackgroundTransparency = 1
+pickerScroll.BorderSizePixel = 0
+pickerScroll.ScrollBarThickness = 4
+pickerScroll.ScrollBarImageColor3 = CONFIG.Colors.PrimaryAccent
+pickerScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+pickerScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+pickerScroll.ScrollingDirection = Enum.ScrollingDirection.Y
+pickerScroll.ZIndex = 13
+local pickerLayout = Instance.new("UIListLayout", pickerScroll)
+pickerLayout.Padding = UDim.new(0, 6)
+pickerLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+local isPickerOpen = false
+local currentPickerButtons = {}
+
+local function applyPickerFilter()
+    local query = pickerSearch.Text:lower()
+    for _, opt in ipairs(currentPickerButtons) do
+        if opt.Parent then
+            local name = (opt:GetAttribute("OptionName") or ""):lower()
+            opt.Visible = (query == "") or (name:find(query, 1, true) ~= nil)
+        end
+    end
+    pickerScroll.CanvasPosition = Vector2.new(0, 0)
+end
+
+local function closePicker(instant)
+    if not pickerFrame.Visible then return end
+    isPickerOpen = false
+    if instant then
+        pickerFrame.Visible = false
+        pickerScale.Scale = 0
+    else
+        local tw = TweenService:Create(pickerScale, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Scale = 0})
+        tw:Play()
+        tw.Completed:Once(function() pickerFrame.Visible = false end)
+    end
+end
+
+-- entries: array of {Name, Font?, SwatchA?, SwatchB?} — Font renders the
+-- option in its own typeface (font picker), the swatches draw a theme
+-- preview dot (theme picker).
+local function openPicker(title, entries, currentIndex, onPick, searchable)
+    pickerTitle.Text = title
+    for _, child in ipairs(pickerScroll:GetChildren()) do
+        if child:IsA("TextButton") then child:Destroy() end
+    end
+    table.clear(currentPickerButtons)
+
+    pickerSearch.Text = ""
+    pickerSearch.Visible = searchable == true
+    if searchable then
+        pickerScroll.Position = UDim2.new(0, 10, 0, 78)
+        pickerScroll.Size = UDim2.new(1, -20, 1, -88)
+    else
+        pickerScroll.Position = UDim2.new(0, 10, 0, 40)
+        pickerScroll.Size = UDim2.new(1, -20, 1, -50)
+    end
+
+    for i, entry in ipairs(entries) do
+        local opt = Instance.new("TextButton", pickerScroll)
+        opt.Size = UDim2.new(1, -6, 0, 34)
+        opt.LayoutOrder = i
+        local selected = (i == currentIndex)
+        opt.BackgroundColor3 = selected and CONFIG.Colors.SecondaryAccent or CONFIG.Colors.UtilButton
+        opt.Font = entry.Font or CONFIG.Font
+        opt.Text = (selected and "✓  " or "") .. entry.Name
+        opt.TextColor3 = selected and Color3.new(1, 1, 1) or CONFIG.Colors.Text
+        opt.TextSize = 15
+        opt.ZIndex = 13
+        Instance.new("UICorner", opt).CornerRadius = UDim.new(0, 6)
+        addDepthGradient(opt)
+        safeSetCursor(opt, "rbxasset://SystemCursor/Arrow")
+        opt:SetAttribute("OptionName", entry.Name)
+        table.insert(currentPickerButtons, opt)
+        if entry.SwatchA then
+            local sw = Instance.new("Frame", opt)
+            sw.Size = UDim2.new(0, 16, 0, 16)
+            sw.Position = UDim2.new(1, -14, 0.5, 0)
+            sw.AnchorPoint = Vector2.new(1, 0.5)
+            sw.BackgroundColor3 = entry.SwatchA
+            sw.ZIndex = 14
+            Instance.new("UICorner", sw).CornerRadius = UDim.new(1, 0)
+            local swStroke = Instance.new("UIStroke", sw)
+            swStroke.Color = entry.SwatchB
+            swStroke.Thickness = 2
+        end
+        opt.MouseButton1Click:Connect(function()
+            createClickParticles(opt)
+            onPick(i)
+            closePicker()
+        end)
+    end
+    pickerScroll.CanvasPosition = Vector2.new(0, 0)
+    pickerFrame.Visible = true
+    isPickerOpen = true
+    pickerScale.Scale = 0
+    TweenService:Create(pickerScale, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Scale = 1}):Play()
+end
+
+table.insert(connections, pickerClose.MouseButton1Click:Connect(function() closePicker() end))
+table.insert(connections, pickerSearch:GetPropertyChangedSignal("Text"):Connect(applyPickerFilter))
+
+-- === Settings row builders ===
+local rowOrder = 0
+local function nextOrder() rowOrder += 1 return rowOrder end
+
+local function createDropdownRow(labelText, buildEntries, getIndex, onSelect, searchable)
+    local btn = Instance.new("TextButton", settingsScroll)
+    btn.Size = UDim2.new(1, -6, 0, 36)
+    btn.LayoutOrder = nextOrder()
+    btn.BackgroundColor3 = CONFIG.Colors.UtilButton
+    btn.Font = CONFIG.Font
+    btn.TextColor3 = CONFIG.Colors.Text
+    btn.TextSize = 15
+    btn.ZIndex = 11
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    addDepthGradient(btn)
+    safeSetCursor(btn, "rbxasset://SystemCursor/Arrow")
+
+    local function refreshText()
+        btn.Text = tr(labelText) .. ":  " .. buildEntries()[getIndex()].Name .. "  ▼"
+    end
+    refreshText()
+    registerLocalizedString(labelText)
+    registerLocalizedRefresher(refreshText)
+
+    table.insert(themedUpdaters, function(theme, fontData)
+        tintTween(btn, {BackgroundColor3 = theme.UtilButton, TextColor3 = theme.Text})
+        btn.Font = fontData.Font
+    end)
+
+    table.insert(connections, btn.MouseButton1Click:Connect(function()
+        openPicker(tr(labelText), buildEntries(), getIndex(), function(i)
+            onSelect(i)
+            refreshText()
+        end, searchable)
+    end))
+    return btn
+end
+
+local function createToggleRow(labelText, initial, onChanged)
+    local row = Instance.new("Frame", settingsScroll)
+    row.Size = UDim2.new(1, -6, 0, 36)
+    row.LayoutOrder = nextOrder()
+    row.BackgroundTransparency = 1
+
+    local label = Instance.new("TextLabel", row)
+    label.Size = UDim2.new(1, -60, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Font = CONFIG.Font
+    label.Text = labelText
+    label.TextColor3 = CONFIG.Colors.Text
+    label.TextSize = 15
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.ZIndex = 11
+
+    local switch = Instance.new("TextButton", row)
+    switch.Size = UDim2.new(0, 46, 0, 24)
+    switch.Position = UDim2.new(1, 0, 0.5, 0)
+    switch.AnchorPoint = Vector2.new(1, 0.5)
+    switch.Text = ""
+    switch.ZIndex = 11
+    Instance.new("UICorner", switch).CornerRadius = UDim.new(1, 0)
+    safeSetCursor(switch, "rbxasset://SystemCursor/Arrow")
+
+    local knob = Instance.new("Frame", switch)
+    knob.Size = UDim2.new(0, 18, 0, 18)
+    knob.AnchorPoint = Vector2.new(0, 0.5)
+    knob.BackgroundColor3 = Color3.new(1, 1, 1)
+    knob.ZIndex = 12
+    Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
+
+    local state = initial
+    local function render(animate)
+        local targetPos = state and UDim2.new(1, -21, 0.5, 0) or UDim2.new(0, 3, 0.5, 0)
+        local targetColor = state and CONFIG.Colors.SecondaryAccent or CONFIG.Colors.UtilButton
+        if animate then
+            TweenService:Create(knob, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = targetPos}):Play()
+            TweenService:Create(switch, TweenInfo.new(0.2), {BackgroundColor3 = targetColor}):Play()
+        else
+            knob.Position = targetPos
+            switch.BackgroundColor3 = targetColor
+        end
+    end
+    render(false)
+    registerLocalizedString(labelText)
+    registerLocalizedRefresher(function() label.Text = tr(labelText) end)
+
+    table.insert(themedUpdaters, function(theme, fontData)
+        tintTween(label, {TextColor3 = theme.Text})
+        label.Font = fontData.Font
+        tintTween(switch, {BackgroundColor3 = state and theme.SecondaryAccent or theme.UtilButton})
+    end)
+
+    table.insert(connections, switch.MouseButton1Click:Connect(function()
+        state = not state
+        render(true)
+        onChanged(state)
+    end))
+    return row
+end
+
+-- === Rows ===
+createDropdownRow("Theme", function()
+    local entries = {}
+    for _, t in ipairs(themes) do
+        table.insert(entries, {Name = t.Name, SwatchA = t.Colors.Background, SwatchB = t.Colors.PrimaryAccent})
+    end
+    return entries
+end, function() return currentThemeIndex end, function(i)
+    currentThemeIndex = i
+    applySettings()
+    saveSettings()
+end)
+
+createDropdownRow("Font", function()
+    local entries = {}
+    for _, f in ipairs(fontsList) do
+        table.insert(entries, {Name = f.Name, Font = f.Font})
+    end
+    return entries
+end, function() return currentFontIndex end, function(i)
+    currentFontIndex = i
+    applySettings()
+    saveSettings()
+end)
+
+registerLocalizedString("Small")
+registerLocalizedString("Medium")
+registerLocalizedString("Large")
+createDropdownRow("Text Size", function()
+    local entries = {}
+    for _, s in ipairs(textSizes) do
+        table.insert(entries, {Name = tr(s.Name) .. " (" .. s.Size .. ")"})
+    end
+    return entries
+end, function() return currentTextSizeIndex end, function(i)
+    currentTextSizeIndex = i
+    CONFIG.TextSize = textSizes[i].Size
+    applySettings()
+    saveSettings()
+end)
+
+createDropdownRow("Language", function()
+    return languages
+end, function() return currentLanguageIndex end, function(i)
+    currentLanguageIndex = i
+    localizeUI()
+    saveSettings()
+end, true)
+
+createToggleRow("Auto-Translate Logs", uiSettings.autoTranslate, function(on)
+    uiSettings.autoTranslate = on
+    saveSettings()
+end)
+
+createToggleRow("Click Particles", uiSettings.particles, function(on)
+    uiSettings.particles = on
+    saveSettings()
+end)
+
+createToggleRow("Border Glow", uiSettings.glow, function(on)
+    uiSettings.glow = on
+    if on then startGlow() else stopGlow() end
+    saveSettings()
+end)
+
+createToggleRow("Background Blur", uiSettings.blur, function(on)
+    uiSettings.blur = on
+    if not isMinimized then blur.Enabled = on end
+    -- Solidify the panel slightly when the world isn't blurred behind it
+    TweenService:Create(blurFrame, TweenInfo.new(0.3), {BackgroundTransparency = on and 0.3 or 0.1}):Play()
+    saveSettings()
+end)
+
+local consoleBtn = Instance.new("TextButton", settingsScroll)
+consoleBtn.Name = "ConsoleBtn"
+consoleBtn.Size = UDim2.new(1, -6, 0, 36)
+consoleBtn.LayoutOrder = nextOrder()
+consoleBtn.BackgroundColor3 = CONFIG.Colors.SecondaryAccent
+consoleBtn.Font = CONFIG.BoldFont
+consoleBtn.TextColor3 = Color3.new(1, 1, 1)
+consoleBtn.TextSize = 15
+consoleBtn.Text = "Open Dev Console"
+consoleBtn.ZIndex = 11
+Instance.new("UICorner", consoleBtn).CornerRadius = UDim.new(0, 6)
+addDepthGradient(consoleBtn)
+safeSetCursor(consoleBtn, "rbxasset://SystemCursor/Arrow")
+
+local closeSettingsBtn = Instance.new("TextButton", settingsScroll)
+closeSettingsBtn.Name = "CloseBtn"
+closeSettingsBtn.Size = UDim2.new(1, -6, 0, 36)
+closeSettingsBtn.LayoutOrder = nextOrder()
+closeSettingsBtn.BackgroundColor3 = CONFIG.Colors.UtilButton
+closeSettingsBtn.Font = CONFIG.BoldFont
+closeSettingsBtn.TextColor3 = CONFIG.Colors.Text
+closeSettingsBtn.TextSize = 15
+closeSettingsBtn.Text = "Close"
+closeSettingsBtn.ZIndex = 11
+Instance.new("UICorner", closeSettingsBtn).CornerRadius = UDim.new(0, 6)
+addDepthGradient(closeSettingsBtn)
+safeSetCursor(closeSettingsBtn, "rbxasset://SystemCursor/Arrow")
+
+registerLocalizedString("Open Dev Console")
+registerLocalizedString("Close")
+registerLocalizedRefresher(function()
+    consoleBtn.Text = tr("Open Dev Console")
+    closeSettingsBtn.Text = tr("Close")
+end)
+
+table.insert(themedUpdaters, function(theme, fontData)
+    tintTween(consoleBtn, {BackgroundColor3 = theme.SecondaryAccent})
+    consoleBtn.Font = fontData.Bold
+    tintTween(closeSettingsBtn, {BackgroundColor3 = theme.UtilButton, TextColor3 = theme.Text})
+    closeSettingsBtn.Font = fontData.Bold
+    tintTween(pickerFrame, {BackgroundColor3 = theme.Background})
+    tintTween(pickerStroke, {Color = theme.SecondaryAccent})
+    tintTween(pickerTitle, {TextColor3 = theme.Text})
+    pickerTitle.Font = fontData.Bold
+    tintTween(pickerClose, {BackgroundColor3 = theme.UtilButton})
+    tintTween(pickerSearch, {BackgroundColor3 = theme.UtilButton, TextColor3 = theme.Text})
+    pickerSearch.Font = fontData.Font
+    tintTween(settingsScroll, {ScrollBarImageColor3 = theme.PrimaryAccent})
+    tintTween(pickerScroll, {ScrollBarImageColor3 = theme.PrimaryAccent})
+    tintTween(inputFocusStroke, {Color = theme.PrimaryAccent})
+end)
+
+function applySettings()
     local theme = themes[currentThemeIndex].Colors
     local fontData = fontsList[currentFontIndex]
 
@@ -797,6 +1716,7 @@ local function applySettings()
             local entry = frame:FindFirstChild("LogEntry")
             if entry then
                 entry.Font = fontData.Font
+                entry.TextSize = CONFIG.TextSize
                 local typeAttr = entry:GetAttribute("LogType")
                 local target
                 if typeAttr == "Error" then target = theme.Error
@@ -814,18 +1734,18 @@ local function applySettings()
     tintTween(settingsTitle, {TextColor3 = theme.Text})
     settingsTitle.Font = fontData.Bold
 
-    tintTween(themeBtn, {BackgroundColor3 = theme.UtilButton, TextColor3 = theme.Text})
-    themeBtn.Font = fontData.Font
+    for _, updater in ipairs(themedUpdaters) do
+        pcall(updater, theme, fontData)
+    end
 
-    tintTween(fontBtn, {BackgroundColor3 = theme.UtilButton, TextColor3 = theme.Text})
-    fontBtn.Font = fontData.Font
+    strokeGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, theme.PrimaryAccent),
+        ColorSequenceKeypoint.new(0.5, theme.SecondaryAccent),
+        ColorSequenceKeypoint.new(1, theme.PrimaryAccent),
+    })
 
-    tintTween(consoleBtn, {BackgroundColor3 = theme.SecondaryAccent})
-    consoleBtn.Font = fontData.Bold
-
-    tintTween(closeSettingsBtn, {BackgroundColor3 = theme.UtilButton, TextColor3 = theme.Text})
-    closeSettingsBtn.Font = fontData.Bold
-
+    inputBox.TextSize = CONFIG.TextSize
+    templateEntry.TextSize = CONFIG.TextSize
     templateEntry.Font = fontData.Font
 end
 
@@ -835,11 +1755,12 @@ local function toggleSettings()
         settingsOverlay.Visible = true
         settingsFrame.Visible = true
         TweenService:Create(settingsOverlay, TweenInfo.new(0.3), {BackgroundTransparency = 0.6}):Play()
-        settingsFrame.Size = UDim2.new(0, 0, 0, 0)
-        TweenService:Create(settingsFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0, 300, 0, 240)}):Play()
+        settingsScale.Scale = 0
+        TweenService:Create(settingsScale, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Scale = 1}):Play()
     else
+        closePicker(true)
         TweenService:Create(settingsOverlay, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
-        local tw = TweenService:Create(settingsFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Size = UDim2.new(0, 0, 0, 0)})
+        local tw = TweenService:Create(settingsScale, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Scale = 0})
         tw:Play()
         tw.Completed:Wait()
         settingsOverlay.Visible = false
@@ -850,16 +1771,13 @@ end
 table.insert(connections, settingsButton.MouseButton1Click:Connect(toggleSettings))
 table.insert(connections, closeSettingsBtn.MouseButton1Click:Connect(toggleSettings))
 
-table.insert(connections, themeBtn.MouseButton1Click:Connect(function()
-    currentThemeIndex = (currentThemeIndex % #themes) + 1
-    themeBtn.Text = "Theme: " .. themes[currentThemeIndex].Name
-    applySettings()
-end))
-
-table.insert(connections, fontBtn.MouseButton1Click:Connect(function()
-    currentFontIndex = (currentFontIndex % #fontsList) + 1
-    fontBtn.Text = "Font: " .. fontsList[currentFontIndex].Name
-    applySettings()
+-- Tapping the dimmed backdrop closes the picker first, then the panel
+table.insert(connections, settingsOverlay.MouseButton1Click:Connect(function()
+    if isPickerOpen then
+        closePicker()
+    else
+        toggleSettings()
+    end
 end))
 
 table.insert(connections, consoleBtn.MouseButton1Click:Connect(function()
@@ -893,7 +1811,7 @@ local function toggleMinimize()
     
     footer.Visible = not isMinimized
     logContainer.Visible = not isMinimized
-    blur.Enabled = not isMinimized
+    blur.Enabled = not isMinimized and uiSettings.blur
     inputSink.Active = not isMinimized
 
     if isMinimized then
@@ -945,7 +1863,7 @@ local function clearLogs()
     requestCanvasUpdate()
 end
 
-local function log(message, messageType, bulkLoad)
+function log(message, messageType, bulkLoad)
     isLoggingInternally = true
     logCounter += 1
 
@@ -972,6 +1890,45 @@ local function log(message, messageType, bulkLoad)
         logEntry.TextColor3 = CONFIG.Colors.Text
         logEntry.Text = messageStr
     end
+
+    -- Asynchronously swap in a Google-translated version (🌐 marks translated
+    -- lines; tapping a translated line toggles back to the original text).
+    -- Skips code echoes and bulk history loads.
+    local originalLogText = logEntry.Text
+    local translatedLogText = nil
+    local showingTranslation = false
+
+    if uiSettings.autoTranslate and not bulkLoad and messageType ~= "Input" and #messageStr > 1 then
+        queueTranslation(messageStr, languages[currentLanguageIndex].Code, function(translated)
+            if translated and translated ~= messageStr and logFrame.Parent then
+                local safe = escapeRichText(translated)
+                if messageType == "Error" or messageType == "Warning" then
+                    translatedLogText = "<b>🌐 " .. safe .. "</b>"
+                else
+                    translatedLogText = "🌐 " .. safe
+                end
+                showingTranslation = true
+                logEntry.Text = translatedLogText
+            end
+        end)
+    end
+
+    table.insert(connections, logEntry.InputBegan:Connect(function(input)
+        if not translatedLogText then return end
+        if input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch then return end
+        -- Only toggle on a genuine tap, not a scroll drag
+        local startPos = input.Position
+        local changedConn
+        changedConn = input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                changedConn:Disconnect()
+                if (input.Position - startPos).Magnitude < 10 then
+                    showingTranslation = not showingTranslation
+                    logEntry.Text = showingTranslation and translatedLogText or originalLogText
+                end
+            end
+        end)
+    end))
 
     local actionsFrame = logFrame.Actions
     table.insert(connections, actionsFrame.CopyBtn.MouseButton1Click:Connect(function()
@@ -1257,14 +2214,6 @@ table.insert(connections, UserInputService:GetPropertyChangedSignal("OnScreenKey
 screenGui.Parent = playerGui
 blurGui.Parent = playerGui
 
-local function loopGlow()
-    local info = TweenInfo.new(1.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
-    activeTweens.glowTransparency = TweenService:Create(blurStroke, info, {Transparency = 0.9})
-    activeTweens.glowThickness = TweenService:Create(blurStroke, info, {Thickness = 6})
-    activeTweens.glowTransparency:Play()
-    activeTweens.glowThickness:Play()
-end
-
 screenGui.Destroying:Connect(function()
     if blur and blur.Parent then blur:Destroy() end
     if blurGui and blurGui.Parent then blurGui:Destroy() end
@@ -1276,6 +2225,10 @@ end)
 
 refreshLogs()
 toggleMinimize()
-loopGlow()
+if uiSettings.glow then startGlow() end
+activeTweens.titleShimmer:Play()
 updateInputControlsVisibility()
 onInsetsChanged()
+if languages[currentLanguageIndex].Code ~= "en" then
+    localizeUI()
+end
