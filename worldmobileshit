@@ -1479,9 +1479,9 @@ clipboardRunButton.ZIndex = 4
 Instance.new("UICorner", clipboardRunButton).CornerRadius = UDim.new(0, 6)
 addDepthGradient(clipboardRunButton)
 safeSetCursor(clipboardRunButton, "rbxasset://SystemCursor/Arrow")
-registerLocalizedString("Clip")
+registerLocalizedString("Run from clipboard")
 registerLocalizedRefresher(function()
-	clipboardRunButton.Text = tr("Clip")
+	clipboardRunButton.Text = tr("Run from clipboard")
 end)
 table.insert(
 	connections,
@@ -2323,7 +2323,7 @@ do
 			closeX.AnchorPoint = Vector2.new(1, 0.5)
 			closeX.BackgroundTransparency = 1
 			closeX.Font = Enum.Font.SourceSansBold
-			closeX.Text = "✕"
+			closeX.Text = "✖"
 			closeX.TextColor3 = isActive and Color3.new(1, 1, 1) or CONFIG.Colors.InputEcho
 			closeX.TextSize = 14
 			closeX.ZIndex = 6
