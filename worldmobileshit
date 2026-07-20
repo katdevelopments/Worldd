@@ -108,6 +108,134 @@ local themes = {
             UtilButton = Color3.fromRGB(68, 71, 90),
             UtilButtonHover = Color3.fromRGB(98, 114, 164),
         }
+    },
+    {
+        Name = "Midnight",
+        Colors = {
+            Background = Color3.fromRGB(13, 17, 33),
+            PrimaryAccent = Color3.fromRGB(99, 102, 241),
+            SecondaryAccent = Color3.fromRGB(129, 140, 248),
+            Text = Color3.fromRGB(224, 231, 255),
+            Error = Color3.fromRGB(248, 113, 113),
+            Warning = Color3.fromRGB(251, 191, 36),
+            Info = Color3.fromRGB(165, 180, 252),
+            InputEcho = Color3.fromRGB(148, 163, 184),
+            MinimizeButton = Color3.fromRGB(49, 46, 129),
+            UtilButton = Color3.fromRGB(49, 46, 129),
+            UtilButtonHover = Color3.fromRGB(67, 56, 202),
+        }
+    },
+    {
+        Name = "Nord",
+        Colors = {
+            Background = Color3.fromRGB(46, 52, 64),
+            PrimaryAccent = Color3.fromRGB(136, 192, 208),
+            SecondaryAccent = Color3.fromRGB(129, 161, 193),
+            Text = Color3.fromRGB(236, 239, 244),
+            Error = Color3.fromRGB(191, 97, 106),
+            Warning = Color3.fromRGB(235, 203, 139),
+            Info = Color3.fromRGB(143, 188, 187),
+            InputEcho = Color3.fromRGB(129, 161, 193),
+            MinimizeButton = Color3.fromRGB(59, 66, 82),
+            UtilButton = Color3.fromRGB(59, 66, 82),
+            UtilButtonHover = Color3.fromRGB(76, 86, 106),
+        }
+    },
+    {
+        Name = "Synthwave",
+        Colors = {
+            Background = Color3.fromRGB(24, 16, 35),
+            PrimaryAccent = Color3.fromRGB(236, 72, 153),
+            SecondaryAccent = Color3.fromRGB(34, 211, 238),
+            Text = Color3.fromRGB(243, 232, 255),
+            Error = Color3.fromRGB(255, 85, 119),
+            Warning = Color3.fromRGB(250, 204, 21),
+            Info = Color3.fromRGB(103, 232, 249),
+            InputEcho = Color3.fromRGB(167, 139, 250),
+            MinimizeButton = Color3.fromRGB(88, 28, 135),
+            UtilButton = Color3.fromRGB(88, 28, 135),
+            UtilButtonHover = Color3.fromRGB(126, 34, 206),
+        }
+    },
+    {
+        Name = "Solarized",
+        Colors = {
+            Background = Color3.fromRGB(0, 43, 54),
+            PrimaryAccent = Color3.fromRGB(38, 139, 210),
+            SecondaryAccent = Color3.fromRGB(42, 161, 152),
+            Text = Color3.fromRGB(238, 232, 213),
+            Error = Color3.fromRGB(220, 50, 47),
+            Warning = Color3.fromRGB(181, 137, 0),
+            Info = Color3.fromRGB(38, 139, 210),
+            InputEcho = Color3.fromRGB(131, 148, 150),
+            MinimizeButton = Color3.fromRGB(7, 54, 66),
+            UtilButton = Color3.fromRGB(7, 54, 66),
+            UtilButtonHover = Color3.fromRGB(88, 110, 117),
+        }
+    },
+    {
+        Name = "Rose",
+        Colors = {
+            Background = Color3.fromRGB(25, 16, 21),
+            PrimaryAccent = Color3.fromRGB(244, 63, 94),
+            SecondaryAccent = Color3.fromRGB(251, 113, 133),
+            Text = Color3.fromRGB(255, 228, 230),
+            Error = Color3.fromRGB(248, 113, 113),
+            Warning = Color3.fromRGB(251, 191, 36),
+            Info = Color3.fromRGB(253, 164, 175),
+            InputEcho = Color3.fromRGB(159, 118, 131),
+            MinimizeButton = Color3.fromRGB(77, 22, 36),
+            UtilButton = Color3.fromRGB(77, 22, 36),
+            UtilButtonHover = Color3.fromRGB(112, 35, 55),
+        }
+    },
+    {
+        Name = "Ocean",
+        Colors = {
+            Background = Color3.fromRGB(8, 24, 33),
+            PrimaryAccent = Color3.fromRGB(20, 184, 166),
+            SecondaryAccent = Color3.fromRGB(45, 212, 191),
+            Text = Color3.fromRGB(204, 251, 241),
+            Error = Color3.fromRGB(239, 68, 68),
+            Warning = Color3.fromRGB(250, 204, 21),
+            Info = Color3.fromRGB(94, 234, 212),
+            InputEcho = Color3.fromRGB(94, 134, 145),
+            MinimizeButton = Color3.fromRGB(15, 60, 68),
+            UtilButton = Color3.fromRGB(15, 60, 68),
+            UtilButtonHover = Color3.fromRGB(17, 94, 89),
+        }
+    },
+    {
+        Name = "Ember",
+        Colors = {
+            Background = Color3.fromRGB(26, 15, 10),
+            PrimaryAccent = Color3.fromRGB(249, 115, 22),
+            SecondaryAccent = Color3.fromRGB(251, 146, 60),
+            Text = Color3.fromRGB(255, 237, 213),
+            Error = Color3.fromRGB(239, 68, 68),
+            Warning = Color3.fromRGB(253, 224, 71),
+            Info = Color3.fromRGB(253, 186, 116),
+            InputEcho = Color3.fromRGB(163, 120, 90),
+            MinimizeButton = Color3.fromRGB(90, 40, 12),
+            UtilButton = Color3.fromRGB(90, 40, 12),
+            UtilButtonHover = Color3.fromRGB(133, 60, 16),
+        }
+    },
+    {
+        Name = "Mono",
+        Colors = {
+            Background = Color3.fromRGB(18, 18, 18),
+            PrimaryAccent = Color3.fromRGB(229, 229, 229),
+            SecondaryAccent = Color3.fromRGB(163, 163, 163),
+            Text = Color3.fromRGB(245, 245, 245),
+            Error = Color3.fromRGB(248, 113, 113),
+            Warning = Color3.fromRGB(234, 179, 8),
+            Info = Color3.fromRGB(212, 212, 212),
+            InputEcho = Color3.fromRGB(115, 115, 115),
+            MinimizeButton = Color3.fromRGB(55, 55, 55),
+            UtilButton = Color3.fromRGB(55, 55, 55),
+            UtilButtonHover = Color3.fromRGB(82, 82, 82),
+        }
     }
 }
 
@@ -115,8 +243,23 @@ local fontsList = {
     { Name = "Source Sans", Font = Enum.Font.SourceSans, Bold = Enum.Font.SourceSansBold },
     { Name = "Code", Font = Enum.Font.Code, Bold = Enum.Font.Code },
     { Name = "Gotham", Font = Enum.Font.Gotham, Bold = Enum.Font.GothamBold },
-    { Name = "Ubuntu", Font = Enum.Font.Ubuntu, Bold = Enum.Font.Ubuntu }
+    { Name = "Ubuntu", Font = Enum.Font.Ubuntu, Bold = Enum.Font.Ubuntu },
+    { Name = "Builder Sans", Font = Enum.Font.BuilderSans, Bold = Enum.Font.BuilderSansBold },
+    { Name = "Roboto", Font = Enum.Font.Roboto, Bold = Enum.Font.Roboto },
+    { Name = "Roboto Mono", Font = Enum.Font.RobotoMono, Bold = Enum.Font.RobotoMono },
+    { Name = "Arial", Font = Enum.Font.Arial, Bold = Enum.Font.ArialBold },
+    { Name = "Nunito", Font = Enum.Font.Nunito, Bold = Enum.Font.Nunito },
+    { Name = "Oswald", Font = Enum.Font.Oswald, Bold = Enum.Font.Oswald },
+    { Name = "Merriweather", Font = Enum.Font.Merriweather, Bold = Enum.Font.Merriweather },
+    { Name = "Sci-Fi", Font = Enum.Font.SciFi, Bold = Enum.Font.SciFi }
 }
+
+local textSizes = {
+    { Name = "Small", Size = 12 },
+    { Name = "Medium", Size = 14 },
+    { Name = "Large", Size = 17 }
+}
+local currentTextSizeIndex = 2
 
 local currentThemeIndex = 1
 local currentFontIndex = 1
@@ -128,6 +271,7 @@ local CONFIG = {
     Colors = themes[currentThemeIndex].Colors,
     Font = fontsList[currentFontIndex].Font,
     BoldFont = fontsList[currentFontIndex].Bold,
+    TextSize = textSizes[currentTextSizeIndex].Size,
 }
 
 local commandHistory = {}
@@ -146,6 +290,13 @@ local isInputMaximized = false
 local queuedCanvasUpdate = false
 local dragStart, frameStartPos, targetPosition, targetSize, dragStartTime
 local lastMinimizedPosition = UDim2.new(0.5, 0, 0.05, 0)
+
+-- User-toggleable effects (driven from the Settings panel)
+local uiSettings = {
+    particles = true,
+    glow = true,
+    blur = true,
+}
 
 local function safeSetCursor(object, cursor)
     pcall(function() object.CursorIcon = cursor end)
@@ -216,6 +367,41 @@ blurStroke.Color = CONFIG.Colors.PrimaryAccent
 blurStroke.Thickness = 2
 blurStroke.Transparency = 0.2
 
+-- Slowly rotating two-tone gradient inside the border stroke
+local strokeGradient = Instance.new("UIGradient", blurStroke)
+strokeGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, CONFIG.Colors.PrimaryAccent),
+    ColorSequenceKeypoint.new(0.5, CONFIG.Colors.SecondaryAccent),
+    ColorSequenceKeypoint.new(1, CONFIG.Colors.PrimaryAccent),
+})
+
+-- Subtle vertical shading on the panel background for depth
+local bgDepthGradient = Instance.new("UIGradient", blurFrame)
+bgDepthGradient.Rotation = 90
+bgDepthGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.new(1, 1, 1)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 200, 200)),
+})
+
+local function startGlow()
+    local pulseInfo = TweenInfo.new(1.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
+    local spinInfo = TweenInfo.new(6, Enum.EasingStyle.Linear, Enum.EasingDirection.Out, -1)
+    strokeGradient.Rotation = 0
+    activeTweens.glowTransparency = TweenService:Create(blurStroke, pulseInfo, {Transparency = 0.9})
+    activeTweens.glowThickness = TweenService:Create(blurStroke, pulseInfo, {Thickness = 6})
+    activeTweens.strokeSpin = TweenService:Create(strokeGradient, spinInfo, {Rotation = 360})
+    activeTweens.glowTransparency:Play()
+    activeTweens.glowThickness:Play()
+    activeTweens.strokeSpin:Play()
+end
+
+local function stopGlow()
+    for _, key in ipairs({"glowTransparency", "glowThickness", "strokeSpin"}) do
+        if activeTweens[key] then activeTweens[key]:Cancel() activeTweens[key] = nil end
+    end
+    TweenService:Create(blurStroke, TweenInfo.new(0.3), {Transparency = 0.2, Thickness = 2}):Play()
+end
+
 local header = Instance.new("Frame", mainFrame)
 header.Name = "Header"
 header.Size = UDim2.new(1, 0, 0, 40)
@@ -268,7 +454,34 @@ titleLabel.TextColor3 = CONFIG.Colors.Text
 titleLabel.TextSize = 18
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 
+-- Recurring shine sweep across the title text
+local titleShimmer = Instance.new("UIGradient", titleLabel)
+titleShimmer.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(210, 210, 210)),
+    ColorSequenceKeypoint.new(0.5, Color3.new(1, 1, 1)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(210, 210, 210)),
+})
+titleShimmer.Offset = Vector2.new(-1, 0)
+activeTweens.titleShimmer = TweenService:Create(
+    titleShimmer,
+    TweenInfo.new(1.6, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, false, 2.5),
+    {Offset = Vector2.new(1, 0)}
+)
+
+-- Multiplies the background color white->grey top-to-bottom, giving every
+-- button a soft 3D depth regardless of theme.
+local function addDepthGradient(obj)
+    local g = Instance.new("UIGradient", obj)
+    g.Rotation = 90
+    g.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.new(1, 1, 1)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(190, 190, 190)),
+    })
+    return g
+end
+
 local function createClickParticles(parent, color)
+    if not uiSettings.particles then return end
     local emitter = Instance.new("ParticleEmitter")
     emitter.Color = ColorSequence.new(color or CONFIG.Colors.SecondaryAccent)
     emitter.LightEmission = 0.8
@@ -292,8 +505,9 @@ local function createIconButton(parent, emoji, size, colorType)
     btn.TextColor3 = Color3.new(1, 1, 1)
     btn.TextSize = math.floor(size * 0.7)
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    addDepthGradient(btn)
     safeSetCursor(btn, "rbxasset://SystemCursor/Arrow")
-    
+
     local scale = Instance.new("UIScale", btn)
     scale.Scale = 1
     local isHovered = false
@@ -394,6 +608,7 @@ runButton.Text = "Run"
 runButton.TextColor3 = Color3.new(1, 1, 1)
 runButton.TextSize = 16
 Instance.new("UICorner", runButton).CornerRadius = UDim.new(0, 6)
+addDepthGradient(runButton)
 safeSetCursor(runButton, "rbxasset://SystemCursor/Arrow")
 
 local runButtonScale = Instance.new("UIScale", runButton)
@@ -434,6 +649,12 @@ inputContainer.ScrollingDirection = Enum.ScrollingDirection.XY
 Instance.new("UICorner", inputContainer).CornerRadius = UDim.new(0, 6)
 safeSetCursor(inputContainer, "rbxasset://SystemCursor/Arrow")
 
+-- Accent ring that lights up while the code box is focused
+local inputFocusStroke = Instance.new("UIStroke", inputContainer)
+inputFocusStroke.Color = CONFIG.Colors.PrimaryAccent
+inputFocusStroke.Thickness = 1.5
+inputFocusStroke.Transparency = 1
+
 local inputBox = Instance.new("TextBox", inputContainer)
 inputBox.BackgroundTransparency = 1
 inputBox.ClearTextOnFocus = false
@@ -441,7 +662,7 @@ inputBox.Font = CONFIG.Font
 inputBox.PlaceholderText = "Execute Luau code..."
 inputBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
 inputBox.TextColor3 = CONFIG.Colors.Text
-inputBox.TextSize = 14
+inputBox.TextSize = CONFIG.TextSize
 safeSetCursor(inputBox, "rbxasset://SystemCursor/Arrow")
 inputBox.MultiLine = true
 inputBox.Text = ""
@@ -455,6 +676,13 @@ Instance.new("UIPadding", inputBox, {
     PaddingBottom = UDim.new(0, 5)
 })
 
+table.insert(connections, inputBox.Focused:Connect(function()
+    TweenService:Create(inputFocusStroke, TweenInfo.new(0.2), {Transparency = 0.2, Thickness = 2}):Play()
+end))
+table.insert(connections, inputBox.FocusLost:Connect(function()
+    TweenService:Create(inputFocusStroke, TweenInfo.new(0.3), {Transparency = 1, Thickness = 1.5}):Play()
+end))
+
 local templateLog = Instance.new("Frame")
 templateLog.Name = "LogFrame"
 templateLog.BackgroundTransparency = 1
@@ -467,7 +695,7 @@ local templateEntry = Instance.new("TextLabel", templateLog)
 templateEntry.Name = "LogEntry"
 templateEntry.BackgroundTransparency = 1
 templateEntry.Font = CONFIG.Font
-templateEntry.TextSize = 14
+templateEntry.TextSize = CONFIG.TextSize
 templateEntry.TextWrapped = true
 templateEntry.TextXAlignment = Enum.TextXAlignment.Left
 templateEntry.Size = UDim2.new(1, -60, 0, 0)
@@ -672,79 +900,6 @@ settingsOverlay.Text = ""
 settingsOverlay.AutoButtonColor = false
 settingsOverlay.Visible = false
 
-local settingsFrame = Instance.new("Frame", screenGui)
-settingsFrame.Name = "SettingsFrame"
-settingsFrame.Size = UDim2.new(0, 300, 0, 240)
-settingsFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-settingsFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-settingsFrame.BackgroundColor3 = CONFIG.Colors.Background
-settingsFrame.BackgroundTransparency = 0.1
-settingsFrame.ZIndex = 10
-settingsFrame.Visible = false
-Instance.new("UICorner", settingsFrame).CornerRadius = UDim.new(0, 8)
-local settingsStroke = Instance.new("UIStroke", settingsFrame)
-settingsStroke.Color = CONFIG.Colors.PrimaryAccent
-settingsStroke.Thickness = 2
-
-local settingsTitle = Instance.new("TextLabel", settingsFrame)
-settingsTitle.Name = "SettingsTitle"
-settingsTitle.Size = UDim2.new(1, 0, 0, 40)
-settingsTitle.Position = UDim2.new(0.5, 0, 0, 5)
-settingsTitle.AnchorPoint = Vector2.new(0.5, 0)
-settingsTitle.BackgroundTransparency = 1
-settingsTitle.Font = CONFIG.BoldFont
-settingsTitle.TextColor3 = CONFIG.Colors.Text
-settingsTitle.TextSize = 20
-settingsTitle.Text = "Settings"
-
-local themeBtn = Instance.new("TextButton", settingsFrame)
-themeBtn.Name = "ThemeBtn"
-themeBtn.Size = UDim2.new(1, -40, 0, 35)
-themeBtn.Position = UDim2.new(0.5, 0, 0, 50)
-themeBtn.AnchorPoint = Vector2.new(0.5, 0)
-themeBtn.BackgroundColor3 = CONFIG.Colors.UtilButton
-themeBtn.Font = CONFIG.Font
-themeBtn.TextColor3 = CONFIG.Colors.Text
-themeBtn.TextSize = 16
-themeBtn.Text = "Theme: " .. themes[currentThemeIndex].Name
-Instance.new("UICorner", themeBtn).CornerRadius = UDim.new(0, 6)
-
-local fontBtn = Instance.new("TextButton", settingsFrame)
-fontBtn.Name = "FontBtn"
-fontBtn.Size = UDim2.new(1, -40, 0, 35)
-fontBtn.Position = UDim2.new(0.5, 0, 0, 95)
-fontBtn.AnchorPoint = Vector2.new(0.5, 0)
-fontBtn.BackgroundColor3 = CONFIG.Colors.UtilButton
-fontBtn.Font = CONFIG.Font
-fontBtn.TextColor3 = CONFIG.Colors.Text
-fontBtn.TextSize = 16
-fontBtn.Text = "Font: " .. fontsList[currentFontIndex].Name
-Instance.new("UICorner", fontBtn).CornerRadius = UDim.new(0, 6)
-
-local consoleBtn = Instance.new("TextButton", settingsFrame)
-consoleBtn.Name = "ConsoleBtn"
-consoleBtn.Size = UDim2.new(1, -40, 0, 35)
-consoleBtn.Position = UDim2.new(0.5, 0, 0, 140)
-consoleBtn.AnchorPoint = Vector2.new(0.5, 0)
-consoleBtn.BackgroundColor3 = CONFIG.Colors.SecondaryAccent
-consoleBtn.Font = CONFIG.BoldFont
-consoleBtn.TextColor3 = Color3.new(1, 1, 1)
-consoleBtn.TextSize = 16
-consoleBtn.Text = "Open Dev Console"
-Instance.new("UICorner", consoleBtn).CornerRadius = UDim.new(0, 6)
-
-local closeSettingsBtn = Instance.new("TextButton", settingsFrame)
-closeSettingsBtn.Name = "CloseBtn"
-closeSettingsBtn.Size = UDim2.new(0, 100, 0, 35)
-closeSettingsBtn.Position = UDim2.new(0.5, 0, 0, 190)
-closeSettingsBtn.AnchorPoint = Vector2.new(0.5, 0)
-closeSettingsBtn.BackgroundColor3 = CONFIG.Colors.UtilButton
-closeSettingsBtn.Font = CONFIG.BoldFont
-closeSettingsBtn.TextColor3 = CONFIG.Colors.Text
-closeSettingsBtn.TextSize = 16
-closeSettingsBtn.Text = "Close"
-Instance.new("UICorner", closeSettingsBtn).CornerRadius = UDim.new(0, 6)
-
 local themeTweenInfo = TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 local function tintTween(obj, props)
     if obj and obj.Parent then
@@ -752,7 +907,368 @@ local function tintTween(obj, props)
     end
 end
 
-local function applySettings()
+local settingsFrame = Instance.new("Frame", screenGui)
+settingsFrame.Name = "SettingsFrame"
+settingsFrame.Size = UDim2.new(0, 320, 0.75, 0)
+settingsFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+settingsFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+settingsFrame.BackgroundColor3 = CONFIG.Colors.Background
+settingsFrame.BackgroundTransparency = 0.05
+settingsFrame.ZIndex = 10
+settingsFrame.Visible = false
+Instance.new("UICorner", settingsFrame).CornerRadius = UDim.new(0, 10)
+local settingsSizeLimit = Instance.new("UISizeConstraint", settingsFrame)
+settingsSizeLimit.MaxSize = Vector2.new(320, 440)
+settingsSizeLimit.MinSize = Vector2.new(320, 240)
+local settingsScale = Instance.new("UIScale", settingsFrame)
+settingsScale.Scale = 0
+local settingsStroke = Instance.new("UIStroke", settingsFrame)
+settingsStroke.Color = CONFIG.Colors.PrimaryAccent
+settingsStroke.Thickness = 2
+
+local settingsTitle = Instance.new("TextLabel", settingsFrame)
+settingsTitle.Name = "SettingsTitle"
+settingsTitle.Size = UDim2.new(1, 0, 0, 36)
+settingsTitle.Position = UDim2.new(0.5, 0, 0, 8)
+settingsTitle.AnchorPoint = Vector2.new(0.5, 0)
+settingsTitle.BackgroundTransparency = 1
+settingsTitle.Font = CONFIG.BoldFont
+settingsTitle.TextColor3 = CONFIG.Colors.Text
+settingsTitle.TextSize = 20
+settingsTitle.Text = "Settings"
+
+local settingsScroll = Instance.new("ScrollingFrame", settingsFrame)
+settingsScroll.Name = "SettingsScroll"
+settingsScroll.Position = UDim2.new(0, 12, 0, 48)
+settingsScroll.Size = UDim2.new(1, -24, 1, -60)
+settingsScroll.BackgroundTransparency = 1
+settingsScroll.BorderSizePixel = 0
+settingsScroll.ScrollBarThickness = 4
+settingsScroll.ScrollBarImageColor3 = CONFIG.Colors.PrimaryAccent
+settingsScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+settingsScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+settingsScroll.ScrollingDirection = Enum.ScrollingDirection.Y
+local settingsListLayout = Instance.new("UIListLayout", settingsScroll)
+settingsListLayout.Padding = UDim.new(0, 8)
+settingsListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+-- Widgets that must be restyled on every theme/font change register a
+-- function here; applySettings runs them all.
+local themedUpdaters = {}
+local applySettings
+
+-- === Shared option picker (the "dropdown" panel) ===
+local pickerFrame = Instance.new("Frame", settingsFrame)
+pickerFrame.Name = "PickerFrame"
+pickerFrame.Size = UDim2.new(1, -16, 1, -16)
+pickerFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+pickerFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+pickerFrame.BackgroundColor3 = CONFIG.Colors.Background
+pickerFrame.ZIndex = 12
+pickerFrame.Visible = false
+Instance.new("UICorner", pickerFrame).CornerRadius = UDim.new(0, 10)
+local pickerStroke = Instance.new("UIStroke", pickerFrame)
+pickerStroke.Color = CONFIG.Colors.SecondaryAccent
+pickerStroke.Thickness = 1.5
+local pickerScale = Instance.new("UIScale", pickerFrame)
+pickerScale.Scale = 0
+
+local pickerTitle = Instance.new("TextLabel", pickerFrame)
+pickerTitle.Name = "PickerTitle"
+pickerTitle.Size = UDim2.new(1, -50, 0, 34)
+pickerTitle.Position = UDim2.new(0, 12, 0, 4)
+pickerTitle.BackgroundTransparency = 1
+pickerTitle.Font = CONFIG.BoldFont
+pickerTitle.TextColor3 = CONFIG.Colors.Text
+pickerTitle.TextSize = 17
+pickerTitle.TextXAlignment = Enum.TextXAlignment.Left
+pickerTitle.ZIndex = 13
+
+local pickerClose = Instance.new("TextButton", pickerFrame)
+pickerClose.Name = "PickerClose"
+pickerClose.Size = UDim2.new(0, 26, 0, 26)
+pickerClose.Position = UDim2.new(1, -8, 0, 8)
+pickerClose.AnchorPoint = Vector2.new(1, 0)
+pickerClose.BackgroundColor3 = CONFIG.Colors.UtilButton
+pickerClose.Font = Enum.Font.SourceSans
+pickerClose.Text = "✖️"
+pickerClose.TextColor3 = Color3.new(1, 1, 1)
+pickerClose.TextSize = 14
+pickerClose.ZIndex = 13
+Instance.new("UICorner", pickerClose).CornerRadius = UDim.new(0, 6)
+addDepthGradient(pickerClose)
+
+local pickerScroll = Instance.new("ScrollingFrame", pickerFrame)
+pickerScroll.Name = "PickerScroll"
+pickerScroll.Position = UDim2.new(0, 10, 0, 40)
+pickerScroll.Size = UDim2.new(1, -20, 1, -50)
+pickerScroll.BackgroundTransparency = 1
+pickerScroll.BorderSizePixel = 0
+pickerScroll.ScrollBarThickness = 4
+pickerScroll.ScrollBarImageColor3 = CONFIG.Colors.PrimaryAccent
+pickerScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+pickerScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+pickerScroll.ScrollingDirection = Enum.ScrollingDirection.Y
+pickerScroll.ZIndex = 13
+local pickerLayout = Instance.new("UIListLayout", pickerScroll)
+pickerLayout.Padding = UDim.new(0, 6)
+pickerLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+local isPickerOpen = false
+
+local function closePicker(instant)
+    if not pickerFrame.Visible then return end
+    isPickerOpen = false
+    if instant then
+        pickerFrame.Visible = false
+        pickerScale.Scale = 0
+    else
+        local tw = TweenService:Create(pickerScale, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Scale = 0})
+        tw:Play()
+        tw.Completed:Once(function() pickerFrame.Visible = false end)
+    end
+end
+
+-- entries: array of {Name, Font?, SwatchA?, SwatchB?} — Font renders the
+-- option in its own typeface (font picker), the swatches draw a theme
+-- preview dot (theme picker).
+local function openPicker(title, entries, currentIndex, onPick)
+    pickerTitle.Text = title
+    for _, child in ipairs(pickerScroll:GetChildren()) do
+        if child:IsA("TextButton") then child:Destroy() end
+    end
+    for i, entry in ipairs(entries) do
+        local opt = Instance.new("TextButton", pickerScroll)
+        opt.Size = UDim2.new(1, -6, 0, 34)
+        opt.LayoutOrder = i
+        local selected = (i == currentIndex)
+        opt.BackgroundColor3 = selected and CONFIG.Colors.SecondaryAccent or CONFIG.Colors.UtilButton
+        opt.Font = entry.Font or CONFIG.Font
+        opt.Text = (selected and "✓  " or "") .. entry.Name
+        opt.TextColor3 = selected and Color3.new(1, 1, 1) or CONFIG.Colors.Text
+        opt.TextSize = 15
+        opt.ZIndex = 13
+        Instance.new("UICorner", opt).CornerRadius = UDim.new(0, 6)
+        addDepthGradient(opt)
+        safeSetCursor(opt, "rbxasset://SystemCursor/Arrow")
+        if entry.SwatchA then
+            local sw = Instance.new("Frame", opt)
+            sw.Size = UDim2.new(0, 16, 0, 16)
+            sw.Position = UDim2.new(1, -14, 0.5, 0)
+            sw.AnchorPoint = Vector2.new(1, 0.5)
+            sw.BackgroundColor3 = entry.SwatchA
+            sw.ZIndex = 14
+            Instance.new("UICorner", sw).CornerRadius = UDim.new(1, 0)
+            local swStroke = Instance.new("UIStroke", sw)
+            swStroke.Color = entry.SwatchB
+            swStroke.Thickness = 2
+        end
+        opt.MouseButton1Click:Connect(function()
+            createClickParticles(opt)
+            onPick(i)
+            closePicker()
+        end)
+    end
+    pickerScroll.CanvasPosition = Vector2.new(0, 0)
+    pickerFrame.Visible = true
+    isPickerOpen = true
+    pickerScale.Scale = 0
+    TweenService:Create(pickerScale, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Scale = 1}):Play()
+end
+
+table.insert(connections, pickerClose.MouseButton1Click:Connect(function() closePicker() end))
+
+-- === Settings row builders ===
+local rowOrder = 0
+local function nextOrder() rowOrder += 1 return rowOrder end
+
+local function createDropdownRow(labelText, buildEntries, getIndex, onSelect)
+    local btn = Instance.new("TextButton", settingsScroll)
+    btn.Size = UDim2.new(1, -6, 0, 36)
+    btn.LayoutOrder = nextOrder()
+    btn.BackgroundColor3 = CONFIG.Colors.UtilButton
+    btn.Font = CONFIG.Font
+    btn.TextColor3 = CONFIG.Colors.Text
+    btn.TextSize = 15
+    btn.ZIndex = 11
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    addDepthGradient(btn)
+    safeSetCursor(btn, "rbxasset://SystemCursor/Arrow")
+
+    local function refreshText()
+        btn.Text = labelText .. ":  " .. buildEntries()[getIndex()].Name .. "  ▼"
+    end
+    refreshText()
+
+    table.insert(themedUpdaters, function(theme, fontData)
+        tintTween(btn, {BackgroundColor3 = theme.UtilButton, TextColor3 = theme.Text})
+        btn.Font = fontData.Font
+    end)
+
+    table.insert(connections, btn.MouseButton1Click:Connect(function()
+        openPicker(labelText, buildEntries(), getIndex(), function(i)
+            onSelect(i)
+            refreshText()
+        end)
+    end))
+    return btn
+end
+
+local function createToggleRow(labelText, initial, onChanged)
+    local row = Instance.new("Frame", settingsScroll)
+    row.Size = UDim2.new(1, -6, 0, 36)
+    row.LayoutOrder = nextOrder()
+    row.BackgroundTransparency = 1
+
+    local label = Instance.new("TextLabel", row)
+    label.Size = UDim2.new(1, -60, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Font = CONFIG.Font
+    label.Text = labelText
+    label.TextColor3 = CONFIG.Colors.Text
+    label.TextSize = 15
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.ZIndex = 11
+
+    local switch = Instance.new("TextButton", row)
+    switch.Size = UDim2.new(0, 46, 0, 24)
+    switch.Position = UDim2.new(1, 0, 0.5, 0)
+    switch.AnchorPoint = Vector2.new(1, 0.5)
+    switch.Text = ""
+    switch.ZIndex = 11
+    Instance.new("UICorner", switch).CornerRadius = UDim.new(1, 0)
+    safeSetCursor(switch, "rbxasset://SystemCursor/Arrow")
+
+    local knob = Instance.new("Frame", switch)
+    knob.Size = UDim2.new(0, 18, 0, 18)
+    knob.AnchorPoint = Vector2.new(0, 0.5)
+    knob.BackgroundColor3 = Color3.new(1, 1, 1)
+    knob.ZIndex = 12
+    Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
+
+    local state = initial
+    local function render(animate)
+        local targetPos = state and UDim2.new(1, -21, 0.5, 0) or UDim2.new(0, 3, 0.5, 0)
+        local targetColor = state and CONFIG.Colors.SecondaryAccent or CONFIG.Colors.UtilButton
+        if animate then
+            TweenService:Create(knob, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = targetPos}):Play()
+            TweenService:Create(switch, TweenInfo.new(0.2), {BackgroundColor3 = targetColor}):Play()
+        else
+            knob.Position = targetPos
+            switch.BackgroundColor3 = targetColor
+        end
+    end
+    render(false)
+
+    table.insert(themedUpdaters, function(theme, fontData)
+        tintTween(label, {TextColor3 = theme.Text})
+        label.Font = fontData.Font
+        tintTween(switch, {BackgroundColor3 = state and theme.SecondaryAccent or theme.UtilButton})
+    end)
+
+    table.insert(connections, switch.MouseButton1Click:Connect(function()
+        state = not state
+        render(true)
+        onChanged(state)
+    end))
+    return row
+end
+
+-- === Rows ===
+createDropdownRow("Theme", function()
+    local entries = {}
+    for _, t in ipairs(themes) do
+        table.insert(entries, {Name = t.Name, SwatchA = t.Colors.Background, SwatchB = t.Colors.PrimaryAccent})
+    end
+    return entries
+end, function() return currentThemeIndex end, function(i)
+    currentThemeIndex = i
+    applySettings()
+end)
+
+createDropdownRow("Font", function()
+    local entries = {}
+    for _, f in ipairs(fontsList) do
+        table.insert(entries, {Name = f.Name, Font = f.Font})
+    end
+    return entries
+end, function() return currentFontIndex end, function(i)
+    currentFontIndex = i
+    applySettings()
+end)
+
+createDropdownRow("Text Size", function()
+    local entries = {}
+    for _, s in ipairs(textSizes) do
+        table.insert(entries, {Name = s.Name .. " (" .. s.Size .. ")"})
+    end
+    return entries
+end, function() return currentTextSizeIndex end, function(i)
+    currentTextSizeIndex = i
+    CONFIG.TextSize = textSizes[i].Size
+    applySettings()
+end)
+
+createToggleRow("Click Particles", uiSettings.particles, function(on)
+    uiSettings.particles = on
+end)
+
+createToggleRow("Border Glow", uiSettings.glow, function(on)
+    uiSettings.glow = on
+    if on then startGlow() else stopGlow() end
+end)
+
+createToggleRow("Background Blur", uiSettings.blur, function(on)
+    uiSettings.blur = on
+    if not isMinimized then blur.Enabled = on end
+    -- Solidify the panel slightly when the world isn't blurred behind it
+    TweenService:Create(blurFrame, TweenInfo.new(0.3), {BackgroundTransparency = on and 0.3 or 0.1}):Play()
+end)
+
+local consoleBtn = Instance.new("TextButton", settingsScroll)
+consoleBtn.Name = "ConsoleBtn"
+consoleBtn.Size = UDim2.new(1, -6, 0, 36)
+consoleBtn.LayoutOrder = nextOrder()
+consoleBtn.BackgroundColor3 = CONFIG.Colors.SecondaryAccent
+consoleBtn.Font = CONFIG.BoldFont
+consoleBtn.TextColor3 = Color3.new(1, 1, 1)
+consoleBtn.TextSize = 15
+consoleBtn.Text = "Open Dev Console"
+consoleBtn.ZIndex = 11
+Instance.new("UICorner", consoleBtn).CornerRadius = UDim.new(0, 6)
+addDepthGradient(consoleBtn)
+safeSetCursor(consoleBtn, "rbxasset://SystemCursor/Arrow")
+
+local closeSettingsBtn = Instance.new("TextButton", settingsScroll)
+closeSettingsBtn.Name = "CloseBtn"
+closeSettingsBtn.Size = UDim2.new(1, -6, 0, 36)
+closeSettingsBtn.LayoutOrder = nextOrder()
+closeSettingsBtn.BackgroundColor3 = CONFIG.Colors.UtilButton
+closeSettingsBtn.Font = CONFIG.BoldFont
+closeSettingsBtn.TextColor3 = CONFIG.Colors.Text
+closeSettingsBtn.TextSize = 15
+closeSettingsBtn.Text = "Close"
+closeSettingsBtn.ZIndex = 11
+Instance.new("UICorner", closeSettingsBtn).CornerRadius = UDim.new(0, 6)
+addDepthGradient(closeSettingsBtn)
+safeSetCursor(closeSettingsBtn, "rbxasset://SystemCursor/Arrow")
+
+table.insert(themedUpdaters, function(theme, fontData)
+    tintTween(consoleBtn, {BackgroundColor3 = theme.SecondaryAccent})
+    consoleBtn.Font = fontData.Bold
+    tintTween(closeSettingsBtn, {BackgroundColor3 = theme.UtilButton, TextColor3 = theme.Text})
+    closeSettingsBtn.Font = fontData.Bold
+    tintTween(pickerFrame, {BackgroundColor3 = theme.Background})
+    tintTween(pickerStroke, {Color = theme.SecondaryAccent})
+    tintTween(pickerTitle, {TextColor3 = theme.Text})
+    pickerTitle.Font = fontData.Bold
+    tintTween(pickerClose, {BackgroundColor3 = theme.UtilButton})
+    tintTween(settingsScroll, {ScrollBarImageColor3 = theme.PrimaryAccent})
+    tintTween(pickerScroll, {ScrollBarImageColor3 = theme.PrimaryAccent})
+    tintTween(inputFocusStroke, {Color = theme.PrimaryAccent})
+end)
+
+function applySettings()
     local theme = themes[currentThemeIndex].Colors
     local fontData = fontsList[currentFontIndex]
 
@@ -797,6 +1313,7 @@ local function applySettings()
             local entry = frame:FindFirstChild("LogEntry")
             if entry then
                 entry.Font = fontData.Font
+                entry.TextSize = CONFIG.TextSize
                 local typeAttr = entry:GetAttribute("LogType")
                 local target
                 if typeAttr == "Error" then target = theme.Error
@@ -814,18 +1331,18 @@ local function applySettings()
     tintTween(settingsTitle, {TextColor3 = theme.Text})
     settingsTitle.Font = fontData.Bold
 
-    tintTween(themeBtn, {BackgroundColor3 = theme.UtilButton, TextColor3 = theme.Text})
-    themeBtn.Font = fontData.Font
+    for _, updater in ipairs(themedUpdaters) do
+        pcall(updater, theme, fontData)
+    end
 
-    tintTween(fontBtn, {BackgroundColor3 = theme.UtilButton, TextColor3 = theme.Text})
-    fontBtn.Font = fontData.Font
+    strokeGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, theme.PrimaryAccent),
+        ColorSequenceKeypoint.new(0.5, theme.SecondaryAccent),
+        ColorSequenceKeypoint.new(1, theme.PrimaryAccent),
+    })
 
-    tintTween(consoleBtn, {BackgroundColor3 = theme.SecondaryAccent})
-    consoleBtn.Font = fontData.Bold
-
-    tintTween(closeSettingsBtn, {BackgroundColor3 = theme.UtilButton, TextColor3 = theme.Text})
-    closeSettingsBtn.Font = fontData.Bold
-
+    inputBox.TextSize = CONFIG.TextSize
+    templateEntry.TextSize = CONFIG.TextSize
     templateEntry.Font = fontData.Font
 end
 
@@ -835,11 +1352,12 @@ local function toggleSettings()
         settingsOverlay.Visible = true
         settingsFrame.Visible = true
         TweenService:Create(settingsOverlay, TweenInfo.new(0.3), {BackgroundTransparency = 0.6}):Play()
-        settingsFrame.Size = UDim2.new(0, 0, 0, 0)
-        TweenService:Create(settingsFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0, 300, 0, 240)}):Play()
+        settingsScale.Scale = 0
+        TweenService:Create(settingsScale, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Scale = 1}):Play()
     else
+        closePicker(true)
         TweenService:Create(settingsOverlay, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
-        local tw = TweenService:Create(settingsFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Size = UDim2.new(0, 0, 0, 0)})
+        local tw = TweenService:Create(settingsScale, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Scale = 0})
         tw:Play()
         tw.Completed:Wait()
         settingsOverlay.Visible = false
@@ -850,16 +1368,13 @@ end
 table.insert(connections, settingsButton.MouseButton1Click:Connect(toggleSettings))
 table.insert(connections, closeSettingsBtn.MouseButton1Click:Connect(toggleSettings))
 
-table.insert(connections, themeBtn.MouseButton1Click:Connect(function()
-    currentThemeIndex = (currentThemeIndex % #themes) + 1
-    themeBtn.Text = "Theme: " .. themes[currentThemeIndex].Name
-    applySettings()
-end))
-
-table.insert(connections, fontBtn.MouseButton1Click:Connect(function()
-    currentFontIndex = (currentFontIndex % #fontsList) + 1
-    fontBtn.Text = "Font: " .. fontsList[currentFontIndex].Name
-    applySettings()
+-- Tapping the dimmed backdrop closes the picker first, then the panel
+table.insert(connections, settingsOverlay.MouseButton1Click:Connect(function()
+    if isPickerOpen then
+        closePicker()
+    else
+        toggleSettings()
+    end
 end))
 
 table.insert(connections, consoleBtn.MouseButton1Click:Connect(function()
@@ -893,7 +1408,7 @@ local function toggleMinimize()
     
     footer.Visible = not isMinimized
     logContainer.Visible = not isMinimized
-    blur.Enabled = not isMinimized
+    blur.Enabled = not isMinimized and uiSettings.blur
     inputSink.Active = not isMinimized
 
     if isMinimized then
@@ -1257,14 +1772,6 @@ table.insert(connections, UserInputService:GetPropertyChangedSignal("OnScreenKey
 screenGui.Parent = playerGui
 blurGui.Parent = playerGui
 
-local function loopGlow()
-    local info = TweenInfo.new(1.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
-    activeTweens.glowTransparency = TweenService:Create(blurStroke, info, {Transparency = 0.9})
-    activeTweens.glowThickness = TweenService:Create(blurStroke, info, {Thickness = 6})
-    activeTweens.glowTransparency:Play()
-    activeTweens.glowThickness:Play()
-end
-
 screenGui.Destroying:Connect(function()
     if blur and blur.Parent then blur:Destroy() end
     if blurGui and blurGui.Parent then blurGui:Destroy() end
@@ -1276,6 +1783,7 @@ end)
 
 refreshLogs()
 toggleMinimize()
-loopGlow()
+startGlow()
+activeTweens.titleShimmer:Play()
 updateInputControlsVisibility()
 onInsetsChanged()
