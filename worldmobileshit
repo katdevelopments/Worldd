@@ -1,5 +1,6 @@
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
+local HttpService = game:GetService("HttpService")
 local LogService = game:GetService("LogService")
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
@@ -261,6 +262,63 @@ local textSizes = {
 }
 local currentTextSizeIndex = 2
 
+-- Every language supported by the Google Translate gtx endpoint
+local languages = {
+    { Name = "Afrikaans", Code = "af" }, { Name = "Albanian", Code = "sq" }, { Name = "Amharic", Code = "am" },
+    { Name = "Arabic", Code = "ar" }, { Name = "Armenian", Code = "hy" }, { Name = "Assamese", Code = "as" },
+    { Name = "Aymara", Code = "ay" }, { Name = "Azerbaijani", Code = "az" }, { Name = "Bambara", Code = "bm" },
+    { Name = "Basque", Code = "eu" }, { Name = "Belarusian", Code = "be" }, { Name = "Bengali", Code = "bn" },
+    { Name = "Bhojpuri", Code = "bho" }, { Name = "Bosnian", Code = "bs" }, { Name = "Bulgarian", Code = "bg" },
+    { Name = "Catalan", Code = "ca" }, { Name = "Cebuano", Code = "ceb" }, { Name = "Chinese (Simplified)", Code = "zh-CN" },
+    { Name = "Chinese (Traditional)", Code = "zh-TW" }, { Name = "Corsican", Code = "co" }, { Name = "Croatian", Code = "hr" },
+    { Name = "Czech", Code = "cs" }, { Name = "Danish", Code = "da" }, { Name = "Dhivehi", Code = "dv" },
+    { Name = "Dogri", Code = "doi" }, { Name = "Dutch", Code = "nl" }, { Name = "English", Code = "en" },
+    { Name = "Esperanto", Code = "eo" }, { Name = "Estonian", Code = "et" }, { Name = "Ewe", Code = "ee" },
+    { Name = "Filipino (Tagalog)", Code = "tl" }, { Name = "Finnish", Code = "fi" }, { Name = "French", Code = "fr" },
+    { Name = "Frisian", Code = "fy" }, { Name = "Galician", Code = "gl" }, { Name = "Georgian", Code = "ka" },
+    { Name = "German", Code = "de" }, { Name = "Greek", Code = "el" }, { Name = "Guarani", Code = "gn" },
+    { Name = "Gujarati", Code = "gu" }, { Name = "Haitian Creole", Code = "ht" }, { Name = "Hausa", Code = "ha" },
+    { Name = "Hawaiian", Code = "haw" }, { Name = "Hebrew", Code = "iw" }, { Name = "Hindi", Code = "hi" },
+    { Name = "Hmong", Code = "hmn" }, { Name = "Hungarian", Code = "hu" }, { Name = "Icelandic", Code = "is" },
+    { Name = "Igbo", Code = "ig" }, { Name = "Ilocano", Code = "ilo" }, { Name = "Indonesian", Code = "id" },
+    { Name = "Irish", Code = "ga" }, { Name = "Italian", Code = "it" }, { Name = "Japanese", Code = "ja" },
+    { Name = "Javanese", Code = "jw" }, { Name = "Kannada", Code = "kn" }, { Name = "Kazakh", Code = "kk" },
+    { Name = "Khmer", Code = "km" }, { Name = "Kinyarwanda", Code = "rw" }, { Name = "Konkani", Code = "gom" },
+    { Name = "Korean", Code = "ko" }, { Name = "Krio", Code = "kri" }, { Name = "Kurdish (Kurmanji)", Code = "ku" },
+    { Name = "Kurdish (Sorani)", Code = "ckb" }, { Name = "Kyrgyz", Code = "ky" }, { Name = "Lao", Code = "lo" },
+    { Name = "Latin", Code = "la" }, { Name = "Latvian", Code = "lv" }, { Name = "Lingala", Code = "ln" },
+    { Name = "Lithuanian", Code = "lt" }, { Name = "Luganda", Code = "lg" }, { Name = "Luxembourgish", Code = "lb" },
+    { Name = "Macedonian", Code = "mk" }, { Name = "Maithili", Code = "mai" }, { Name = "Malagasy", Code = "mg" },
+    { Name = "Malay", Code = "ms" }, { Name = "Malayalam", Code = "ml" }, { Name = "Maltese", Code = "mt" },
+    { Name = "Maori", Code = "mi" }, { Name = "Marathi", Code = "mr" }, { Name = "Meiteilon (Manipuri)", Code = "mni-Mtei" },
+    { Name = "Mizo", Code = "lus" }, { Name = "Mongolian", Code = "mn" }, { Name = "Myanmar (Burmese)", Code = "my" },
+    { Name = "Nepali", Code = "ne" }, { Name = "Norwegian", Code = "no" }, { Name = "Nyanja (Chichewa)", Code = "ny" },
+    { Name = "Odia (Oriya)", Code = "or" }, { Name = "Oromo", Code = "om" }, { Name = "Pashto", Code = "ps" },
+    { Name = "Persian", Code = "fa" }, { Name = "Polish", Code = "pl" }, { Name = "Portuguese", Code = "pt" },
+    { Name = "Punjabi", Code = "pa" }, { Name = "Quechua", Code = "qu" }, { Name = "Romanian", Code = "ro" },
+    { Name = "Russian", Code = "ru" }, { Name = "Samoan", Code = "sm" }, { Name = "Sanskrit", Code = "sa" },
+    { Name = "Scots Gaelic", Code = "gd" }, { Name = "Sepedi", Code = "nso" }, { Name = "Serbian", Code = "sr" },
+    { Name = "Sesotho", Code = "st" }, { Name = "Shona", Code = "sn" }, { Name = "Sindhi", Code = "sd" },
+    { Name = "Sinhala", Code = "si" }, { Name = "Slovak", Code = "sk" }, { Name = "Slovenian", Code = "sl" },
+    { Name = "Somali", Code = "so" }, { Name = "Spanish", Code = "es" }, { Name = "Sundanese", Code = "su" },
+    { Name = "Swahili", Code = "sw" }, { Name = "Swedish", Code = "sv" }, { Name = "Tajik", Code = "tg" },
+    { Name = "Tamil", Code = "ta" }, { Name = "Tatar", Code = "tt" }, { Name = "Telugu", Code = "te" },
+    { Name = "Thai", Code = "th" }, { Name = "Tigrinya", Code = "ti" }, { Name = "Tsonga", Code = "ts" },
+    { Name = "Turkish", Code = "tr" }, { Name = "Turkmen", Code = "tk" }, { Name = "Twi (Akan)", Code = "ak" },
+    { Name = "Ukrainian", Code = "uk" }, { Name = "Urdu", Code = "ur" }, { Name = "Uyghur", Code = "ug" },
+    { Name = "Uzbek", Code = "uz" }, { Name = "Vietnamese", Code = "vi" }, { Name = "Welsh", Code = "cy" },
+    { Name = "Xhosa", Code = "xh" }, { Name = "Yiddish", Code = "yi" }, { Name = "Yoruba", Code = "yo" },
+    { Name = "Zulu", Code = "zu" },
+}
+
+local currentLanguageIndex = 1
+for i, lang in ipairs(languages) do
+    if lang.Code == "en" then
+        currentLanguageIndex = i
+        break
+    end
+end
+
 local currentThemeIndex = 1
 local currentFontIndex = 1
 
@@ -296,7 +354,67 @@ local uiSettings = {
     particles = true,
     glow = true,
     blur = true,
+    autoTranslate = false,
 }
+
+-- === Google Translate integration ===
+-- Works across executors: prefers the executor's request function, falls
+-- back to game:HttpGet.
+local function httpGet(url)
+    local requester = (syn and syn.request) or (http and http.request) or http_request
+        or (fluxus and fluxus.request) or request
+    if requester then
+        local ok, res = pcall(requester, { Url = url, Method = "GET" })
+        if ok and type(res) == "table" and (res.StatusCode == 200 or res.Success) and type(res.Body) == "string" then
+            return res.Body
+        end
+    end
+    local ok, body = pcall(function() return game:HttpGet(url) end)
+    if ok and type(body) == "string" then return body end
+    return nil
+end
+
+local function escapeRichText(s)
+    return (s:gsub("&", "&amp;"):gsub("<", "&lt;"):gsub(">", "&gt;"))
+end
+
+local translateCache = {}
+local translateCacheCount = 0
+
+local function translateText(text, targetCode)
+    if #text > 450 then return nil end
+    local cacheKey = targetCode .. "\1" .. text
+    local cached = translateCache[cacheKey]
+    if cached ~= nil then
+        return cached ~= false and cached or nil
+    end
+
+    local url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl="
+        .. targetCode .. "&dt=t&q=" .. HttpService:UrlEncode(text)
+    local body = httpGet(url)
+
+    local result = nil
+    if body then
+        local ok, data = pcall(function() return HttpService:JSONDecode(body) end)
+        if ok and type(data) == "table" and type(data[1]) == "table" then
+            local parts = {}
+            for _, seg in ipairs(data[1]) do
+                if type(seg) == "table" and type(seg[1]) == "string" then
+                    table.insert(parts, seg[1])
+                end
+            end
+            if #parts > 0 then result = table.concat(parts) end
+        end
+    end
+
+    if translateCacheCount > 500 then
+        table.clear(translateCache)
+        translateCacheCount = 0
+    end
+    translateCache[cacheKey] = result or false
+    translateCacheCount += 1
+    return result
+end
 
 local function safeSetCursor(object, cursor)
     pcall(function() object.CursorIcon = cursor end)
@@ -998,6 +1116,28 @@ pickerClose.ZIndex = 13
 Instance.new("UICorner", pickerClose).CornerRadius = UDim.new(0, 6)
 addDepthGradient(pickerClose)
 
+-- Search bar, shown for long option lists (e.g. languages)
+local pickerSearch = Instance.new("TextBox", pickerFrame)
+pickerSearch.Name = "PickerSearch"
+pickerSearch.Size = UDim2.new(1, -20, 0, 30)
+pickerSearch.Position = UDim2.new(0, 10, 0, 40)
+pickerSearch.BackgroundColor3 = CONFIG.Colors.UtilButton
+pickerSearch.BackgroundTransparency = 0.25
+pickerSearch.Font = CONFIG.Font
+pickerSearch.PlaceholderText = "🔎 Search..."
+pickerSearch.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+pickerSearch.Text = ""
+pickerSearch.TextColor3 = CONFIG.Colors.Text
+pickerSearch.TextSize = 14
+pickerSearch.ClearTextOnFocus = false
+pickerSearch.TextXAlignment = Enum.TextXAlignment.Left
+pickerSearch.ZIndex = 13
+pickerSearch.Visible = false
+Instance.new("UICorner", pickerSearch).CornerRadius = UDim.new(0, 6)
+local pickerSearchPad = Instance.new("UIPadding", pickerSearch)
+pickerSearchPad.PaddingLeft = UDim.new(0, 8)
+safeSetCursor(pickerSearch, "rbxasset://SystemCursor/Arrow")
+
 local pickerScroll = Instance.new("ScrollingFrame", pickerFrame)
 pickerScroll.Name = "PickerScroll"
 pickerScroll.Position = UDim2.new(0, 10, 0, 40)
@@ -1015,6 +1155,18 @@ pickerLayout.Padding = UDim.new(0, 6)
 pickerLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
 local isPickerOpen = false
+local currentPickerButtons = {}
+
+local function applyPickerFilter()
+    local query = pickerSearch.Text:lower()
+    for _, opt in ipairs(currentPickerButtons) do
+        if opt.Parent then
+            local name = (opt:GetAttribute("OptionName") or ""):lower()
+            opt.Visible = (query == "") or (name:find(query, 1, true) ~= nil)
+        end
+    end
+    pickerScroll.CanvasPosition = Vector2.new(0, 0)
+end
 
 local function closePicker(instant)
     if not pickerFrame.Visible then return end
@@ -1032,11 +1184,23 @@ end
 -- entries: array of {Name, Font?, SwatchA?, SwatchB?} — Font renders the
 -- option in its own typeface (font picker), the swatches draw a theme
 -- preview dot (theme picker).
-local function openPicker(title, entries, currentIndex, onPick)
+local function openPicker(title, entries, currentIndex, onPick, searchable)
     pickerTitle.Text = title
     for _, child in ipairs(pickerScroll:GetChildren()) do
         if child:IsA("TextButton") then child:Destroy() end
     end
+    table.clear(currentPickerButtons)
+
+    pickerSearch.Text = ""
+    pickerSearch.Visible = searchable == true
+    if searchable then
+        pickerScroll.Position = UDim2.new(0, 10, 0, 78)
+        pickerScroll.Size = UDim2.new(1, -20, 1, -88)
+    else
+        pickerScroll.Position = UDim2.new(0, 10, 0, 40)
+        pickerScroll.Size = UDim2.new(1, -20, 1, -50)
+    end
+
     for i, entry in ipairs(entries) do
         local opt = Instance.new("TextButton", pickerScroll)
         opt.Size = UDim2.new(1, -6, 0, 34)
@@ -1051,6 +1215,8 @@ local function openPicker(title, entries, currentIndex, onPick)
         Instance.new("UICorner", opt).CornerRadius = UDim.new(0, 6)
         addDepthGradient(opt)
         safeSetCursor(opt, "rbxasset://SystemCursor/Arrow")
+        opt:SetAttribute("OptionName", entry.Name)
+        table.insert(currentPickerButtons, opt)
         if entry.SwatchA then
             local sw = Instance.new("Frame", opt)
             sw.Size = UDim2.new(0, 16, 0, 16)
@@ -1077,12 +1243,13 @@ local function openPicker(title, entries, currentIndex, onPick)
 end
 
 table.insert(connections, pickerClose.MouseButton1Click:Connect(function() closePicker() end))
+table.insert(connections, pickerSearch:GetPropertyChangedSignal("Text"):Connect(applyPickerFilter))
 
 -- === Settings row builders ===
 local rowOrder = 0
 local function nextOrder() rowOrder += 1 return rowOrder end
 
-local function createDropdownRow(labelText, buildEntries, getIndex, onSelect)
+local function createDropdownRow(labelText, buildEntries, getIndex, onSelect, searchable)
     local btn = Instance.new("TextButton", settingsScroll)
     btn.Size = UDim2.new(1, -6, 0, 36)
     btn.LayoutOrder = nextOrder()
@@ -1109,7 +1276,7 @@ local function createDropdownRow(labelText, buildEntries, getIndex, onSelect)
         openPicker(labelText, buildEntries(), getIndex(), function(i)
             onSelect(i)
             refreshText()
-        end)
+        end, searchable)
     end))
     return btn
 end
@@ -1209,6 +1376,16 @@ end, function() return currentTextSizeIndex end, function(i)
     applySettings()
 end)
 
+createDropdownRow("Language", function()
+    return languages
+end, function() return currentLanguageIndex end, function(i)
+    currentLanguageIndex = i
+end, true)
+
+createToggleRow("Auto-Translate Logs", uiSettings.autoTranslate, function(on)
+    uiSettings.autoTranslate = on
+end)
+
 createToggleRow("Click Particles", uiSettings.particles, function(on)
     uiSettings.particles = on
 end)
@@ -1263,6 +1440,8 @@ table.insert(themedUpdaters, function(theme, fontData)
     tintTween(pickerTitle, {TextColor3 = theme.Text})
     pickerTitle.Font = fontData.Bold
     tintTween(pickerClose, {BackgroundColor3 = theme.UtilButton})
+    tintTween(pickerSearch, {BackgroundColor3 = theme.UtilButton, TextColor3 = theme.Text})
+    pickerSearch.Font = fontData.Font
     tintTween(settingsScroll, {ScrollBarImageColor3 = theme.PrimaryAccent})
     tintTween(pickerScroll, {ScrollBarImageColor3 = theme.PrimaryAccent})
     tintTween(inputFocusStroke, {Color = theme.PrimaryAccent})
@@ -1486,6 +1665,23 @@ local function log(message, messageType, bulkLoad)
     else
         logEntry.TextColor3 = CONFIG.Colors.Text
         logEntry.Text = messageStr
+    end
+
+    -- Asynchronously swap in a Google-translated version (🌐 marks translated
+    -- lines). Skips code echoes and bulk history loads.
+    if uiSettings.autoTranslate and not bulkLoad and messageType ~= "Input" and #messageStr > 1 then
+        local targetCode = languages[currentLanguageIndex].Code
+        task.spawn(function()
+            local translated = translateText(messageStr, targetCode)
+            if translated and translated ~= messageStr and logFrame.Parent then
+                local safe = escapeRichText(translated)
+                if messageType == "Error" or messageType == "Warning" then
+                    logEntry.Text = "<b>🌐 " .. safe .. "</b>"
+                else
+                    logEntry.Text = "🌐 " .. safe
+                end
+            end
+        end)
     end
 
     local actionsFrame = logFrame.Actions
