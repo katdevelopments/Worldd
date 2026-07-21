@@ -428,6 +428,28 @@ for i, lang in ipairs(languages) do
 		break
 	end
 end
+-- True once a saved language has been read from settings; when it stays false
+-- (first launch) we auto-detect the player's language from their Roblox locale.
+local languageWasLoaded = false
+
+-- Map a Roblox locale id (e.g. "en-us", "pt-br", "zh-tw") to an index in the
+-- languages table, returning nil when there's no reasonable match.
+local function detectLanguageIndex(locale)
+	locale = tostring(locale):lower()
+	local base = locale:match("^[%a]+") or locale
+	if base == "zh" then
+		base = (locale:find("tw") or locale:find("hk") or locale:find("hant")) and "zh-TW" or "zh-CN"
+	end
+	-- A few locales use different codes than Google Translate / our list.
+	local aliases = { he = "iw", nb = "no", nn = "no", ["in"] = "id", ji = "yi", jv = "jw", tl = "tl", fil = "tl" }
+	local code = (aliases[base] or base):lower()
+	for i, lang in ipairs(languages) do
+		if lang.Code:lower() == code then
+			return i
+		end
+	end
+	return nil
+end
 
 local currentThemeIndex = 1
 local currentFontIndex = 1
@@ -790,6 +812,7 @@ local function loadSettings()
 		for i, lang in ipairs(languages) do
 			if lang.Code == data.languageCode then
 				currentLanguageIndex = i
+				languageWasLoaded = true
 				break
 			end
 		end
@@ -847,15 +870,39 @@ local function loadSettings()
 end
 
 loadSettings()
+-- First launch (no saved language): default to the player's Roblox locale so
+-- the client opens in their language. The tutorial still lets them change it.
+if not languageWasLoaded then
+	local ok, locale = pcall(function()
+		return game:GetService("LocalizationService").RobloxLocaleId
+	end)
+	if ok and type(locale) == "string" and locale ~= "" then
+		local detected = detectLanguageIndex(locale)
+		if detected then
+			currentLanguageIndex = detected
+		end
+	end
+end
 CONFIG.Colors = themes[currentThemeIndex].Colors
 CONFIG.Font = fontsList[currentFontIndex].Font
 CONFIG.BoldFont = fontsList[currentFontIndex].Bold
 CONFIG.TextSize = textSizes[currentTextSizeIndex].Size
 
 -- Each page can spotlight a real UI element (Target) and optionally gate
--- progress on the user performing an action (Step). Targets are resolved to
--- live instances inside showTutorial so this data stays declarative.
+-- progress on the user performing an action (Step). A few pages use a custom
+-- Kind (language chooser / discord prompt) that renders its own widgets instead
+-- of the normal spotlight body. Targets resolve to live instances inside
+-- showTutorial so this data stays declarative.
 local tutorialPages = {
+	{
+		Kind = "language",
+		Title = "Choose Your Language",
+	},
+	{
+		Kind = "discord",
+		Title = "Join the Community",
+		Text = "Join our Discord to get update notifications, new features, scripts, and support.",
+	},
 	{
 		Title = "Welcome!",
 		DynamicTitle = true,
@@ -925,13 +972,20 @@ local tutorialPages = {
 	},
 }
 for _, page in ipairs(tutorialPages) do
-	registerLocalizedString(page.Title)
-	registerLocalizedString(page.Text)
+	if page.Title then
+		registerLocalizedString(page.Title)
+	end
+	if page.Text then
+		registerLocalizedString(page.Text)
+	end
 end
 registerLocalizedString("Skip")
 registerLocalizedString("Run the script to continue")
 registerLocalizedString("Tap the X to minimise and finish")
 registerLocalizedString("Welcome")
+registerLocalizedString("Detected from your device")
+registerLocalizedString("Join Discord")
+registerLocalizedString("Invite copied! Paste it in your browser to join.")
 
 local function safeSetCursor(object, cursor)
 	pcall(function()
@@ -2949,6 +3003,170 @@ local function showTutorial()
 	skipButton.ZIndex = 47
 	safeSetCursor(skipButton, "rbxasset://SystemCursor/Arrow")
 
+	-- Resize the card per page (the language chooser needs far more room than a
+	-- normal text page). Keeps the width cap but swaps the fixed height.
+	local function setCardHeight(h)
+		card.Size = UDim2.new(1, -24, 0, h)
+		cardSizeLimit.MaxSize = Vector2.new(340, h)
+		cardSizeLimit.MinSize = Vector2.new(220, h)
+	end
+
+	-- === Language chooser (page Kind == "language") ===
+	local langPane, langScroll, langSearch, langSubtitle
+	local langButtons = {}
+	local refreshLangSel
+
+	local function buildLangPane()
+		if langPane then
+			return
+		end
+		langPane = Instance.new("Frame", card)
+		langPane.Name = "LangPane"
+		langPane.BackgroundTransparency = 1
+		langPane.Position = UDim2.new(0, 12, 0, 44)
+		langPane.Size = UDim2.new(1, -24, 1, -100)
+		langPane.Visible = false
+		langPane.ZIndex = 46
+
+		langSubtitle = Instance.new("TextLabel", langPane)
+		langSubtitle.Size = UDim2.new(1, 0, 0, 16)
+		langSubtitle.BackgroundTransparency = 1
+		langSubtitle.Font = CONFIG.Font
+		langSubtitle.TextColor3 = CONFIG.Colors.InputEcho
+		langSubtitle.TextSize = 12
+		langSubtitle.TextXAlignment = Enum.TextXAlignment.Left
+		langSubtitle.ZIndex = 47
+
+		langSearch = Instance.new("TextBox", langPane)
+		langSearch.Size = UDim2.new(1, 0, 0, 28)
+		langSearch.Position = UDim2.new(0, 0, 0, 20)
+		langSearch.BackgroundColor3 = CONFIG.Colors.UtilButton
+		langSearch.BackgroundTransparency = 0.25
+		langSearch.Font = CONFIG.Font
+		langSearch.PlaceholderText = "🔎 " .. tr("Search...")
+		langSearch.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+		langSearch.Text = ""
+		langSearch.TextColor3 = CONFIG.Colors.Text
+		langSearch.TextSize = 14
+		langSearch.ClearTextOnFocus = false
+		langSearch.TextXAlignment = Enum.TextXAlignment.Left
+		langSearch.ZIndex = 47
+		Instance.new("UICorner", langSearch).CornerRadius = UDim.new(0, 6)
+		local lsp = Instance.new("UIPadding", langSearch)
+		lsp.PaddingLeft = UDim.new(0, 8)
+		safeSetCursor(langSearch, "rbxasset://SystemCursor/Arrow")
+
+		langScroll = Instance.new("ScrollingFrame", langPane)
+		langScroll.Position = UDim2.new(0, 0, 0, 54)
+		langScroll.Size = UDim2.new(1, 0, 1, -54)
+		langScroll.BackgroundTransparency = 1
+		langScroll.BorderSizePixel = 0
+		langScroll.ScrollBarThickness = 4
+		langScroll.ScrollBarImageColor3 = CONFIG.Colors.PrimaryAccent
+		langScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+		langScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+		langScroll.ScrollingDirection = Enum.ScrollingDirection.Y
+		langScroll.ZIndex = 47
+		local ll = Instance.new("UIListLayout", langScroll)
+		ll.Padding = UDim.new(0, 4)
+		ll.SortOrder = Enum.SortOrder.LayoutOrder
+
+		for i, lang in ipairs(languages) do
+			local opt = Instance.new("TextButton", langScroll)
+			opt.Size = UDim2.new(1, -6, 0, 30)
+			opt.LayoutOrder = i
+			opt.BackgroundColor3 = CONFIG.Colors.UtilButton
+			opt.Font = CONFIG.Font
+			opt.Text = lang.Name
+			opt.TextColor3 = CONFIG.Colors.Text
+			opt.TextSize = 14
+			opt.ZIndex = 47
+			opt:SetAttribute("LangName", lang.Name:lower())
+			Instance.new("UICorner", opt).CornerRadius = UDim.new(0, 6)
+			safeSetCursor(opt, "rbxasset://SystemCursor/Arrow")
+			langButtons[i] = opt
+			table.insert(
+				connections,
+				opt.MouseButton1Click:Connect(function()
+					createClickParticles(opt)
+					if currentLanguageIndex ~= i then
+						currentLanguageIndex = i
+						localizeUI()
+						saveSettings()
+					end
+					refreshLangSel()
+				end)
+			)
+		end
+
+		table.insert(
+			connections,
+			langSearch:GetPropertyChangedSignal("Text"):Connect(function()
+				local q = langSearch.Text:lower()
+				for _, opt in ipairs(langButtons) do
+					opt.Visible = (q == "") or (opt:GetAttribute("LangName"):find(q, 1, true) ~= nil)
+				end
+				langScroll.CanvasPosition = Vector2.new(0, 0)
+			end)
+		)
+
+		-- On touch devices lift the whole card while searching so the keyboard
+		-- doesn't cover the list.
+		liftPanelWhileTyping(card, langSearch)
+	end
+
+	function refreshLangSel()
+		for i, opt in ipairs(langButtons) do
+			local sel = (i == currentLanguageIndex)
+			opt.Text = (sel and "✓  " or "") .. languages[i].Name
+			opt.BackgroundColor3 = sel and CONFIG.Colors.SecondaryAccent or CONFIG.Colors.UtilButton
+			opt.TextColor3 = sel and Color3.new(1, 1, 1) or CONFIG.Colors.Text
+		end
+		if langSubtitle then
+			langSubtitle.Text = tr("Detected from your device") .. ": " .. languages[currentLanguageIndex].Name
+		end
+	end
+
+	-- === Discord prompt (page Kind == "discord") ===
+	local discordJoinBtn = Instance.new("TextButton", card)
+	discordJoinBtn.Name = "DiscordJoinBtn"
+	discordJoinBtn.Size = UDim2.new(0, 200, 0, 34)
+	discordJoinBtn.Position = UDim2.new(0.5, 0, 1, -56)
+	discordJoinBtn.AnchorPoint = Vector2.new(0.5, 1)
+	discordJoinBtn.BackgroundColor3 = Color3.fromRGB(88, 101, 242) -- Discord blurple
+	discordJoinBtn.Font = CONFIG.BoldFont
+	discordJoinBtn.Text = "💬  " .. tr("Join Discord")
+	discordJoinBtn.TextColor3 = Color3.new(1, 1, 1)
+	discordJoinBtn.TextSize = 15
+	discordJoinBtn.Visible = false
+	discordJoinBtn.ZIndex = 47
+	Instance.new("UICorner", discordJoinBtn).CornerRadius = UDim.new(0, 6)
+	addDepthGradient(discordJoinBtn)
+	safeSetCursor(discordJoinBtn, "rbxasset://SystemCursor/Arrow")
+
+	local discordStatus = Instance.new("TextLabel", card)
+	discordStatus.Name = "DiscordStatus"
+	discordStatus.Size = UDim2.new(1, -24, 0, 18)
+	discordStatus.Position = UDim2.new(0.5, 0, 1, -92)
+	discordStatus.AnchorPoint = Vector2.new(0.5, 1)
+	discordStatus.BackgroundTransparency = 1
+	discordStatus.Font = CONFIG.Font
+	discordStatus.TextColor3 = CONFIG.Colors.Info
+	discordStatus.TextSize = 13
+	discordStatus.TextWrapped = true
+	discordStatus.Text = ""
+	discordStatus.Visible = false
+	discordStatus.ZIndex = 47
+	table.insert(
+		connections,
+		discordJoinBtn.MouseButton1Click:Connect(function()
+			createClickParticles(discordJoinBtn)
+			pcall(setclipboard, "https://discord.gg/worldclient")
+			discordStatus.Text = "✓ " .. tr("Invite copied! Paste it in your browser to join.")
+			discordStatus.Visible = true
+		end)
+	)
+
 	local pages = tutorialPages
 	local currentPage = 1
 	local typeToken = 0
@@ -3053,19 +3271,38 @@ local function showTutorial()
 		end
 		clearStep()
 		local pageData = pages[currentPage]
-		local target = resolveTarget(pageData.Target)
+		local kind = pageData.Kind
+		-- Custom-kind pages (language/discord) are centred, never spotlight.
+		local target = (not kind) and resolveTarget(pageData.Target) or nil
 		-- Only gate on an action when its target actually resolved, otherwise
 		-- fall back to a normal Next button so the tour can never soft-lock.
 		local interactive = pageData.Step ~= nil and target ~= nil
 
+		-- Reset per-page widgets before applying this page's layout.
+		tutBody.Visible = true
+		if langPane then
+			langPane.Visible = false
+		end
+		discordJoinBtn.Visible = false
+		discordStatus.Visible = false
+
 		applySpotlight(target, interactive)
-		positionCard(target)
 
 		if pageData.DynamicTitle then
 			tutTitle.Text = tr("Welcome") .. ", " .. player.DisplayName .. "!"
 		else
 			tutTitle.Text = tr(pageData.Title)
 		end
+
+		-- Size the card for this page's content, then place it.
+		if kind == "language" then
+			setCardHeight(math.clamp(viewportSize().Y - 60, 300, 400))
+		elseif kind == "discord" then
+			setCardHeight(260)
+		else
+			setCardHeight(210)
+		end
+		positionCard(target)
 
 		local filled = ("●"):rep(currentPage)
 		local empty = ("○"):rep(#pages - currentPage)
@@ -3080,6 +3317,32 @@ local function showTutorial()
 		else
 			nextButton.Visible = true
 			nextButton.Text = (currentPage == #pages) and "✅" or "➡️"
+		end
+
+		if kind == "language" then
+			-- Language chooser: no typewriter body, show the searchable list.
+			tutBody.Visible = false
+			buildLangPane()
+			langSearch.Text = ""
+			for _, opt in ipairs(langButtons) do
+				opt.Visible = true
+			end
+			refreshLangSel()
+			langPane.Visible = true
+			local selBtn = langButtons[currentLanguageIndex]
+			if selBtn then
+				task.defer(function()
+					if langScroll.Parent and selBtn.Parent then
+						langScroll.CanvasPosition = Vector2.new(
+							0,
+							math.max(0, selBtn.AbsolutePosition.Y - langScroll.AbsolutePosition.Y - 40)
+						)
+					end
+				end)
+			end
+			return
+		elseif kind == "discord" then
+			discordJoinBtn.Visible = true
 		end
 
 		-- Typewriter steps by codepoint so translated UTF-8 text never renders
