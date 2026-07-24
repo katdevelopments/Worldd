@@ -482,9 +482,6 @@ local setAutoScroll
 local openAutoExec
 -- Assigned by the auto-execute block; runs enabled scripts at startup.
 local runAutoExecScripts
--- Set by the interactive tutorial's "run" step; fired once when the user
--- executes any code so the tour can auto-advance. Cleared after it fires.
-local onTutorialRun
 
 -- === Google Translate integration ===
 -- Works across executors: prefers the executor's request function, falls
@@ -872,14 +869,13 @@ local tutorialPages = {
 		Target = "filter",
 	},
 	{
-		Title = "Run Your First Script",
-		Text = "This is the code editor. I've dropped a line of code in for you - press Run (or the Enter key) to execute it and continue!",
+		Title = "The Code Editor",
+		Text = "Type Luau here and press Run (or the Enter key) to execute it. Your code is syntax-highlighted as you type.",
 		Target = "run",
-		Step = "run",
 	},
 	{
 		Title = "Command History",
-		Text = "Nicely done! Press the Up and Down arrow keys while typing here to cycle back through scripts you've already run.",
+		Text = "Press the Up and Down arrow keys while typing here to cycle back through scripts you've already run.",
 		Target = "history",
 	},
 	{
@@ -921,7 +917,6 @@ local tutorialPages = {
 		Title = "You're all set!",
 		Text = "Tap the X to minimise me into a draggable bubble and start scripting. Reopen this tour any time by running tutorial().",
 		Target = "minimize",
-		Step = "minimize",
 	},
 }
 for _, page in ipairs(tutorialPages) do
@@ -929,8 +924,6 @@ for _, page in ipairs(tutorialPages) do
 	registerLocalizedString(page.Text)
 end
 registerLocalizedString("Skip")
-registerLocalizedString("Run the script to continue")
-registerLocalizedString("Tap the X to minimise and finish")
 registerLocalizedString("Welcome")
 
 local function safeSetCursor(object, cursor)
@@ -2702,41 +2695,8 @@ local function showTutorial()
 	tutorialActive = true
 	tutorialShown = true
 
-	-- Resolve a page's Target key to the live UI element it should spotlight.
-	local function resolveTarget(key)
-		if not key then
-			return nil
-		end
-		local map = {
-			console = logContainer,
-			filter = filterBar,
-			run = runButton,
-			history = inputContainer,
-			tabs = footer:FindFirstChild("TabBar"),
-			editor = inputContainer,
-			clipboard = clipboardRunButton,
-			scripts = scriptsButton,
-			settings = settingsButton,
-			copy = copyButton,
-			minimize = minimizeButton,
-		}
-		local target = map[key]
-		if target and target.Parent and target.Visible then
-			return target
-		end
-		return nil
-	end
-
-	local function viewportSize()
-		local v = screenGui.AbsoluteSize
-		if v.X < 2 or v.Y < 2 then
-			v = (workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize) or Vector2.new(1280, 720)
-		end
-		return v
-	end
-
-	-- Full-screen dimmer, used for pages without a spotlight target (intro/outro)
-	-- and as a click-blocker so the rest of the UI is inert during the tour.
+	-- Full-screen dimmer. It is an Active TextButton so the rest of the UI stays
+	-- inert while the tour is open; nothing on screen is highlighted.
 	local dimOverlay = Instance.new("TextButton", screenGui)
 	dimOverlay.Name = "TutorialOverlay"
 	dimOverlay.Size = UDim2.new(1, 0, 1, 0)
@@ -2749,146 +2709,9 @@ local function showTutorial()
 	safeSetCursor(dimOverlay, "rbxasset://SystemCursor/Arrow")
 	TweenService:Create(dimOverlay, TweenInfo.new(0.4), { BackgroundTransparency = 0.62 }):Play()
 
-	-- Holds the four "shade" panels that surround the spotlit element, plus the
-	-- pulsing highlight ring. Rebuilt every page.
-	local spotlight = Instance.new("Frame", screenGui)
-	spotlight.Name = "TutorialSpotlight"
-	spotlight.Size = UDim2.new(1, 0, 1, 0)
-	spotlight.BackgroundTransparency = 1
-	spotlight.ZIndex = 41
-	spotlight.Visible = false
-
-	local shadeFrames = {}
-	local highlightRing
-	local holeBlocker
-	local ringTween
-	local spotlightConn
-	-- Forward declaration; the body lives further down but the spotlight's
-	-- per-frame tracker (below) needs to call it.
-	local positionCard
-
-	local function clearSpotlight()
-		if spotlightConn then
-			spotlightConn:Disconnect()
-			spotlightConn = nil
-		end
-		if ringTween then
-			ringTween:Cancel()
-			ringTween = nil
-		end
-		for _, f in ipairs(shadeFrames) do
-			f:Destroy()
-		end
-		table.clear(shadeFrames)
-		if highlightRing then
-			highlightRing:Destroy()
-			highlightRing = nil
-		end
-		if holeBlocker then
-			holeBlocker:Destroy()
-			holeBlocker = nil
-		end
-	end
-
-	local function newShade()
-		local f = Instance.new("Frame", spotlight)
-		f.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-		f.BackgroundTransparency = 0.38
-		f.BorderSizePixel = 0
-		f.Active = true
-		f.ZIndex = 41
-		table.insert(shadeFrames, f)
-		return f
-	end
-
-	-- Dim the whole screen and cut a bright hole around `target`: four shades
-	-- tile everything except the control, and a ring pulses on it. The geometry
-	-- is refreshed every frame so the hole keeps tracking the control even while
-	-- the console is still animating into place (reading AbsolutePosition once,
-	-- mid-layout, is what left the hole floating in the wrong spot). When
-	-- `clickThrough` is false a transparent blocker fills the hole so the real
-	-- control can't be triggered mid-explanation; interactive steps leave it open.
-	local function applySpotlight(target, clickThrough)
-		clearSpotlight()
-		if not target then
-			spotlight.Visible = false
-			dimOverlay.Visible = true
-			return
-		end
-
-		-- The base dimmer stays hidden; the four shades supply the full-screen
-		-- dim while leaving the hole bright.
-		dimOverlay.Visible = false
-		spotlight.Visible = true
-
-		local top, bottom, left, right = newShade(), newShade(), newShade(), newShade()
-
-		highlightRing = Instance.new("Frame", spotlight)
-		highlightRing.BackgroundTransparency = 1
-		highlightRing.Active = false
-		highlightRing.ZIndex = 42
-		Instance.new("UICorner", highlightRing).CornerRadius = UDim.new(0, 8)
-		local ring = Instance.new("UIStroke", highlightRing)
-		ring.Color = CONFIG.Colors.SecondaryAccent
-		ring.Thickness = 2
-		ringTween = TweenService:Create(
-			ring,
-			TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
-			{ Thickness = 4, Transparency = 0.35 }
-		)
-		ringTween:Play()
-
-		if not clickThrough then
-			holeBlocker = Instance.new("TextButton", spotlight)
-			holeBlocker.BackgroundTransparency = 1
-			holeBlocker.Text = ""
-			holeBlocker.AutoButtonColor = false
-			holeBlocker.Active = true
-			holeBlocker.ZIndex = 42
-		end
-
-		local function layout()
-			if not target.Parent then
-				return
-			end
-			local vp = viewportSize()
-			local pad = 8
-			local os = 8 -- overscan so rounding can't leave a seam at the edges
-			local ap = target.AbsolutePosition
-			local sz = target.AbsoluteSize
-			local x = ap.X - pad
-			local y = ap.Y - pad
-			local w = sz.X + pad * 2
-			local h = sz.Y + pad * 2
-
-			top.Position = UDim2.fromOffset(-os, -os)
-			top.Size = UDim2.fromOffset(vp.X + os * 2, math.max(0, y + os))
-			bottom.Position = UDim2.fromOffset(-os, y + h)
-			bottom.Size = UDim2.fromOffset(vp.X + os * 2, math.max(0, vp.Y - (y + h) + os))
-			left.Position = UDim2.fromOffset(-os, y)
-			left.Size = UDim2.fromOffset(math.max(0, x + os), h)
-			right.Position = UDim2.fromOffset(x + w, y)
-			right.Size = UDim2.fromOffset(math.max(0, vp.X - (x + w) + os), h)
-
-			highlightRing.Position = UDim2.fromOffset(math.floor(x), math.floor(y))
-			highlightRing.Size = UDim2.fromOffset(math.ceil(w), math.ceil(h))
-			if holeBlocker then
-				holeBlocker.Position = UDim2.fromOffset(math.floor(x), math.floor(y))
-				holeBlocker.Size = UDim2.fromOffset(math.ceil(w), math.ceil(h))
-			end
-
-			positionCard(target)
-		end
-
-		layout()
-		spotlightConn = RunService.RenderStepped:Connect(layout)
-	end
-
-	-- === The tip card (sits above the spotlight subtree) ===
+	-- === Centred tip card ===
 	local card = Instance.new("Frame", screenGui)
 	card.Name = "TutorialCard"
-	-- Caps at 340 wide on tablets/desktop but shrinks with a margin on narrow
-	-- phones so the card never runs off either edge of the screen.
 	card.Size = UDim2.new(1, -24, 0, 210)
 	card.AnchorPoint = Vector2.new(0.5, 0.5)
 	card.Position = UDim2.new(0.5, 0, 0.5, 0)
@@ -2940,23 +2763,6 @@ local function showTutorial()
 	dots.TextSize = 14
 	dots.ZIndex = 46
 
-	local hintLabel = Instance.new("TextLabel", card)
-	hintLabel.Size = UDim2.new(1, -110, 0, 22)
-	hintLabel.Position = UDim2.new(0.5, 0, 1, -14)
-	hintLabel.AnchorPoint = Vector2.new(0.5, 1)
-	hintLabel.BackgroundTransparency = 1
-	hintLabel.Font = CONFIG.BoldFont
-	hintLabel.TextColor3 = CONFIG.Colors.Warning
-	hintLabel.TextSize = 15
-	hintLabel.TextWrapped = true
-	hintLabel.Visible = false
-	hintLabel.ZIndex = 46
-	local hintTween = TweenService:Create(
-		hintLabel,
-		TweenInfo.new(0.7, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
-		{ TextTransparency = 0.5 }
-	)
-
 	local prevButton = createIconButton(card, "⬅️", 34, "UtilButton")
 	prevButton.Position = UDim2.new(0, 12, 1, -12)
 	prevButton.AnchorPoint = Vector2.new(0, 1)
@@ -2982,61 +2788,9 @@ local function showTutorial()
 
 	local pages = tutorialPages
 	local currentPage = 1
-	local typeToken = 0
-	local stepConns = {}
 
-	-- Forward declarations so the inner handlers capture each other as upvalues.
-	local updatePage, closeTutorial, advance, completeStep, clearStep, setupStep
-
-	function positionCard(target)
-		if not target then
-			card.AnchorPoint = Vector2.new(0.5, 0.5)
-			card.Position = UDim2.new(0.5, 0, 0.5, 0)
-			return
-		end
-		local vp = viewportSize()
-		local ap = target.AbsolutePosition
-		local sz = target.AbsoluteSize
-		local cardW = card.AbsoluteSize.X
-		if cardW < 2 then
-			cardW = 340
-		end
-		local cardH = card.AbsoluteSize.Y
-		if cardH < 2 then
-			cardH = 210
-		end
-		local margin = 12
-		-- Centre horizontally on the target, clamped so the whole card stays on
-		-- screen. On viewports too narrow to inset it, fall back to centring
-		-- (math.clamp errors when min > max).
-		local lo = cardW / 2 + margin
-		local hi = vp.X - cardW / 2 - margin
-		local cx = (hi <= lo) and (vp.X / 2) or math.clamp(ap.X + sz.X / 2, lo, hi)
-		-- Prefer below the target when it sits in the top half, otherwise above.
-		-- Anchor from the top and clamp the top edge so the card is always fully
-		-- visible -- never slipping under the top inset or off the bottom.
-		local targetMidY = ap.Y + sz.Y / 2
-		local topY
-		if targetMidY < vp.Y / 2 then
-			topY = ap.Y + sz.Y + 22
-		else
-			topY = ap.Y - 22 - cardH
-		end
-		topY = math.clamp(topY, margin, math.max(margin, vp.Y - cardH - margin))
-		card.AnchorPoint = Vector2.new(0.5, 0)
-		card.Position = UDim2.fromOffset(cx, topY)
-	end
-
-	function clearStep()
-		onTutorialRun = nil
-		for _, c in ipairs(stepConns) do
-			c:Disconnect()
-		end
-		table.clear(stepConns)
-		hintTween:Cancel()
-		hintLabel.Visible = false
-		hintLabel.TextTransparency = 0
-	end
+	-- Forward declarations so the handlers can reference each other.
+	local updatePage, closeTutorial, advance
 
 	function advance()
 		if currentPage < #pages then
@@ -3047,117 +2801,36 @@ local function showTutorial()
 		end
 	end
 
-	function completeStep(target)
-		if target then
-			createClickParticles(target, CONFIG.Colors.PrimaryAccent)
-		end
-		clearStep()
-		task.delay(0.35, advance)
-	end
-
-	function setupStep(step, target)
-		if step == "run" then
-			if inputBox.Text:gsub("%s", "") == "" then
-				inputBox.Text = 'print("Hello from the World Client!")'
-				if updateEditorLines then
-					updateEditorLines()
-				end
-				if refreshInputHighlight then
-					refreshInputHighlight()
-				end
-			end
-			hintLabel.Text = "▶  " .. tr("Run the script to continue")
-			hintLabel.Visible = true
-			hintTween:Play()
-			onTutorialRun = function()
-				completeStep(runButton)
-			end
-		elseif step == "minimize" then
-			hintLabel.Text = "✖️  " .. tr("Tap the X to minimise and finish")
-			hintLabel.Visible = true
-			hintTween:Play()
-			table.insert(
-				stepConns,
-				minimizeButton.MouseButton1Click:Connect(function()
-					clearStep()
-					closeTutorial()
-				end)
-			)
-		end
-	end
-
 	function updatePage()
-		-- A queued advance can arrive after the user skipped/finished; ignore it.
 		if not card.Parent then
 			return
 		end
-		clearStep()
 		local pageData = pages[currentPage]
-		local target = resolveTarget(pageData.Target)
-		-- Only gate on an action when its target actually resolved, otherwise
-		-- fall back to a normal Next button so the tour can never soft-lock.
-		local interactive = pageData.Step ~= nil and target ~= nil
-
-		applySpotlight(target, interactive)
-		positionCard(target)
 
 		if pageData.DynamicTitle then
 			tutTitle.Text = tr("Welcome") .. ", " .. player.DisplayName .. "!"
 		else
 			tutTitle.Text = tr(pageData.Title)
 		end
+		tutBody.Text = tr(pageData.Text)
 
 		local filled = ("●"):rep(currentPage)
 		local empty = ("○"):rep(#pages - currentPage)
 		dots.Text = filled .. empty
-		dots.Visible = not interactive
 
 		prevButton.Visible = currentPage > 1
 		skipButton.Visible = (currentPage ~= #pages)
-
-		if interactive then
-			nextButton.Visible = false
-		else
-			nextButton.Visible = true
-			nextButton.Text = (currentPage == #pages) and "✅" or "➡️"
-		end
-
-		-- Typewriter steps by codepoint so translated UTF-8 text never renders
-		-- a half-cut character. Runs on its own thread and is cancelled by
-		-- bumping the token whenever the page changes.
-		local bodyText = tr(pageData.Text)
-		typeToken += 1
-		local myToken = typeToken
-		task.spawn(function()
-			local charCount = utf8.len(bodyText) or #bodyText
-			for i = 1, charCount do
-				if myToken ~= typeToken or not tutBody.Parent then
-					return
-				end
-				local byteEnd = (utf8.offset(bodyText, i + 1) or (#bodyText + 1)) - 1
-				tutBody.Text = string.sub(bodyText, 1, byteEnd)
-				task.wait(0.008)
-			end
-			if myToken == typeToken and interactive then
-				setupStep(pageData.Step, target)
-			end
-		end)
+		nextButton.Text = (currentPage == #pages) and "✅" or "➡️"
 	end
 
 	function closeTutorial()
 		if not card.Parent then
 			return
 		end
-		clearStep()
-		typeToken += 1
 		tutorialActive = false
 		if not tutorialCompleted then
 			tutorialCompleted = true
 			saveSettings()
-		end
-		clearSpotlight()
-		if spotlight.Parent then
-			spotlight:Destroy()
 		end
 		if dimOverlay.Parent then
 			TweenService:Create(dimOverlay, TweenInfo.new(0.3), { BackgroundTransparency = 1 }):Play()
@@ -5336,15 +5009,6 @@ local function executeCommand()
 	if command:lower():gsub("%s", "") == "tutorial()" then
 		showTutorial()
 		return
-	end
-
-	-- Let the interactive tutorial's "run" step advance the moment the user
-	-- executes anything (fires whether or not an executor is available, so the
-	-- tour never soft-locks).
-	if onTutorialRun then
-		local hook = onTutorialRun
-		onTutorialRun = nil
-		task.spawn(hook)
 	end
 
 	if not isExecuteScriptEnabled then
