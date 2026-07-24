@@ -2779,7 +2779,7 @@ local function showTutorial()
 	skipButton.AnchorPoint = Vector2.new(1, 0)
 	skipButton.BackgroundTransparency = 1
 	skipButton.Font = CONFIG.Font
-	skipButton.Text = tr("Skip") .. " ✕"
+	skipButton.Text = tr("Skip") .. " ❌"
 	skipButton.TextColor3 = CONFIG.Colors.InputEcho
 	skipButton.TextSize = 14
 	skipButton.TextXAlignment = Enum.TextXAlignment.Right
@@ -2821,6 +2821,16 @@ local function showTutorial()
 		prevButton.Visible = currentPage > 1
 		skipButton.Visible = (currentPage ~= #pages)
 		nextButton.Text = (currentPage == #pages) and "✅" or "➡️"
+
+		-- Animate the new page in: the title and body fade up from a small
+		-- rightward offset each time the page changes.
+		local slideInfo = TweenInfo.new(0.28, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+		tutTitle.TextTransparency = 1
+		tutBody.TextTransparency = 1
+		tutTitle.Position = UDim2.new(0.5, 16, 0, 12)
+		tutBody.Position = UDim2.new(0.5, 16, 0, 44)
+		TweenService:Create(tutTitle, slideInfo, { TextTransparency = 0, Position = UDim2.new(0.5, 0, 0, 12) }):Play()
+		TweenService:Create(tutBody, slideInfo, { TextTransparency = 0, Position = UDim2.new(0.5, 0, 0, 44) }):Play()
 	end
 
 	function closeTutorial()
@@ -4800,13 +4810,51 @@ local function toggleMinimize()
 	end
 end
 
-local function clearLogs()
-	for _, child in ipairs(activeLogFrames) do
+-- Clears every log line. When `animated` is true each line fades and collapses
+-- out on a slight per-line stagger before it is destroyed; otherwise they are
+-- removed instantly (used by refreshLogs, which repopulates immediately).
+local function clearLogs(animated)
+	local frames = table.clone(activeLogFrames)
+	table.clear(activeLogFrames)
+
+	if not animated then
+		for _, child in ipairs(frames) do
+			if child and child.Parent then
+				child:Destroy()
+			end
+		end
+		requestCanvasUpdate()
+		return
+	end
+
+	-- Spread the stagger across a fixed window so a long log never animates
+	-- out for seconds on end.
+	local step = 0.5 / math.max(1, #frames)
+	for i, child in ipairs(frames) do
 		if child and child.Parent then
-			child:Destroy()
+			local entry = child:FindFirstChild("LogEntry")
+			local lineNo = child:FindFirstChild("LineNumber")
+			task.delay((i - 1) * step, function()
+				if not child.Parent then
+					return
+				end
+				local info = TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+				if entry then
+					TweenService:Create(entry, info, { TextTransparency = 1 }):Play()
+				end
+				if lineNo then
+					TweenService:Create(lineNo, info, { TextTransparency = 1 }):Play()
+				end
+				TweenService:Create(child, info, { Size = UDim2.new(1, 0, 0, 0) }):Play()
+				task.delay(0.22, function()
+					if child.Parent then
+						child:Destroy()
+					end
+					requestCanvasUpdate()
+				end)
+			end)
 		end
 	end
-	table.clear(activeLogFrames)
 	requestCanvasUpdate()
 end
 
@@ -4962,18 +5010,25 @@ function log(message, messageType, bulkLoad)
 	end
 
 	isLoggingInternally = false
+	return logFrame
 end
 
 local function refreshLogs()
 	clearLogs()
+
+	-- Collect each freshly-added line so they can be faded in on a stagger.
+	local added = {}
+	local function addLine(msg, typeStr)
+		local frame = log(msg, typeStr, true)
+		if frame then
+			table.insert(added, frame)
+		end
+	end
+
 	if not isExecuteScriptEnabled then
-		log(
-			"Warning: No executor found ('execute_script' or 'loadstring'). Code execution will not work.",
-			"Warning",
-			true
-		)
+		addLine("Warning: No executor found ('execute_script' or 'loadstring'). Code execution will not work.", "Warning")
 	elseif executorType == "loadstring" then
-		log("Note: 'execute_script' not found; falling back to the executor's default 'loadstring'.", "Info", true)
+		addLine("Note: 'execute_script' not found; falling back to the executor's default 'loadstring'.", "Info")
 	end
 
 	local history = LogService:GetLogHistory()
@@ -4986,9 +5041,36 @@ local function refreshLogs()
 		elseif entry.messageType == Enum.MessageType.MessageInfo then
 			typeStr = "Info"
 		end
-		log(entry.message, typeStr, true)
+		addLine(entry.message, typeStr)
 	end
-	log("Console logs refreshed. Type 'tutorial()' to see the intro again.", "Info", true)
+	addLine("Console logs refreshed. Type 'tutorial()' to see the intro again.", "Info")
+
+	-- Fade each line in on a stagger spread across a fixed window, so a refresh
+	-- visibly animates regardless of how many lines there are.
+	local step = 0.6 / math.max(1, #added)
+	for i, frame in ipairs(added) do
+		local entry = frame:FindFirstChild("LogEntry")
+		local lineNo = frame:FindFirstChild("LineNumber")
+		if entry then
+			entry.TextTransparency = 1
+		end
+		if lineNo then
+			lineNo.TextTransparency = 1
+		end
+		task.delay((i - 1) * step, function()
+			if not frame.Parent then
+				return
+			end
+			local info = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+			if entry then
+				TweenService:Create(entry, info, { TextTransparency = 0 }):Play()
+			end
+			if lineNo then
+				TweenService:Create(lineNo, info, { TextTransparency = 0 }):Play()
+			end
+		end)
+	end
+
 	requestCanvasUpdate()
 	scrollLogsToBottom()
 end
@@ -5363,7 +5445,9 @@ table.insert(
 )
 table.insert(connections, expandInputButton.MouseButton1Click:Connect(toggleScriptView))
 table.insert(connections, minimizeButton.MouseButton1Click:Connect(toggleMinimize))
-table.insert(connections, clearButton.MouseButton1Click:Connect(clearLogs))
+table.insert(connections, clearButton.MouseButton1Click:Connect(function()
+	clearLogs(true)
+end))
 table.insert(connections, refreshButton.MouseButton1Click:Connect(refreshLogs))
 
 table.insert(
