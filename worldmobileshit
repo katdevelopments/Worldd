@@ -2760,9 +2760,18 @@ local function showTutorial()
 
 	local shadeFrames = {}
 	local highlightRing
+	local holeBlocker
 	local ringTween
+	local spotlightConn
+	-- Forward declaration; the body lives further down but the spotlight's
+	-- per-frame tracker (below) needs to call it.
+	local positionCard
 
 	local function clearSpotlight()
+		if spotlightConn then
+			spotlightConn:Disconnect()
+			spotlightConn = nil
+		end
 		if ringTween then
 			ringTween:Cancel()
 			ringTween = nil
@@ -2775,29 +2784,30 @@ local function showTutorial()
 			highlightRing:Destroy()
 			highlightRing = nil
 		end
+		if holeBlocker then
+			holeBlocker:Destroy()
+			holeBlocker = nil
+		end
 	end
 
-	local function makeShade(x, y, w, h)
-		if w <= 0 or h <= 0 then
-			return
-		end
+	local function newShade()
 		local f = Instance.new("Frame", spotlight)
 		f.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 		f.BackgroundTransparency = 0.38
 		f.BorderSizePixel = 0
 		f.Active = true
 		f.ZIndex = 41
-		f.Position = UDim2.fromOffset(math.floor(x), math.floor(y))
-		f.Size = UDim2.fromOffset(math.ceil(w), math.ceil(h))
 		table.insert(shadeFrames, f)
+		return f
 	end
 
-	-- Two dimming modes:
-	--  * Interactive steps cut a genuine, click-through hole -- four shades ring
-	--    the control and the base dimmer is hidden -- so the user can tap it.
-	--  * Explanatory steps dim the whole screen uniformly with the base overlay,
-	--    which can never leave an uncovered edge, and just pulse a ring on the
-	--    control. That overlay also blocks stray input, so no extra blocker.
+	-- Dim the whole screen and cut a bright hole around `target`: four shades
+	-- tile everything except the control, and a ring pulses on it. The geometry
+	-- is refreshed every frame so the hole keeps tracking the control even while
+	-- the console is still animating into place (reading AbsolutePosition once,
+	-- mid-layout, is what left the hole floating in the wrong spot). When
+	-- `clickThrough` is false a transparent blocker fills the hole so the real
+	-- control can't be triggered mid-explanation; interactive steps leave it open.
 	local function applySpotlight(target, clickThrough)
 		clearSpotlight()
 		if not target then
@@ -2806,37 +2816,17 @@ local function showTutorial()
 			return
 		end
 
-		local vp = viewportSize()
-		local pad = 8
-		local ap = target.AbsolutePosition
-		local sz = target.AbsoluteSize
-		local x = ap.X - pad
-		local y = ap.Y - pad
-		local w = sz.X + pad * 2
-		local h = sz.Y + pad * 2
-
+		-- The base dimmer stays hidden; the four shades supply the full-screen
+		-- dim while leaving the hole bright.
+		dimOverlay.Visible = false
 		spotlight.Visible = true
 
-		if clickThrough then
-			-- Overscan each shade past the screen edge so pixel rounding can
-			-- never leave a bright seam around the border.
-			dimOverlay.Visible = false
-			local os = 8
-			makeShade(-os, -os, vp.X + os * 2, y + os) -- top
-			makeShade(-os, y + h, vp.X + os * 2, vp.Y - (y + h) + os) -- bottom
-			makeShade(-os, y, x + os, h) -- left
-			makeShade(x + w, y, vp.X - (x + w) + os, h) -- right
-		else
-			-- Keep the full-screen dimmer up so the whole screen stays covered.
-			dimOverlay.Visible = true
-		end
+		local top, bottom, left, right = newShade(), newShade(), newShade(), newShade()
 
 		highlightRing = Instance.new("Frame", spotlight)
 		highlightRing.BackgroundTransparency = 1
 		highlightRing.Active = false
 		highlightRing.ZIndex = 42
-		highlightRing.Position = UDim2.fromOffset(math.floor(x), math.floor(y))
-		highlightRing.Size = UDim2.fromOffset(math.ceil(w), math.ceil(h))
 		Instance.new("UICorner", highlightRing).CornerRadius = UDim.new(0, 8)
 		local ring = Instance.new("UIStroke", highlightRing)
 		ring.Color = CONFIG.Colors.SecondaryAccent
@@ -2847,6 +2837,51 @@ local function showTutorial()
 			{ Thickness = 4, Transparency = 0.35 }
 		)
 		ringTween:Play()
+
+		if not clickThrough then
+			holeBlocker = Instance.new("TextButton", spotlight)
+			holeBlocker.BackgroundTransparency = 1
+			holeBlocker.Text = ""
+			holeBlocker.AutoButtonColor = false
+			holeBlocker.Active = true
+			holeBlocker.ZIndex = 42
+		end
+
+		local function layout()
+			if not target.Parent then
+				return
+			end
+			local vp = viewportSize()
+			local pad = 8
+			local os = 8 -- overscan so rounding can't leave a seam at the edges
+			local ap = target.AbsolutePosition
+			local sz = target.AbsoluteSize
+			local x = ap.X - pad
+			local y = ap.Y - pad
+			local w = sz.X + pad * 2
+			local h = sz.Y + pad * 2
+
+			top.Position = UDim2.fromOffset(-os, -os)
+			top.Size = UDim2.fromOffset(vp.X + os * 2, math.max(0, y + os))
+			bottom.Position = UDim2.fromOffset(-os, y + h)
+			bottom.Size = UDim2.fromOffset(vp.X + os * 2, math.max(0, vp.Y - (y + h) + os))
+			left.Position = UDim2.fromOffset(-os, y)
+			left.Size = UDim2.fromOffset(math.max(0, x + os), h)
+			right.Position = UDim2.fromOffset(x + w, y)
+			right.Size = UDim2.fromOffset(math.max(0, vp.X - (x + w) + os), h)
+
+			highlightRing.Position = UDim2.fromOffset(math.floor(x), math.floor(y))
+			highlightRing.Size = UDim2.fromOffset(math.ceil(w), math.ceil(h))
+			if holeBlocker then
+				holeBlocker.Position = UDim2.fromOffset(math.floor(x), math.floor(y))
+				holeBlocker.Size = UDim2.fromOffset(math.ceil(w), math.ceil(h))
+			end
+
+			positionCard(target)
+		end
+
+		layout()
+		spotlightConn = RunService.RenderStepped:Connect(layout)
 	end
 
 	-- === The tip card (sits above the spotlight subtree) ===
@@ -2953,7 +2988,7 @@ local function showTutorial()
 	-- Forward declarations so the inner handlers capture each other as upvalues.
 	local updatePage, closeTutorial, advance, completeStep, clearStep, setupStep
 
-	local function positionCard(target)
+	function positionCard(target)
 		if not target then
 			card.AnchorPoint = Vector2.new(0.5, 0.5)
 			card.Position = UDim2.new(0.5, 0, 0.5, 0)
