@@ -2760,7 +2760,6 @@ local function showTutorial()
 
 	local shadeFrames = {}
 	local highlightRing
-	local holeBlocker
 	local ringTween
 
 	local function clearSpotlight()
@@ -2775,10 +2774,6 @@ local function showTutorial()
 		if highlightRing then
 			highlightRing:Destroy()
 			highlightRing = nil
-		end
-		if holeBlocker then
-			holeBlocker:Destroy()
-			holeBlocker = nil
 		end
 	end
 
@@ -2797,9 +2792,12 @@ local function showTutorial()
 		table.insert(shadeFrames, f)
 	end
 
-	-- Cut a hole around `target`: four shades dim everything else, a ring pulses
-	-- on the element. When `clickThrough` is false a transparent blocker fills
-	-- the hole so the real control can't be triggered mid-explanation.
+	-- Two dimming modes:
+	--  * Interactive steps cut a genuine, click-through hole -- four shades ring
+	--    the control and the base dimmer is hidden -- so the user can tap it.
+	--  * Explanatory steps dim the whole screen uniformly with the base overlay,
+	--    which can never leave an uncovered edge, and just pulse a ring on the
+	--    control. That overlay also blocks stray input, so no extra blocker.
 	local function applySpotlight(target, clickThrough)
 		clearSpotlight()
 		if not target then
@@ -2807,8 +2805,6 @@ local function showTutorial()
 			dimOverlay.Visible = true
 			return
 		end
-		dimOverlay.Visible = false
-		spotlight.Visible = true
 
 		local vp = viewportSize()
 		local pad = 8
@@ -2819,10 +2815,21 @@ local function showTutorial()
 		local w = sz.X + pad * 2
 		local h = sz.Y + pad * 2
 
-		makeShade(0, 0, vp.X, y) -- top
-		makeShade(0, y + h, vp.X, vp.Y - (y + h)) -- bottom
-		makeShade(0, y, x, h) -- left
-		makeShade(x + w, y, vp.X - (x + w), h) -- right
+		spotlight.Visible = true
+
+		if clickThrough then
+			-- Overscan each shade past the screen edge so pixel rounding can
+			-- never leave a bright seam around the border.
+			dimOverlay.Visible = false
+			local os = 8
+			makeShade(-os, -os, vp.X + os * 2, y + os) -- top
+			makeShade(-os, y + h, vp.X + os * 2, vp.Y - (y + h) + os) -- bottom
+			makeShade(-os, y, x + os, h) -- left
+			makeShade(x + w, y, vp.X - (x + w) + os, h) -- right
+		else
+			-- Keep the full-screen dimmer up so the whole screen stays covered.
+			dimOverlay.Visible = true
+		end
 
 		highlightRing = Instance.new("Frame", spotlight)
 		highlightRing.BackgroundTransparency = 1
@@ -2840,17 +2847,6 @@ local function showTutorial()
 			{ Thickness = 4, Transparency = 0.35 }
 		)
 		ringTween:Play()
-
-		if not clickThrough then
-			holeBlocker = Instance.new("TextButton", spotlight)
-			holeBlocker.BackgroundTransparency = 1
-			holeBlocker.Text = ""
-			holeBlocker.AutoButtonColor = false
-			holeBlocker.Active = true
-			holeBlocker.ZIndex = 42
-			holeBlocker.Position = UDim2.fromOffset(math.floor(x), math.floor(y))
-			holeBlocker.Size = UDim2.fromOffset(math.ceil(w), math.ceil(h))
-		end
 	end
 
 	-- === The tip card (sits above the spotlight subtree) ===
@@ -2970,21 +2966,30 @@ local function showTutorial()
 		if cardW < 2 then
 			cardW = 340
 		end
-		-- Keep the card fully on-screen. On viewports too narrow to inset it,
-		-- fall back to centring (math.clamp errors when min > max).
-		local lo = cardW / 2 + 8
-		local hi = vp.X - cardW / 2 - 8
-		local cx = (hi <= lo) and (vp.X / 2) or math.clamp(ap.X + sz.X / 2, lo, hi)
-		local targetMidY = ap.Y + sz.Y / 2
-		if targetMidY < vp.Y / 2 then
-			-- Target is in the top half: place the card below it.
-			card.AnchorPoint = Vector2.new(0.5, 0)
-			card.Position = UDim2.fromOffset(cx, math.min(ap.Y + sz.Y + 22, vp.Y - 232))
-		else
-			-- Target is in the bottom half: place the card above it.
-			card.AnchorPoint = Vector2.new(0.5, 1)
-			card.Position = UDim2.fromOffset(cx, math.max(ap.Y - 22, 232))
+		local cardH = card.AbsoluteSize.Y
+		if cardH < 2 then
+			cardH = 210
 		end
+		local margin = 12
+		-- Centre horizontally on the target, clamped so the whole card stays on
+		-- screen. On viewports too narrow to inset it, fall back to centring
+		-- (math.clamp errors when min > max).
+		local lo = cardW / 2 + margin
+		local hi = vp.X - cardW / 2 - margin
+		local cx = (hi <= lo) and (vp.X / 2) or math.clamp(ap.X + sz.X / 2, lo, hi)
+		-- Prefer below the target when it sits in the top half, otherwise above.
+		-- Anchor from the top and clamp the top edge so the card is always fully
+		-- visible -- never slipping under the top inset or off the bottom.
+		local targetMidY = ap.Y + sz.Y / 2
+		local topY
+		if targetMidY < vp.Y / 2 then
+			topY = ap.Y + sz.Y + 22
+		else
+			topY = ap.Y - 22 - cardH
+		end
+		topY = math.clamp(topY, margin, math.max(margin, vp.Y - cardH - margin))
+		card.AnchorPoint = Vector2.new(0.5, 0)
+		card.Position = UDim2.fromOffset(cx, topY)
 	end
 
 	function clearStep()
@@ -5784,31 +5789,7 @@ local function playIntro()
 		local introScale = Instance.new("UIScale", introIcon)
 		introScale.Scale = 0
 
-		local introTitle = Instance.new("TextLabel", screenGui)
-		introTitle.AnchorPoint = Vector2.new(0.5, 0)
-		introTitle.Position = UDim2.new(0.5, 0, 0.5, 80)
-		introTitle.Size = UDim2.new(0, 400, 0, 30)
-		introTitle.BackgroundTransparency = 1
-		introTitle.Font = CONFIG.BoldFont
-		introTitle.Text = CONFIG.Title
-		introTitle.TextColor3 = CONFIG.Colors.Text
-		introTitle.TextSize = 24
-		introTitle.TextTransparency = 1
-		introTitle.ZIndex = 41
-
-		local bootLabel = Instance.new("TextLabel", screenGui)
-		bootLabel.AnchorPoint = Vector2.new(0.5, 0)
-		bootLabel.Position = UDim2.new(0.5, 0, 0.5, 118)
-		bootLabel.Size = UDim2.new(0, 420, 0, 62)
-		bootLabel.BackgroundTransparency = 1
-		bootLabel.Font = Enum.Font.Code
-		bootLabel.Text = ""
-		bootLabel.TextColor3 = CONFIG.Colors.InputEcho
-		bootLabel.TextSize = 14
-		bootLabel.TextTransparency = 0.15
-		bootLabel.ZIndex = 41
-
-		local introPieces = { overlay, ring, introIcon, introTitle, bootLabel }
+		local introPieces = { overlay, ring, introIcon }
 
 		local function finish()
 			if finished then
@@ -5875,7 +5856,6 @@ local function playIntro()
 			:Create(ringScale, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Scale = 1 })
 			:Play()
 		TweenService:Create(ringStroke, TweenInfo.new(0.6), { Transparency = 0.25 }):Play()
-		TweenService:Create(introTitle, TweenInfo.new(0.5), { TextTransparency = 0 }):Play()
 		local orbit = TweenService:Create(
 			ringGradient,
 			TweenInfo.new(3, Enum.EasingStyle.Linear, Enum.EasingDirection.Out, -1),
@@ -5892,36 +5872,10 @@ local function playIntro()
 
 		task.wait(0.55)
 
-		-- Phase 2: boot lines - real status, typed out
-		local bootLines = {
-			"> hooking executor... " .. (executorType and ("OK [" .. executorType .. "]") or "FAILED (not found)"),
-			"> loading settings... OK ["
-				.. themes[currentThemeIndex].Name
-				.. " / "
-				.. languages[currentLanguageIndex].Name
-				.. "]",
-			"> world client ready.",
-		}
-		local shown = ""
-		for _, line in ipairs(bootLines) do
-			if skipped then
-				break
-			end
-			for i = 1, #line do
-				if skipped then
-					break
-				end
-				bootLabel.Text = shown .. line:sub(1, i)
-				task.wait(0.012)
-			end
-			shown = shown .. line .. "\n"
-			bootLabel.Text = shown
-			if not skipped then
-				task.wait(0.25)
-			end
-		end
-		if not skipped then
-			task.wait(0.6)
+		-- Phase 2: hold on the globe for a beat (interruptible by a tap to skip).
+		local hold = 0
+		while hold < 1.1 and not skipped do
+			hold += task.wait()
 		end
 
 		if skipped then
@@ -5934,8 +5888,6 @@ local function playIntro()
 		-- Phase 3: arc flight to the dock
 		sway:Cancel()
 		TweenService:Create(introIcon, TweenInfo.new(0.3), { Rotation = 0 }):Play()
-		TweenService:Create(introTitle, TweenInfo.new(0.3), { TextTransparency = 1 }):Play()
-		TweenService:Create(bootLabel, TweenInfo.new(0.3), { TextTransparency = 1 }):Play()
 		TweenService:Create(ringStroke, TweenInfo.new(0.3), { Transparency = 1 }):Play()
 		TweenService
 			:Create(ringScale, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.In), { Scale = 0.2 })
