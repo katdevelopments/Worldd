@@ -3158,6 +3158,16 @@ local function showTutorial()
 	updatePage()
 end
 
+-- Settings and colour-picker UI construction lives in its own `do` scope so
+-- that the many build-time-only locals declared here are released at the
+-- matching `end`. Without this the main chunk stays above Luau's 200
+-- local-register limit and fails to compile ("Out of local registers").
+-- Only the handful still referenced afterwards are forward-declared above.
+local settingsFrame
+local consoleBtn
+local applyFpsBooster, applyAntiAfk
+local toggleSettings
+do
 local settingsOverlay = Instance.new("TextButton", screenGui)
 settingsOverlay.Name = "SettingsOverlay"
 settingsOverlay.Size = UDim2.new(1, 0, 1, 0)
@@ -3168,7 +3178,7 @@ settingsOverlay.Text = ""
 settingsOverlay.AutoButtonColor = false
 settingsOverlay.Visible = false
 
-local settingsFrame = Instance.new("Frame", screenGui)
+settingsFrame = Instance.new("Frame", screenGui)
 settingsFrame.Name = "SettingsFrame"
 settingsFrame.Size = UDim2.new(0, 320, 0.75, 0)
 settingsFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
@@ -3527,7 +3537,7 @@ local function createToggleRow(labelText, initial, onChanged)
 end
 
 -- === FPS booster & Anti-AFK ===
-local applyFpsBooster, applyAntiAfk
+-- (applyFpsBooster / applyAntiAfk are forward-declared above the enclosing block)
 do
 	local Lighting = game:GetService("Lighting")
 	local fpsConnection
@@ -4112,7 +4122,7 @@ table.insert(
 	end)
 )
 
-local consoleBtn = Instance.new("TextButton", settingsScroll)
+consoleBtn = Instance.new("TextButton", settingsScroll)
 consoleBtn.Name = "ConsoleBtn"
 consoleBtn.Size = UDim2.new(1, -6, 0, 36)
 consoleBtn.LayoutOrder = nextOrder()
@@ -4254,7 +4264,7 @@ function applySettings()
 	refreshInputHighlight()
 end
 
-local function toggleSettings()
+function toggleSettings()
 	local willBeVisible = not settingsFrame.Visible
 	if willBeVisible then
 		settingsOverlay.Visible = true
@@ -4293,6 +4303,7 @@ table.insert(
 		end
 	end)
 )
+end
 
 -- === Saved scripts library (📜) ===
 do
