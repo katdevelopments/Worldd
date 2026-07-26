@@ -849,74 +849,84 @@ CONFIG.Font = fontsList[currentFontIndex].Font
 CONFIG.BoldFont = fontsList[currentFontIndex].Bold
 CONFIG.TextSize = textSizes[currentTextSizeIndex].Size
 
--- Each page can spotlight a real UI element (Target) and optionally gate
--- progress on the user performing an action (Step). Targets are resolved to
--- live instances inside showTutorial so this data stays declarative.
+-- The tour is a centred modal, so the control a page talks about is hidden
+-- behind the dimmer while you read about it. Each page therefore carries the
+-- glyph of the real on-screen button (Icon) to give the reader something to
+-- match up once the tour closes.
 local tutorialPages = {
+	{
+		-- Kind = "intro" swaps in the language picker / Discord panel built in
+		-- showTutorial; every other page is plain copy.
+		Title = "Choose your language",
+		Kind = "intro",
+		Icon = "🌍",
+		Text = "Translate the whole interface into your language, then join our Discord for support, script drops and development news.",
+	},
 	{
 		Title = "Welcome!",
 		DynamicTitle = true,
-		Text = "Welcome to the World Client - a fast, mobile-friendly Luau executor. This quick tour points out each feature. Tap the arrow to continue, or Skip anytime.",
+		Icon = "👋",
+		Text = "Welcome to the World Client - a fast, mobile-friendly Luau executor. This quick tour points out each feature. Tap the arrow (or swipe) to continue, or Skip anytime.",
 	},
 	{
 		Title = "The Console",
+		Icon = "🖥️",
 		Text = "Script output, warnings, and errors all print here in colour - errors in red, warnings in amber. This is your main window into what your scripts are doing.",
-		Target = "console",
 	},
 	{
 		Title = "Search & Filter",
+		Icon = "🔎",
 		Text = "Search your logs, filter them by type (Output, Info, Warning, Error), and pin auto-scroll - all from this bar.",
-		Target = "filter",
 	},
 	{
 		Title = "The Code Editor",
+		Icon = "▶️",
 		Text = "Type Luau here and press Run (or the Enter key) to execute it. Your code is syntax-highlighted as you type.",
-		Target = "run",
 	},
 	{
 		Title = "Command History",
+		Icon = "⏫",
 		Text = "Press the Up and Down arrow keys while typing here to cycle back through scripts you've already run.",
-		Target = "history",
 	},
 	{
 		Title = "Multiple Tabs",
+		Icon = "🗂️",
 		Text = "Keep several scripts open at once - each tab remembers its own code. Use the rename option on a tab to give it a meaningful name.",
-		Target = "tabs",
 	},
 	{
 		Title = "Full-Screen Editor",
+		Icon = "↗️",
 		Text = "Your code is syntax-highlighted as you type. Tap the expand button on the editor row to switch to a full-screen editor with optional line numbers.",
-		Target = "editor",
 	},
 	{
 		Title = "Run from Clipboard",
+		Icon = "📥",
 		Text = "Copied a script from somewhere else? Tap 'Run from Clipboard' to execute it instantly - no pasting required.",
-		Target = "clipboard",
 	},
 	{
 		Title = "Saved Scripts",
+		Icon = "📜",
 		Text = "Save scripts you use often with the scroll button, then reload them any time. They stay saved between sessions.",
-		Target = "scripts",
 	},
 	{
 		Title = "Make It Yours",
+		Icon = "⚙️",
 		Text = "Open Settings for 13 themes plus a custom theme editor, 12 fonts, text sizes, visual effects, an FPS Booster, Anti-AFK, and auto-execute on join.",
-		Target = "settings",
 	},
 	{
 		Title = "100+ Languages",
+		Icon = "🌍",
 		Text = "Also in Settings: translate the entire interface - and even auto-translate your logs - into over 100 languages.",
-		Target = "settings",
 	},
 	{
 		Title = "Handy Buttons",
+		Icon = "🧰",
 		Text = "Copy all logs with the clipboard button, clear them with the bin, or refresh with the arrows. The globe opens our website and the speech bubble opens our Discord.",
-		Target = "copy",
 	},
 	{
 		Title = "You're all set!",
-		Text = "Tap the X to minimise me into a draggable bubble and start scripting. Reopen this tour any time by running tutorial().",
-		Target = "minimize",
+		Icon = "✖️",
+		Text = "Tap the X to minimise me into a draggable bubble and start scripting. Reopen this tour any time from Settings > Replay Tutorial.",
 	},
 }
 for _, page in ipairs(tutorialPages) do
@@ -925,6 +935,12 @@ for _, page in ipairs(tutorialPages) do
 end
 registerLocalizedString("Skip")
 registerLocalizedString("Welcome")
+registerLocalizedString("Tutorial skipped. Reopen it any time from Settings > Replay Tutorial.")
+registerLocalizedString("Console logs refreshed. Replay the intro from Settings > Replay Tutorial.")
+registerLocalizedString("Search language...")
+registerLocalizedString("Join our Discord")
+registerLocalizedString("Link copied!")
+registerLocalizedString("Discord link copied.")
 
 local function safeSetCursor(object, cursor)
 	pcall(function()
@@ -1200,6 +1216,9 @@ local function createIconButton(parent, emoji, size, colorType)
 	btn.Size = UDim2.new(0, size, 0, size)
 	btn.BackgroundColor3 = CONFIG.Colors[colorType]
 	btn:SetAttribute("ColorType", colorType)
+	-- Accent buttons used to hover to the neutral util colour and then snap back
+	-- to their accent on leave; give each colour its own hover partner.
+	btn:SetAttribute("HoverColorType", colorType == "SecondaryAccent" and "PrimaryAccent" or "UtilButtonHover")
 	btn.Font = Enum.Font.SourceSans
 	btn.Text = emoji
 	btn.TextColor3 = Color3.new(1, 1, 1)
@@ -1219,7 +1238,8 @@ local function createIconButton(parent, emoji, size, colorType)
 		connections,
 		btn.MouseEnter:Connect(function()
 			isHovered = true
-			TweenService:Create(btn, hoverInfo, { BackgroundColor3 = CONFIG.Colors.UtilButtonHover }):Play()
+			TweenService:Create(btn, hoverInfo, { BackgroundColor3 = CONFIG.Colors[btn:GetAttribute("HoverColorType")] })
+				:Play()
 			TweenService:Create(scale, hoverInfo, { Scale = 1.12 }):Play()
 		end)
 	)
@@ -2687,13 +2707,42 @@ do
 	refreshTabBar()
 end
 
-local tutorialActive = false
+-- Holds the live tour so the theme and localisation systems can reach into it
+-- without another top-level local (the main chunk is close to Luau's
+-- 200-register limit). `restyle`/`refresh` are set while a tour is on screen.
+local tutorialState = { active = false, closing = false, restyle = nil, refresh = nil }
+
+table.insert(themedUpdaters, function(theme, fontData)
+	if tutorialState.restyle then
+		tutorialState.restyle(theme, fontData)
+	end
+end)
+
+registerLocalizedRefresher(function()
+	if tutorialState.refresh then
+		tutorialState.refresh()
+	end
+end)
+
 local function showTutorial()
-	if tutorialActive then
+	if tutorialState.active then
 		return
 	end
-	tutorialActive = true
+	tutorialState.active = true
+	tutorialState.closing = false
 	tutorialShown = true
+
+	-- Connections owned by this tour only. They are torn down on close so that
+	-- replaying the tour doesn't pile up handlers on the shared `connections`
+	-- table for buttons that no longer exist.
+	local tourConnections = {}
+	local function track(conn)
+		table.insert(tourConnections, conn)
+	end
+
+	-- Text sizes follow the user's chosen size (12/14/17) instead of being
+	-- hard-coded, so a "Large" reader gets a large tour.
+	local baseSize = CONFIG.TextSize
 
 	-- Full-screen dimmer. It is an Active TextButton so the rest of the UI stays
 	-- inert while the tour is open; nothing on screen is highlighted.
@@ -2710,17 +2759,21 @@ local function showTutorial()
 	TweenService:Create(dimOverlay, TweenInfo.new(0.4), { BackgroundTransparency = 0.62 }):Play()
 
 	-- === Centred tip card ===
+	-- The card grows to fit its text (AutomaticSize + list layout) rather than
+	-- sitting at a fixed height, so longer translations wrap instead of clipping.
 	local card = Instance.new("Frame", screenGui)
 	card.Name = "TutorialCard"
-	card.Size = UDim2.new(1, -24, 0, 210)
+	card.Size = UDim2.new(1, -24, 0, 0)
+	card.AutomaticSize = Enum.AutomaticSize.Y
 	card.AnchorPoint = Vector2.new(0.5, 0.5)
 	card.Position = UDim2.new(0.5, 0, 0.5, 0)
 	card.BackgroundColor3 = CONFIG.Colors.Background
 	card.BackgroundTransparency = 0.03
 	card.ZIndex = 45
+	card.Active = true
 	local cardSizeLimit = Instance.new("UISizeConstraint", card)
-	cardSizeLimit.MaxSize = Vector2.new(340, 210)
-	cardSizeLimit.MinSize = Vector2.new(220, 210)
+	cardSizeLimit.MaxSize = Vector2.new(340, math.huge)
+	cardSizeLimit.MinSize = Vector2.new(220, 0)
 	Instance.new("UICorner", card).CornerRadius = UDim.new(0, 10)
 	local cardScale = Instance.new("UIScale", card)
 	cardScale.Scale = 0
@@ -2728,77 +2781,309 @@ local function showTutorial()
 	cardStroke.Color = CONFIG.Colors.PrimaryAccent
 	cardStroke.Thickness = 2
 
-	local tutTitle = Instance.new("TextLabel", card)
-	tutTitle.Size = UDim2.new(1, -24, 0, 28)
-	tutTitle.Position = UDim2.new(0.5, 0, 0, 12)
-	tutTitle.AnchorPoint = Vector2.new(0.5, 0)
+	local cardPadding = Instance.new("UIPadding", card)
+	cardPadding.PaddingTop = UDim.new(0, 12)
+	cardPadding.PaddingBottom = UDim.new(0, 12)
+	cardPadding.PaddingLeft = UDim.new(0, 12)
+	cardPadding.PaddingRight = UDim.new(0, 12)
+
+	local cardLayout = Instance.new("UIListLayout", card)
+	cardLayout.FillDirection = Enum.FillDirection.Vertical
+	cardLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	cardLayout.Padding = UDim.new(0, 10)
+
+	-- Row 1: page icon, title, and Skip.
+	local headerRow = Instance.new("Frame", card)
+	headerRow.Name = "TutorialHeader"
+	headerRow.LayoutOrder = 1
+	headerRow.Size = UDim2.new(1, 0, 0, math.max(30, baseSize + 16))
+	headerRow.BackgroundTransparency = 1
+	headerRow.ZIndex = 46
+
+	local tutIcon = Instance.new("TextLabel", headerRow)
+	tutIcon.Name = "TutorialIcon"
+	tutIcon.Size = UDim2.new(0, 26, 1, 0)
+	tutIcon.BackgroundTransparency = 1
+	tutIcon.Font = Enum.Font.SourceSans
+	tutIcon.TextColor3 = CONFIG.Colors.Text
+	tutIcon.TextSize = baseSize + 6
+	tutIcon.TextXAlignment = Enum.TextXAlignment.Left
+	tutIcon.Text = ""
+	tutIcon.ZIndex = 46
+
+	-- Text-only (no ✕ glyph) and width-following-content, so translations such as
+	-- "Überspringen" aren't clipped by a fixed button width.
+	local skipButton = Instance.new("TextButton", headerRow)
+	skipButton.Name = "TutorialSkip"
+	skipButton.Size = UDim2.new(0, 0, 0, 24)
+	skipButton.AutomaticSize = Enum.AutomaticSize.X
+	skipButton.Position = UDim2.new(1, 0, 0.5, 0)
+	skipButton.AnchorPoint = Vector2.new(1, 0.5)
+	skipButton.BackgroundTransparency = 1
+	skipButton.Font = CONFIG.Font
+	skipButton.Text = tr("Skip")
+	skipButton.TextColor3 = CONFIG.Colors.InputEcho
+	skipButton.TextSize = baseSize
+	skipButton.TextXAlignment = Enum.TextXAlignment.Right
+	skipButton.ZIndex = 47
+	safeSetCursor(skipButton, "rbxasset://SystemCursor/Arrow")
+
+	local tutTitle = Instance.new("TextLabel", headerRow)
+	tutTitle.Name = "TutorialTitle"
+	tutTitle.Position = UDim2.new(0, 32, 0, 0)
+	tutTitle.Size = UDim2.new(1, -92, 1, 0)
 	tutTitle.BackgroundTransparency = 1
 	tutTitle.Font = CONFIG.BoldFont
 	tutTitle.TextColor3 = CONFIG.Colors.Text
-	tutTitle.TextSize = 20
+	tutTitle.TextSize = baseSize + 5
 	tutTitle.TextXAlignment = Enum.TextXAlignment.Left
+	tutTitle.TextTruncate = Enum.TextTruncate.AtEnd
 	tutTitle.ZIndex = 46
 
+	-- Skip auto-sizes to its translated text, so the title takes whatever width
+	-- is left over instead of a fixed slice that a long language would overrun.
+	local function syncTitleWidth()
+		local reserved = 32 + (skipButton.Visible and (skipButton.AbsoluteSize.X + 10) or 0)
+		tutTitle.Size = UDim2.new(1, -reserved, 1, 0)
+	end
+	track(skipButton:GetPropertyChangedSignal("AbsoluteSize"):Connect(syncTitleWidth))
+
+	-- Row 2: body copy. AutomaticSize.Y drives the card's height.
 	local tutBody = Instance.new("TextLabel", card)
-	tutBody.Size = UDim2.new(1, -24, 0, 108)
-	tutBody.Position = UDim2.new(0.5, 0, 0, 44)
-	tutBody.AnchorPoint = Vector2.new(0.5, 0)
+	tutBody.Name = "TutorialBody"
+	tutBody.LayoutOrder = 2
+	tutBody.Size = UDim2.new(1, 0, 0, 0)
+	tutBody.AutomaticSize = Enum.AutomaticSize.Y
 	tutBody.BackgroundTransparency = 1
 	tutBody.Font = CONFIG.Font
 	tutBody.TextColor3 = CONFIG.Colors.Text
-	tutBody.TextSize = 15
+	tutBody.TextSize = baseSize + 1
 	tutBody.TextWrapped = true
 	tutBody.TextXAlignment = Enum.TextXAlignment.Left
 	tutBody.TextYAlignment = Enum.TextYAlignment.Top
 	tutBody.Text = ""
 	tutBody.ZIndex = 46
 
-	local dots = Instance.new("TextLabel", card)
-	dots.Size = UDim2.new(1, -120, 0, 20)
-	dots.Position = UDim2.new(0.5, 0, 1, -16)
-	dots.AnchorPoint = Vector2.new(0.5, 1)
-	dots.BackgroundTransparency = 1
-	dots.Font = CONFIG.Font
-	dots.TextColor3 = CONFIG.Colors.SecondaryAccent
-	dots.TextSize = 14
-	dots.ZIndex = 46
+	-- Row 3: the first-run panel - language picker plus a Discord invite. Only
+	-- the "intro" page shows it; UIListLayout skips it while it is hidden, so
+	-- the card shrinks back to plain-copy height on every other page.
+	local introPanel = Instance.new("Frame", card)
+	introPanel.Name = "TutorialIntroPanel"
+	introPanel.LayoutOrder = 3
+	introPanel.Size = UDim2.new(1, 0, 0, 0)
+	introPanel.AutomaticSize = Enum.AutomaticSize.Y
+	introPanel.BackgroundTransparency = 1
+	introPanel.Visible = false
+	introPanel.ZIndex = 46
 
-	local prevButton = createIconButton(card, "⬅️", 34, "UtilButton")
-	prevButton.Position = UDim2.new(0, 12, 1, -12)
-	prevButton.AnchorPoint = Vector2.new(0, 1)
+	local introLayout = Instance.new("UIListLayout", introPanel)
+	introLayout.FillDirection = Enum.FillDirection.Vertical
+	introLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	introLayout.Padding = UDim.new(0, 6)
+
+	local langSearch = Instance.new("TextBox", introPanel)
+	langSearch.Name = "TutorialLangSearch"
+	langSearch.LayoutOrder = 1
+	langSearch.Size = UDim2.new(1, 0, 0, 28)
+	langSearch.BackgroundColor3 = CONFIG.Colors.UtilButton
+	langSearch.Font = CONFIG.Font
+	langSearch.TextColor3 = CONFIG.Colors.Text
+	langSearch.PlaceholderColor3 = CONFIG.Colors.InputEcho
+	langSearch.PlaceholderText = "🔎 " .. tr("Search language...")
+	langSearch.Text = ""
+	langSearch.TextSize = baseSize
+	langSearch.ClearTextOnFocus = false
+	langSearch.ZIndex = 47
+	Instance.new("UICorner", langSearch).CornerRadius = UDim.new(0, 6)
+	local searchPad = Instance.new("UIPadding", langSearch)
+	searchPad.PaddingLeft = UDim.new(0, 8)
+	searchPad.PaddingRight = UDim.new(0, 8)
+
+	-- Height follows the viewport so the card still fits on short screens
+	-- (landscape phones) without the picker being useless on tall ones.
+	local listHeight = math.clamp(math.floor(screenGui.AbsoluteSize.Y * 0.22), 68, 120)
+	local langScroll = Instance.new("ScrollingFrame", introPanel)
+	langScroll.Name = "TutorialLangList"
+	langScroll.LayoutOrder = 2
+	langScroll.Size = UDim2.new(1, 0, 0, listHeight)
+	langScroll.BackgroundColor3 = CONFIG.Colors.UtilButton
+	langScroll.BackgroundTransparency = 0.5
+	langScroll.BorderSizePixel = 0
+	langScroll.ScrollBarThickness = 4
+	langScroll.ScrollBarImageColor3 = CONFIG.Colors.PrimaryAccent
+	langScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+	langScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	langScroll.Active = true
+	langScroll.ZIndex = 47
+	Instance.new("UICorner", langScroll).CornerRadius = UDim.new(0, 6)
+
+	local langListLayout = Instance.new("UIListLayout", langScroll)
+	langListLayout.FillDirection = Enum.FillDirection.Vertical
+	langListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+	local discordButtonTour = Instance.new("TextButton", introPanel)
+	discordButtonTour.Name = "TutorialDiscordBtn"
+	discordButtonTour.LayoutOrder = 3
+	discordButtonTour.Size = UDim2.new(1, 0, 0, 32)
+	discordButtonTour.BackgroundColor3 = CONFIG.Colors.SecondaryAccent
+	discordButtonTour.Font = CONFIG.BoldFont
+	discordButtonTour.TextColor3 = Color3.new(1, 1, 1)
+	discordButtonTour.TextSize = baseSize
+	discordButtonTour.Text = "💬  " .. tr("Join our Discord")
+	discordButtonTour.ZIndex = 47
+	Instance.new("UICorner", discordButtonTour).CornerRadius = UDim.new(0, 6)
+	addDepthGradient(discordButtonTour)
+	safeSetCursor(discordButtonTour, "rbxasset://SystemCursor/Arrow")
+
+	-- One row per language, built once and filtered by Visible on search.
+	local langRows = {}
+	-- Takes the theme it should paint with so the restyle hook and CONFIG can't
+	-- disagree; falls back to CONFIG for ordinary selection changes.
+	local function syncLangSelection(theme, fontData)
+		theme = theme or CONFIG.Colors
+		local bodyFont = fontData and fontData.Font or CONFIG.Font
+		local boldFont = fontData and fontData.Bold or CONFIG.BoldFont
+		for index, row in pairs(langRows) do
+			local selected = index == currentLanguageIndex
+			row.BackgroundTransparency = selected and 0 or 1
+			row.TextColor3 = selected and Color3.new(1, 1, 1) or theme.Text
+			row.Font = selected and boldFont or bodyFont
+		end
+	end
+
+	for index, lang in ipairs(languages) do
+		local row = Instance.new("TextButton", langScroll)
+		row.Name = "Lang_" .. lang.Code
+		row.LayoutOrder = index
+		row.Size = UDim2.new(1, -4, 0, 24)
+		row.BackgroundColor3 = CONFIG.Colors.PrimaryAccent
+		row.BackgroundTransparency = 1
+		row.BorderSizePixel = 0
+		row.Font = CONFIG.Font
+		row.TextColor3 = CONFIG.Colors.Text
+		row.TextSize = baseSize
+		row.TextXAlignment = Enum.TextXAlignment.Left
+		row.Text = "  " .. lang.Name
+		row.ZIndex = 48
+		Instance.new("UICorner", row).CornerRadius = UDim.new(0, 4)
+		safeSetCursor(row, "rbxasset://SystemCursor/Arrow")
+		langRows[index] = row
+
+		track(row.MouseButton1Click:Connect(function()
+			if currentLanguageIndex == index then
+				return
+			end
+			currentLanguageIndex = index
+			syncLangSelection()
+			-- Re-fetches every registered string; the tour's localisation
+			-- refresher re-renders this card as the translations land.
+			localizeUI()
+			saveSettings()
+		end))
+	end
+	syncLangSelection()
+
+	-- Open the list at the language already in use instead of at the top.
+	task.defer(function()
+		if langScroll.Parent then
+			langScroll.CanvasPosition =
+				Vector2.new(0, math.max(0, (currentLanguageIndex - 1) * 24 - math.floor(listHeight / 2)))
+		end
+	end)
+
+	track(langSearch:GetPropertyChangedSignal("Text"):Connect(function()
+		local query = langSearch.Text:lower()
+		for index, row in pairs(langRows) do
+			row.Visible = query == "" or languages[index].Name:lower():find(query, 1, true) ~= nil
+		end
+	end))
+
+	track(discordButtonTour.MouseButton1Click:Connect(function()
+		pcall(setclipboard, "https://discord.gg/worldclient")
+		discordButtonTour.Text = "✅  " .. tr("Link copied!")
+		log(tr("Discord link copied."), "Output")
+		task.delay(2, function()
+			if discordButtonTour.Parent then
+				discordButtonTour.Text = "💬  " .. tr("Join our Discord")
+			end
+		end)
+	end))
+
+	-- Row 4: a progress bar. A 13-dot string overflowed on narrow phones, so the
+	-- fill plus an "n / total" counter carries the same information at any width.
+	local progressTrack = Instance.new("Frame", card)
+	progressTrack.Name = "TutorialProgressTrack"
+	progressTrack.LayoutOrder = 4
+	progressTrack.Size = UDim2.new(1, 0, 0, 4)
+	progressTrack.BackgroundColor3 = CONFIG.Colors.UtilButton
+	progressTrack.BorderSizePixel = 0
+	progressTrack.ZIndex = 46
+	Instance.new("UICorner", progressTrack).CornerRadius = UDim.new(1, 0)
+
+	local progressFill = Instance.new("Frame", progressTrack)
+	progressFill.Name = "TutorialProgressFill"
+	progressFill.Size = UDim2.new(0, 0, 1, 0)
+	progressFill.BackgroundColor3 = CONFIG.Colors.SecondaryAccent
+	progressFill.BorderSizePixel = 0
+	progressFill.ZIndex = 47
+	Instance.new("UICorner", progressFill).CornerRadius = UDim.new(1, 0)
+
+	-- Row 5: back / counter / next.
+	local footerRow = Instance.new("Frame", card)
+	footerRow.Name = "TutorialFooter"
+	footerRow.LayoutOrder = 5
+	footerRow.Size = UDim2.new(1, 0, 0, 34)
+	footerRow.BackgroundTransparency = 1
+	footerRow.ZIndex = 46
+
+	local counter = Instance.new("TextLabel", footerRow)
+	counter.Name = "TutorialCounter"
+	counter.Size = UDim2.new(1, -88, 1, 0)
+	counter.Position = UDim2.new(0.5, 0, 0.5, 0)
+	counter.AnchorPoint = Vector2.new(0.5, 0.5)
+	counter.BackgroundTransparency = 1
+	counter.Font = CONFIG.Font
+	counter.TextColor3 = CONFIG.Colors.SecondaryAccent
+	counter.TextSize = baseSize
+	counter.ZIndex = 46
+
+	local prevButton = createIconButton(footerRow, "⬅️", 34, "UtilButton")
+	prevButton.Position = UDim2.new(0, 0, 0.5, 0)
+	prevButton.AnchorPoint = Vector2.new(0, 0.5)
 	prevButton.ZIndex = 46
+	prevButton.Font = CONFIG.BoldFont
 
-	local nextButton = createIconButton(card, "➡️", 34, "SecondaryAccent")
-	nextButton.Position = UDim2.new(1, -12, 1, -12)
-	nextButton.AnchorPoint = Vector2.new(1, 1)
+	local nextButton = createIconButton(footerRow, "➡️", 34, "SecondaryAccent")
+	nextButton.Position = UDim2.new(1, 0, 0.5, 0)
+	nextButton.AnchorPoint = Vector2.new(1, 0.5)
 	nextButton.ZIndex = 46
-
-	local skipButton = Instance.new("TextButton", card)
-	skipButton.Size = UDim2.new(0, 54, 0, 24)
-	skipButton.Position = UDim2.new(1, -12, 0, 10)
-	skipButton.AnchorPoint = Vector2.new(1, 0)
-	skipButton.BackgroundTransparency = 1
-	skipButton.Font = CONFIG.Font
-	skipButton.Text = tr("Skip") .. " ✕"
-	skipButton.TextColor3 = CONFIG.Colors.InputEcho
-	skipButton.TextSize = 14
-	skipButton.TextXAlignment = Enum.TextXAlignment.Right
-	skipButton.ZIndex = 47
-	safeSetCursor(skipButton, "rbxasset://SystemCursor/Arrow")
+	nextButton.Font = CONFIG.BoldFont
 
 	local pages = tutorialPages
 	local currentPage = 1
+	local renderedPage = nil
 
 	-- Forward declarations so the handlers can reference each other.
-	local updatePage, closeTutorial, advance
+	local updatePage, closeTutorial, advance, back
 
 	function advance()
+		if tutorialState.closing then
+			return
+		end
 		if currentPage < #pages then
 			currentPage += 1
 			updatePage()
 		else
-			closeTutorial()
+			closeTutorial(true)
 		end
+	end
+
+	function back()
+		if tutorialState.closing or currentPage <= 1 then
+			return
+		end
+		currentPage -= 1
+		updatePage()
 	end
 
 	function updatePage()
@@ -2813,25 +3098,66 @@ local function showTutorial()
 			tutTitle.Text = tr(pageData.Title)
 		end
 		tutBody.Text = tr(pageData.Text)
+		tutIcon.Text = pageData.Icon or ""
+		skipButton.Text = tr("Skip")
 
-		local filled = ("●"):rep(currentPage)
-		local empty = ("○"):rep(#pages - currentPage)
-		dots.Text = filled .. empty
+		introPanel.Visible = pageData.Kind == "intro"
+		if introPanel.Visible then
+			langSearch.PlaceholderText = "🔎 " .. tr("Search language...")
+			discordButtonTour.Text = "💬  " .. tr("Join our Discord")
+		end
+
+		counter.Text = currentPage .. " / " .. #pages
+		-- updatePage also runs on every localisation refresh, so only animate the
+		-- bar when the page actually moved; otherwise snap it.
+		local fillSize = UDim2.new(currentPage / #pages, 0, 1, 0)
+		if renderedPage == currentPage then
+			progressFill.Size = fillSize
+		else
+			renderedPage = currentPage
+			TweenService:Create(progressFill, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+				Size = fillSize,
+			}):Play()
+		end
 
 		prevButton.Visible = currentPage > 1
 		skipButton.Visible = (currentPage ~= #pages)
 		nextButton.Text = (currentPage == #pages) and "✅" or "➡️"
+		syncTitleWidth()
 	end
 
-	function closeTutorial()
-		if not card.Parent then
+	function closeTutorial(completed)
+		if tutorialState.closing or not card.Parent then
 			return
 		end
-		tutorialActive = false
+		tutorialState.closing = true
+		tutorialState.restyle = nil
+		tutorialState.refresh = nil
+
+		for _, conn in ipairs(tourConnections) do
+			pcall(function()
+				conn:Disconnect()
+			end)
+		end
+		table.clear(tourConnections)
+
+		-- createIconButton registers every button it makes for theme updates;
+		-- drop the two this tour owns so the list doesn't grow on each replay.
+		for _, btn in ipairs({ prevButton, nextButton }) do
+			local at = table.find(utilButtons, btn)
+			if at then
+				table.remove(utilButtons, at)
+			end
+		end
+
 		if not tutorialCompleted then
 			tutorialCompleted = true
 			saveSettings()
 		end
+		if not completed and log then
+			log(tr("Tutorial skipped. Reopen it any time from Settings > Replay Tutorial."), "Info")
+		end
+
 		if dimOverlay.Parent then
 			TweenService:Create(dimOverlay, TweenInfo.new(0.3), { BackgroundTransparency = 1 }):Play()
 			task.delay(0.3, function()
@@ -2847,24 +3173,125 @@ local function showTutorial()
 		if card.Parent then
 			card:Destroy()
 		end
+		-- Cleared only once the card is really gone, so a `tutorial()` call
+		-- during the fade can't stack a second tour on top of this one.
+		tutorialState.active = false
+		tutorialState.closing = false
 	end
 
-	table.insert(
-		connections,
-		prevButton.MouseButton1Click:Connect(function()
-			if currentPage > 1 then
-				currentPage -= 1
-				updatePage()
+	-- Swipe left/right anywhere on the tour to page through it, and tap the
+	-- dimmed backdrop to advance. Both were dead space before.
+	local function attachGestures(target, tapAdvances, blocked)
+		-- Track the exact InputObject that started the gesture so a second finger
+		-- (or the mouse) can't close a swipe that a different pointer opened.
+		local startX, startInput = nil, nil
+		track(target.InputBegan:Connect(function(input)
+			if blocked and blocked() then
+				return
 			end
-		end)
-	)
-	table.insert(connections, nextButton.MouseButton1Click:Connect(advance))
-	table.insert(
-		connections,
-		skipButton.MouseButton1Click:Connect(function()
-			closeTutorial()
-		end)
-	)
+			if
+				input.UserInputType == Enum.UserInputType.Touch
+				or input.UserInputType == Enum.UserInputType.MouseButton1
+			then
+				startX = input.Position.X
+				startInput = input
+			end
+		end))
+		track(target.InputEnded:Connect(function(input)
+			if startInput == nil or input ~= startInput then
+				return
+			end
+			local delta = input.Position.X - startX
+			startX, startInput = nil, nil
+			if delta <= -40 then
+				advance()
+			elseif delta >= 40 then
+				back()
+			elseif tapAdvances and math.abs(delta) < 12 then
+				advance()
+			end
+		end))
+	end
+	attachGestures(dimOverlay, true)
+	-- Swiping the card is disabled on the intro page: a drag there belongs to the
+	-- language list, not to paging.
+	attachGestures(card, false, function()
+		return introPanel.Visible
+	end)
+
+	track(UserInputService.InputBegan:Connect(function(input, gameProcessed)
+		if gameProcessed or not card.Parent then
+			return
+		end
+		local key = input.KeyCode
+		if key == Enum.KeyCode.Escape then
+			closeTutorial(currentPage == #pages)
+		elseif
+			key == Enum.KeyCode.Return
+			or key == Enum.KeyCode.KeypadEnter
+			or key == Enum.KeyCode.Space
+			or key == Enum.KeyCode.Right
+			or key == Enum.KeyCode.Down
+		then
+			advance()
+		elseif key == Enum.KeyCode.Left or key == Enum.KeyCode.Up then
+			back()
+		end
+	end))
+
+	track(prevButton.MouseButton1Click:Connect(back))
+	track(nextButton.MouseButton1Click:Connect(advance))
+	track(skipButton.MouseButton1Click:Connect(function()
+		closeTutorial(false)
+	end))
+
+	-- Re-render on a language switch and re-tint on a theme/font switch while
+	-- the card is on screen; both used to leave the tour stale.
+	tutorialState.refresh = function()
+		updatePage()
+	end
+	tutorialState.restyle = function(theme, fontData)
+		if not card.Parent then
+			return
+		end
+		tintTween(card, { BackgroundColor3 = theme.Background })
+		tintTween(cardStroke, { Color = theme.PrimaryAccent })
+		tintTween(tutTitle, { TextColor3 = theme.Text })
+		tintTween(tutIcon, { TextColor3 = theme.Text })
+		tintTween(tutBody, { TextColor3 = theme.Text })
+		tintTween(counter, { TextColor3 = theme.SecondaryAccent })
+		tintTween(skipButton, { TextColor3 = theme.InputEcho })
+		tintTween(progressTrack, { BackgroundColor3 = theme.UtilButton })
+		tintTween(progressFill, { BackgroundColor3 = theme.SecondaryAccent })
+		tintTween(langSearch, { BackgroundColor3 = theme.UtilButton, TextColor3 = theme.Text })
+		tintTween(langScroll, { BackgroundColor3 = theme.UtilButton, ScrollBarImageColor3 = theme.PrimaryAccent })
+		tintTween(discordButtonTour, { BackgroundColor3 = theme.SecondaryAccent })
+		langSearch.PlaceholderColor3 = theme.InputEcho
+		tutTitle.Font = fontData.Bold
+		tutBody.Font = fontData.Font
+		counter.Font = fontData.Font
+		skipButton.Font = fontData.Font
+		langSearch.Font = fontData.Font
+		discordButtonTour.Font = fontData.Bold
+		prevButton.Font = fontData.Bold
+		nextButton.Font = fontData.Bold
+
+		local newBase = CONFIG.TextSize
+		tutTitle.TextSize = newBase + 5
+		tutIcon.TextSize = newBase + 6
+		tutBody.TextSize = newBase + 1
+		counter.TextSize = newBase
+		skipButton.TextSize = newBase
+		langSearch.TextSize = newBase
+		discordButtonTour.TextSize = newBase
+		headerRow.Size = UDim2.new(1, 0, 0, math.max(30, newBase + 16))
+
+		for _, row in pairs(langRows) do
+			row.TextSize = newBase
+			row.BackgroundColor3 = theme.PrimaryAccent
+		end
+		syncLangSelection(theme, fontData)
+	end
 
 	TweenService:Create(cardScale, TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 }):Play()
 	createClickParticles(card, CONFIG.Colors.PrimaryAccent)
@@ -3825,8 +4252,8 @@ end)
 table.insert(
 	connections,
 	replayTutorialBtn.MouseButton1Click:Connect(function()
-		-- Close the settings panel immediately, then launch the tour so the
-		-- spotlight can highlight the real controls behind it.
+		-- Close the settings panel immediately so the tour's dimmer isn't
+		-- stacked on top of it.
 		closePicker(true)
 		settingsScale.Scale = 0
 		settingsFrame.Visible = false
@@ -3909,19 +4336,8 @@ function applySettings()
 	tintTween(inputContainer, { ScrollBarImageColor3 = theme.Text })
 	tintTween(inputBox, { TextColor3 = theme.Text })
 
-	local tutFrame = screenGui:FindFirstChild("TutorialCard")
-	if tutFrame then
-		tintTween(tutFrame, { BackgroundColor3 = theme.Background })
-		local tStroke = tutFrame:FindFirstChildOfClass("UIStroke")
-		if tStroke then
-			tintTween(tStroke, { Color = theme.PrimaryAccent })
-		end
-		local tTitle = tutFrame:FindFirstChild("TextLabel")
-		if tTitle then
-			tintTween(tTitle, { TextColor3 = theme.Text })
-			tTitle.Font = fontData.Bold
-		end
-	end
+	-- The tutorial card restyles itself through themedUpdaters (see showTutorial);
+	-- it used to be patched here by class lookup, which only ever found the title.
 
 	for i = #utilButtons, 1, -1 do
 		local btn = utilButtons[i]
@@ -4988,7 +5404,7 @@ local function refreshLogs()
 		end
 		log(entry.message, typeStr, true)
 	end
-	log("Console logs refreshed. Type 'tutorial()' to see the intro again.", "Info", true)
+	log(tr("Console logs refreshed. Replay the intro from Settings > Replay Tutorial."), "Info", true)
 	requestCanvasUpdate()
 	scrollLogsToBottom()
 end
