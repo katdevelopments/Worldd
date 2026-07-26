@@ -855,6 +855,14 @@ CONFIG.TextSize = textSizes[currentTextSizeIndex].Size
 -- match up once the tour closes.
 local tutorialPages = {
 	{
+		-- Kind = "intro" swaps in the language picker / Discord panel built in
+		-- showTutorial; every other page is plain copy.
+		Title = "Choose your language",
+		Kind = "intro",
+		Icon = "🌍",
+		Text = "Translate the whole interface into your language, then join our Discord for support, script drops and development news.",
+	},
+	{
 		Title = "Welcome!",
 		DynamicTitle = true,
 		Icon = "👋",
@@ -929,6 +937,10 @@ registerLocalizedString("Skip")
 registerLocalizedString("Welcome")
 registerLocalizedString("Tutorial skipped. Reopen it any time from Settings > Replay Tutorial.")
 registerLocalizedString("Console logs refreshed. Replay the intro from Settings > Replay Tutorial.")
+registerLocalizedString("Search language...")
+registerLocalizedString("Join our Discord")
+registerLocalizedString("Link copied!")
+registerLocalizedString("Discord link copied.")
 
 local function safeSetCursor(object, cursor)
 	pcall(function()
@@ -2852,11 +2864,156 @@ local function showTutorial()
 	tutBody.Text = ""
 	tutBody.ZIndex = 46
 
-	-- Row 3: a progress bar. A 13-dot string overflowed on narrow phones, so the
+	-- Row 3: the first-run panel - language picker plus a Discord invite. Only
+	-- the "intro" page shows it; UIListLayout skips it while it is hidden, so
+	-- the card shrinks back to plain-copy height on every other page.
+	local introPanel = Instance.new("Frame", card)
+	introPanel.Name = "TutorialIntroPanel"
+	introPanel.LayoutOrder = 3
+	introPanel.Size = UDim2.new(1, 0, 0, 0)
+	introPanel.AutomaticSize = Enum.AutomaticSize.Y
+	introPanel.BackgroundTransparency = 1
+	introPanel.Visible = false
+	introPanel.ZIndex = 46
+
+	local introLayout = Instance.new("UIListLayout", introPanel)
+	introLayout.FillDirection = Enum.FillDirection.Vertical
+	introLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	introLayout.Padding = UDim.new(0, 6)
+
+	local langSearch = Instance.new("TextBox", introPanel)
+	langSearch.Name = "TutorialLangSearch"
+	langSearch.LayoutOrder = 1
+	langSearch.Size = UDim2.new(1, 0, 0, 28)
+	langSearch.BackgroundColor3 = CONFIG.Colors.UtilButton
+	langSearch.Font = CONFIG.Font
+	langSearch.TextColor3 = CONFIG.Colors.Text
+	langSearch.PlaceholderColor3 = CONFIG.Colors.InputEcho
+	langSearch.PlaceholderText = "🔎 " .. tr("Search language...")
+	langSearch.Text = ""
+	langSearch.TextSize = baseSize
+	langSearch.ClearTextOnFocus = false
+	langSearch.ZIndex = 47
+	Instance.new("UICorner", langSearch).CornerRadius = UDim.new(0, 6)
+	local searchPad = Instance.new("UIPadding", langSearch)
+	searchPad.PaddingLeft = UDim.new(0, 8)
+	searchPad.PaddingRight = UDim.new(0, 8)
+
+	-- Height follows the viewport so the card still fits on short screens
+	-- (landscape phones) without the picker being useless on tall ones.
+	local listHeight = math.clamp(math.floor(screenGui.AbsoluteSize.Y * 0.22), 68, 120)
+	local langScroll = Instance.new("ScrollingFrame", introPanel)
+	langScroll.Name = "TutorialLangList"
+	langScroll.LayoutOrder = 2
+	langScroll.Size = UDim2.new(1, 0, 0, listHeight)
+	langScroll.BackgroundColor3 = CONFIG.Colors.UtilButton
+	langScroll.BackgroundTransparency = 0.5
+	langScroll.BorderSizePixel = 0
+	langScroll.ScrollBarThickness = 4
+	langScroll.ScrollBarImageColor3 = CONFIG.Colors.PrimaryAccent
+	langScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+	langScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	langScroll.Active = true
+	langScroll.ZIndex = 47
+	Instance.new("UICorner", langScroll).CornerRadius = UDim.new(0, 6)
+
+	local langListLayout = Instance.new("UIListLayout", langScroll)
+	langListLayout.FillDirection = Enum.FillDirection.Vertical
+	langListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+	local discordButtonTour = Instance.new("TextButton", introPanel)
+	discordButtonTour.Name = "TutorialDiscordBtn"
+	discordButtonTour.LayoutOrder = 3
+	discordButtonTour.Size = UDim2.new(1, 0, 0, 32)
+	discordButtonTour.BackgroundColor3 = CONFIG.Colors.SecondaryAccent
+	discordButtonTour.Font = CONFIG.BoldFont
+	discordButtonTour.TextColor3 = Color3.new(1, 1, 1)
+	discordButtonTour.TextSize = baseSize
+	discordButtonTour.Text = "💬  " .. tr("Join our Discord")
+	discordButtonTour.ZIndex = 47
+	Instance.new("UICorner", discordButtonTour).CornerRadius = UDim.new(0, 6)
+	addDepthGradient(discordButtonTour)
+	safeSetCursor(discordButtonTour, "rbxasset://SystemCursor/Arrow")
+
+	-- One row per language, built once and filtered by Visible on search.
+	local langRows = {}
+	-- Takes the theme it should paint with so the restyle hook and CONFIG can't
+	-- disagree; falls back to CONFIG for ordinary selection changes.
+	local function syncLangSelection(theme, fontData)
+		theme = theme or CONFIG.Colors
+		local bodyFont = fontData and fontData.Font or CONFIG.Font
+		local boldFont = fontData and fontData.Bold or CONFIG.BoldFont
+		for index, row in pairs(langRows) do
+			local selected = index == currentLanguageIndex
+			row.BackgroundTransparency = selected and 0 or 1
+			row.TextColor3 = selected and Color3.new(1, 1, 1) or theme.Text
+			row.Font = selected and boldFont or bodyFont
+		end
+	end
+
+	for index, lang in ipairs(languages) do
+		local row = Instance.new("TextButton", langScroll)
+		row.Name = "Lang_" .. lang.Code
+		row.LayoutOrder = index
+		row.Size = UDim2.new(1, -4, 0, 24)
+		row.BackgroundColor3 = CONFIG.Colors.PrimaryAccent
+		row.BackgroundTransparency = 1
+		row.BorderSizePixel = 0
+		row.Font = CONFIG.Font
+		row.TextColor3 = CONFIG.Colors.Text
+		row.TextSize = baseSize
+		row.TextXAlignment = Enum.TextXAlignment.Left
+		row.Text = "  " .. lang.Name
+		row.ZIndex = 48
+		Instance.new("UICorner", row).CornerRadius = UDim.new(0, 4)
+		safeSetCursor(row, "rbxasset://SystemCursor/Arrow")
+		langRows[index] = row
+
+		track(row.MouseButton1Click:Connect(function()
+			if currentLanguageIndex == index then
+				return
+			end
+			currentLanguageIndex = index
+			syncLangSelection()
+			-- Re-fetches every registered string; the tour's localisation
+			-- refresher re-renders this card as the translations land.
+			localizeUI()
+			saveSettings()
+		end))
+	end
+	syncLangSelection()
+
+	-- Open the list at the language already in use instead of at the top.
+	task.defer(function()
+		if langScroll.Parent then
+			langScroll.CanvasPosition =
+				Vector2.new(0, math.max(0, (currentLanguageIndex - 1) * 24 - math.floor(listHeight / 2)))
+		end
+	end)
+
+	track(langSearch:GetPropertyChangedSignal("Text"):Connect(function()
+		local query = langSearch.Text:lower()
+		for index, row in pairs(langRows) do
+			row.Visible = query == "" or languages[index].Name:lower():find(query, 1, true) ~= nil
+		end
+	end))
+
+	track(discordButtonTour.MouseButton1Click:Connect(function()
+		pcall(setclipboard, "https://discord.gg/worldclient")
+		discordButtonTour.Text = "✅  " .. tr("Link copied!")
+		log(tr("Discord link copied."), "Output")
+		task.delay(2, function()
+			if discordButtonTour.Parent then
+				discordButtonTour.Text = "💬  " .. tr("Join our Discord")
+			end
+		end)
+	end))
+
+	-- Row 4: a progress bar. A 13-dot string overflowed on narrow phones, so the
 	-- fill plus an "n / total" counter carries the same information at any width.
 	local progressTrack = Instance.new("Frame", card)
 	progressTrack.Name = "TutorialProgressTrack"
-	progressTrack.LayoutOrder = 3
+	progressTrack.LayoutOrder = 4
 	progressTrack.Size = UDim2.new(1, 0, 0, 4)
 	progressTrack.BackgroundColor3 = CONFIG.Colors.UtilButton
 	progressTrack.BorderSizePixel = 0
@@ -2871,10 +3028,10 @@ local function showTutorial()
 	progressFill.ZIndex = 47
 	Instance.new("UICorner", progressFill).CornerRadius = UDim.new(1, 0)
 
-	-- Row 4: back / counter / next.
+	-- Row 5: back / counter / next.
 	local footerRow = Instance.new("Frame", card)
 	footerRow.Name = "TutorialFooter"
-	footerRow.LayoutOrder = 4
+	footerRow.LayoutOrder = 5
 	footerRow.Size = UDim2.new(1, 0, 0, 34)
 	footerRow.BackgroundTransparency = 1
 	footerRow.ZIndex = 46
@@ -2904,6 +3061,7 @@ local function showTutorial()
 
 	local pages = tutorialPages
 	local currentPage = 1
+	local renderedPage = nil
 
 	-- Forward declarations so the handlers can reference each other.
 	local updatePage, closeTutorial, advance, back
@@ -2943,10 +3101,24 @@ local function showTutorial()
 		tutIcon.Text = pageData.Icon or ""
 		skipButton.Text = tr("Skip")
 
+		introPanel.Visible = pageData.Kind == "intro"
+		if introPanel.Visible then
+			langSearch.PlaceholderText = "🔎 " .. tr("Search language...")
+			discordButtonTour.Text = "💬  " .. tr("Join our Discord")
+		end
+
 		counter.Text = currentPage .. " / " .. #pages
-		TweenService:Create(progressFill, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-			Size = UDim2.new(currentPage / #pages, 0, 1, 0),
-		}):Play()
+		-- updatePage also runs on every localisation refresh, so only animate the
+		-- bar when the page actually moved; otherwise snap it.
+		local fillSize = UDim2.new(currentPage / #pages, 0, 1, 0)
+		if renderedPage == currentPage then
+			progressFill.Size = fillSize
+		else
+			renderedPage = currentPage
+			TweenService:Create(progressFill, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+				Size = fillSize,
+			}):Play()
+		end
 
 		prevButton.Visible = currentPage > 1
 		skipButton.Visible = (currentPage ~= #pages)
@@ -3009,11 +3181,14 @@ local function showTutorial()
 
 	-- Swipe left/right anywhere on the tour to page through it, and tap the
 	-- dimmed backdrop to advance. Both were dead space before.
-	local function attachGestures(target, tapAdvances)
+	local function attachGestures(target, tapAdvances, blocked)
 		-- Track the exact InputObject that started the gesture so a second finger
 		-- (or the mouse) can't close a swipe that a different pointer opened.
 		local startX, startInput = nil, nil
 		track(target.InputBegan:Connect(function(input)
+			if blocked and blocked() then
+				return
+			end
 			if
 				input.UserInputType == Enum.UserInputType.Touch
 				or input.UserInputType == Enum.UserInputType.MouseButton1
@@ -3038,7 +3213,11 @@ local function showTutorial()
 		end))
 	end
 	attachGestures(dimOverlay, true)
-	attachGestures(card, false)
+	-- Swiping the card is disabled on the intro page: a drag there belongs to the
+	-- language list, not to paging.
+	attachGestures(card, false, function()
+		return introPanel.Visible
+	end)
 
 	track(UserInputService.InputBegan:Connect(function(input, gameProcessed)
 		if gameProcessed or not card.Parent then
@@ -3084,10 +3263,16 @@ local function showTutorial()
 		tintTween(skipButton, { TextColor3 = theme.InputEcho })
 		tintTween(progressTrack, { BackgroundColor3 = theme.UtilButton })
 		tintTween(progressFill, { BackgroundColor3 = theme.SecondaryAccent })
+		tintTween(langSearch, { BackgroundColor3 = theme.UtilButton, TextColor3 = theme.Text })
+		tintTween(langScroll, { BackgroundColor3 = theme.UtilButton, ScrollBarImageColor3 = theme.PrimaryAccent })
+		tintTween(discordButtonTour, { BackgroundColor3 = theme.SecondaryAccent })
+		langSearch.PlaceholderColor3 = theme.InputEcho
 		tutTitle.Font = fontData.Bold
 		tutBody.Font = fontData.Font
 		counter.Font = fontData.Font
 		skipButton.Font = fontData.Font
+		langSearch.Font = fontData.Font
+		discordButtonTour.Font = fontData.Bold
 		prevButton.Font = fontData.Bold
 		nextButton.Font = fontData.Bold
 
@@ -3097,7 +3282,15 @@ local function showTutorial()
 		tutBody.TextSize = newBase + 1
 		counter.TextSize = newBase
 		skipButton.TextSize = newBase
-		headerRow.Size = UDim2.new(1, 0, 0, math.max(28, newBase + 12))
+		langSearch.TextSize = newBase
+		discordButtonTour.TextSize = newBase
+		headerRow.Size = UDim2.new(1, 0, 0, math.max(30, newBase + 16))
+
+		for _, row in pairs(langRows) do
+			row.TextSize = newBase
+			row.BackgroundColor3 = theme.PrimaryAccent
+		end
+		syncLangSelection(theme, fontData)
 	end
 
 	TweenService:Create(cardScale, TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 }):Play()
