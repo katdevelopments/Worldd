@@ -482,6 +482,24 @@ local setAutoScroll
 local openAutoExec
 -- Assigned by the auto-execute block; runs enabled scripts at startup.
 local runAutoExecScripts
+-- === Script Hub ===
+-- Everything the hub needs to share with the rest of the script lives in this
+-- one table (the main chunk is close to Luau's 200-local ceiling, so the hub
+-- deliberately claims a single register). Accepted gates the panel behind its
+-- disclaimer, Providers remembers which libraries belong in the feed, Button
+-- is the 📚 header button and AddSaved is filled in by the saved scripts block
+-- so downloaded scripts land in the same library the 📜 panel reads from.
+local scriptHub = {
+	Accepted = false,
+	Providers = {
+		scriptblox = true,
+		rscripts = true,
+		robloxscripts = true,
+		haxhell = true,
+	},
+	Button = nil,
+	AddSaved = nil,
+}
 
 -- === Google Translate integration ===
 -- Works across executors: prefers the executor's request function, falls
@@ -761,6 +779,8 @@ local function saveSettings()
 				editorLineNumbers = uiSettings.editorLineNumbers,
 				consoleLineNumbers = uiSettings.consoleLineNumbers,
 				tutorialCompleted = tutorialCompleted,
+				scriptHubAccepted = scriptHub.Accepted,
+				scriptHubProviders = scriptHub.Providers,
 				customTheme = customTheme,
 			})
 		)
@@ -826,6 +846,16 @@ local function loadSettings()
 	end
 	if type(data.tutorialCompleted) == "boolean" then
 		tutorialCompleted = data.tutorialCompleted
+	end
+	if type(data.scriptHubAccepted) == "boolean" then
+		scriptHub.Accepted = data.scriptHubAccepted
+	end
+	if type(data.scriptHubProviders) == "table" then
+		for key in pairs(scriptHub.Providers) do
+			if type(data.scriptHubProviders[key]) == "boolean" then
+				scriptHub.Providers[key] = data.scriptHubProviders[key]
+			end
+		end
 	end
 	if type(data.customTheme) == "table" then
 		for key, v in pairs(data.customTheme) do
@@ -907,6 +937,11 @@ local tutorialPages = {
 		Title = "Saved Scripts",
 		Icon = "📜",
 		Text = "Save scripts you use often with the scroll button, then reload them any time. They stay saved between sessions.",
+	},
+	{
+		Title = "Script Hub",
+		Icon = "📚",
+		Text = "Tap the books button to browse thousands of community scripts from ScriptBlox, Rscripts, RobloxScripts and HaxHell. Search, filter by provider, then copy, load, save or run any script without leaving the client.",
 	},
 	{
 		Title = "Make It Yours",
@@ -1302,6 +1337,7 @@ rightControlsLayout.VerticalAlignment = Enum.VerticalAlignment.Center
 rightControlsLayout.Padding = UDim.new(0, 8)
 
 local scriptsButton = createIconButton(leftControls, "📜", 28, "UtilButton")
+scriptHub.Button = createIconButton(leftControls, "📚", 28, "UtilButton")
 local siteButton = createIconButton(leftControls, "🌐", 28, "UtilButton")
 local discordButton = createIconButton(leftControls, "💬", 28, "UtilButton")
 local settingsButton = createIconButton(leftControls, "⚙️", 28, "UtilButton")
@@ -4678,6 +4714,38 @@ do
 		end
 	end
 
+	-- Shared with the Script Hub so a downloaded script lands in the same
+	-- library, under a name that never collides with an existing entry.
+	function scriptHub.AddSaved(name, source)
+		if type(source) ~= "string" or source:gsub("%s", "") == "" then
+			return nil
+		end
+		local base = (type(name) == "string" and name or ""):gsub("^%s+", ""):gsub("%s+$", "")
+		if base == "" then
+			base = "Script " .. tostring(#savedScripts + 1)
+		end
+		local unique = base
+		local suffix = 2
+		local function taken(candidate)
+			for _, item in ipairs(savedScripts) do
+				if item.Name == candidate then
+					return true
+				end
+			end
+			return false
+		end
+		while taken(unique) do
+			unique = base .. " (" .. suffix .. ")"
+			suffix += 1
+		end
+		table.insert(savedScripts, { Name = unique, Source = source })
+		saveScriptsFile()
+		if scriptsFrame.Visible then
+			refreshScriptsList()
+		end
+		return unique
+	end
+
 	table.insert(
 		connections,
 		saveScriptBtn.MouseButton1Click:Connect(function()
@@ -5121,6 +5189,1508 @@ aeAddBtn.Visible = false
 		tintTween(aeListScroll, { ScrollBarImageColor3 = theme.PrimaryAccent })
 	end)
 end
+
+-- === Script Hub (📚) ===
+-- Browses the public script libraries from inside the client. Same shape as
+-- the World Scripthub web app: one request per enabled provider, the results
+-- interleaved into a single feed, then a detail page that can copy, load,
+-- save or run the source.
+--
+-- Built inside a function rather than a `do` block: the main chunk sits at
+-- Luau's 200-local ceiling, and a function body gets its own register budget
+-- while still closing over everything declared above it.
+scriptHub.Build = function()
+	local HUB_PAGE_SIZE = 12
+	-- Roblox TextLabels choke on multi-megabyte sources, so the viewer shows a
+	-- prefix while every action still uses the full text.
+	local HUB_PREVIEW_LIMIT = 20000
+	local HUB_REQUEST_TIMEOUT = 20
+	local HUB_ENRICH_TIMEOUT = 8
+
+	-- Provider artwork has to live on Roblox, so each logo is referenced by an
+	-- asset id. Once the decals are uploaded, paste the id into Icon (e.g.
+	-- Icon = "rbxassetid://1234567890") and it is used everywhere that
+	-- provider appears; until then Glyph is drawn in its place.
+	local HUB_FALLBACK_THUMB = ""
+	local HUB_FALLBACK_GLYPH = "🎮"
+
+	local function hubJson(url)
+		local body = httpGet(url)
+		if not body then
+			return nil
+		end
+		local ok, data = pcall(function()
+			return HttpService:JSONDecode(body)
+		end)
+		if ok and type(data) == "table" then
+			return data
+		end
+		return nil
+	end
+
+	local function text(value, fallback)
+		if type(value) == "string" and value ~= "" then
+			return value
+		end
+		return fallback
+	end
+
+	local function number(value)
+		if type(value) == "number" then
+			return value
+		end
+		return tonumber(value) or 0
+	end
+
+	-- Takes every field a library might hide the place id in and returns the
+	-- first usable one. select() rather than ipairs: the candidates are read
+	-- straight off JSON tables, so a nil in the middle of the list is normal
+	-- and must not stop the search early.
+	local function placeIdOf(...)
+		for index = 1, select("#", ...) do
+			local id = math.floor(number((select(index, ...))))
+			if id > 0 then
+				return id
+			end
+		end
+		return 0
+	end
+
+	-- Every library marks its "works in any game" entries differently; these
+	-- are the game names all of them use for it.
+	local universalNames = {
+		["universal script"] = true,
+		["universal script 📌"] = true,
+		["script hub"] = true,
+		["universal"] = true,
+	}
+	local function isUniversal(entry, gameName)
+		if entry.universal == true or entry.isUniversal == true or entry.type == "universal" then
+			return true
+		end
+		return type(gameName) == "string" and universalNames[gameName:lower()] == true
+	end
+
+	local function formatCount(value)
+		local n = number(value)
+		if n >= 1000000000 then
+			return (string.format("%.1fB", n / 1000000000):gsub("%.0B", "B"))
+		elseif n >= 1000000 then
+			return (string.format("%.1fM", n / 1000000):gsub("%.0M", "M"))
+		elseif n >= 1000 then
+			return (string.format("%.1fk", n / 1000):gsub("%.0k", "k"))
+		end
+		return tostring(math.floor(n))
+	end
+
+	local hubProviders = {
+		{
+			Key = "scriptblox",
+			Name = "ScriptBlox",
+			Icon = "",
+			Glyph = "🅱️",
+			Url = function(query, page)
+				if query == "" then
+					return ("https://scriptblox.com/api/script/fetch?page=%d"):format(page)
+				end
+				return ("https://scriptblox.com/api/script/search?q=%s&page=%d&max=%d"):format(
+					HttpService:UrlEncode(query),
+					page,
+					HUB_PAGE_SIZE
+				)
+			end,
+			Parse = function(data)
+				local list = type(data.result) == "table" and data.result.scripts or data.scripts
+				if type(list) ~= "table" then
+					return {}
+				end
+				local out = {}
+				for _, s in ipairs(list) do
+					if type(s) == "table" and (s._id or s.id) then
+						local gameData = type(s.game) == "table" and s.game or {}
+						local universal = isUniversal(s, gameData.name)
+						table.insert(out, {
+							Id = tostring(s._id or s.id),
+							Title = text(s.title, "Untitled Script"),
+							Creator = text(type(s.owner) == "table" and s.owner.username or nil, "Unknown"),
+							Game = universal and "Universal Script" or text(gameData.name, "Unknown Game"),
+							PlaceId = universal and 0 or placeIdOf(gameData.gameId, gameData.placeId, s.placeId),
+							Views = number(s.views),
+							Verified = s.verified == true,
+							Universal = universal,
+							KeySystem = s.key == true or s.keySystem == true,
+							Patched = s.isPatched == true or s.patched == true,
+							Source = type(s.script) == "string" and s.script or nil,
+						})
+					end
+				end
+				return out
+			end,
+			-- ScriptBlox's trending feed ships a trimmed record: no owner and no
+			-- game id, so cards would read "Unknown" with no thumbnail. The
+			-- per-script endpoint has both, so the gaps are backfilled in
+			-- parallel before the page is rendered. Search results already carry
+			-- the full record and skip this entirely.
+			Enrich = function(entries)
+				local pending = {}
+				for _, entry in ipairs(entries) do
+					if entry.Creator == "Unknown" or (not entry.Universal and entry.PlaceId == 0) then
+						table.insert(pending, entry)
+					end
+				end
+				if #pending == 0 then
+					return
+				end
+
+				local remaining = #pending
+				for _, entry in ipairs(pending) do
+					task.spawn(function()
+						local data = hubJson("https://scriptblox.com/api/script/" .. entry.Id)
+						local detail = data and type(data.script) == "table" and data.script or nil
+						if detail then
+							local gameData = type(detail.game) == "table" and detail.game or {}
+							if entry.PlaceId == 0 and not entry.Universal then
+								entry.PlaceId = placeIdOf(gameData.gameId, gameData.placeId)
+							end
+							if entry.Creator == "Unknown" and type(detail.owner) == "table" then
+								entry.Creator = text(detail.owner.username, "Unknown")
+							end
+							if not entry.Source and type(detail.script) == "string" then
+								entry.Source = detail.script
+							end
+						end
+						remaining -= 1
+					end)
+				end
+
+				local deadline = os.clock() + HUB_ENRICH_TIMEOUT
+				while remaining > 0 and os.clock() < deadline do
+					task.wait(0.1)
+				end
+			end,
+			-- The list endpoint omits the source on some entries; the per-script
+			-- endpoint always carries it.
+			DetailUrl = function(entry)
+				return "https://scriptblox.com/api/script/" .. entry.Id
+			end,
+			DetailParse = function(data)
+				if type(data.script) == "table" and type(data.script.script) == "string" then
+					return data.script.script
+				end
+				return nil
+			end,
+		},
+		{
+			Key = "rscripts",
+			Name = "Rscripts",
+			Icon = "",
+			Glyph = "🇷",
+			Url = function(query, page)
+				if query == "" then
+					return ("https://rscripts.net/api/v2/scripts?page=%d"):format(page)
+				end
+				return ("https://rscripts.net/api/v2/scripts?q=%s&page=%d&orderBy=date&sort=desc"):format(
+					HttpService:UrlEncode(query),
+					page
+				)
+			end,
+			Parse = function(data)
+				local list = type(data.scripts) == "table" and data.scripts or data.success
+				if type(list) ~= "table" then
+					return {}
+				end
+				local out = {}
+				for _, s in ipairs(list) do
+					if type(s) == "table" and (s.id or s._id) then
+						local gameData = type(s.game) == "table" and s.game or {}
+						local gameName = text(gameData.title, text(gameData.name, "Unknown Game"))
+						local universal = isUniversal(s, gameName)
+						local user = type(s.user) == "table" and s.user or {}
+						table.insert(out, {
+							Id = tostring(s.id or s._id),
+							Title = text(s.title, "Untitled Script"),
+							Creator = text(user.username, "Unknown"),
+							Game = universal and "Universal Script" or gameName,
+							PlaceId = universal and 0 or placeIdOf(gameData.gameId, gameData.placeId, s.placeId),
+							Views = number(s.views),
+							Verified = user.verified == true,
+							Universal = universal,
+							KeySystem = s.keySystem == true,
+							Patched = s.patched == true,
+							-- Rscripts hands back a URL rather than the source.
+							RawUrl = type(s.rawScript) == "string" and s.rawScript or nil,
+						})
+					end
+				end
+				return out
+			end,
+		},
+		{
+			Key = "robloxscripts",
+			Name = "Roblox Scripts",
+			Icon = "",
+			Glyph = "🟥",
+			Url = function(query, page)
+				if query == "" then
+					return ("https://robloxscripts.com/api/v1/scripts?page=%d&limit=%d"):format(page, HUB_PAGE_SIZE)
+				end
+				return ("https://robloxscripts.com/api/v1/scripts?q=%s&page=%d&limit=%d"):format(
+					HttpService:UrlEncode(query),
+					page,
+					HUB_PAGE_SIZE
+				)
+			end,
+			Parse = function(data)
+				local list = type(data.data) == "table" and data.data or data.scripts
+				if type(list) ~= "table" then
+					return {}
+				end
+				local out = {}
+				for _, s in ipairs(list) do
+					if type(s) == "table" and (s.id or s._id) then
+						local gameData = type(s.game) == "table" and s.game or {}
+						local gameName = text(gameData.name, type(s.game) == "string" and s.game or "Unknown Game")
+						local universal = isUniversal(s, gameName)
+						local author = type(s.author) == "table" and s.author or {}
+						local flags = type(s.flags) == "table" and s.flags or {}
+						table.insert(out, {
+							Id = tostring(s.id or s._id),
+							Title = text(s.title, "Untitled Script"),
+							Creator = text(
+								author.username,
+								text(author.name, type(s.author) == "string" and s.author or "Unknown")
+							),
+							Game = universal and "Universal Script" or gameName,
+							PlaceId = universal and 0 or placeIdOf(gameData.placeId, s.placeId, gameData.universeId),
+							Views = number(s.views ~= nil and s.views or (type(s.stats) == "table" and s.stats.views)),
+							Verified = s.verified == true or author.verified == true or author.isVerified == true,
+							Universal = universal,
+							KeySystem = s.key == true or s.keySystem == true or flags.keySystem == true,
+							Patched = s.patched == true or flags.patched == true,
+							Source = type(s.script) == "string" and s.script or nil,
+							-- The listing calls it rawScriptUrl; keep the other two
+							-- spellings as a fallback in case the field is renamed.
+							RawUrl = type(s.rawScriptUrl) == "string" and s.rawScriptUrl
+								or type(s.rawScript) == "string" and s.rawScript
+								or (type(s.links) == "table" and type(s.links.raw) == "string" and s.links.raw or nil),
+						})
+					end
+				end
+				return out
+			end,
+		},
+		{
+			Key = "haxhell",
+			Name = "HaxHell",
+			Icon = "",
+			Glyph = "😈",
+			Url = function(query, page)
+				if query == "" then
+					return ("https://haxhell.com/api/v1/scripts?page=%d&limit=%d"):format(page, HUB_PAGE_SIZE)
+				end
+				return ("https://haxhell.com/api/v1/search/scripts?q=%s&page=%d&limit=%d"):format(
+					HttpService:UrlEncode(query),
+					page,
+					HUB_PAGE_SIZE
+				)
+			end,
+			Parse = function(data)
+				local list = type(data.data) == "table" and data.data or data.scripts
+				if type(list) ~= "table" then
+					return {}
+				end
+				local out = {}
+				for _, s in ipairs(list) do
+					if type(s) == "table" and (s.id or s._id) then
+						local gameData = type(s.game) == "table" and s.game or {}
+						local universal = isUniversal(s, gameData.name)
+						local author = type(s.author) == "table" and s.author or {}
+						local flags = type(s.flags) == "table" and s.flags or {}
+						local stats = type(s.stats) == "table" and s.stats or {}
+						table.insert(out, {
+							Id = tostring(s.id or s._id),
+							Title = text(s.title, "Untitled Script"),
+							Creator = text(author.username, "Unknown"),
+							Game = universal and "Universal Script" or text(gameData.name, "Unknown Game"),
+							PlaceId = universal and 0 or placeIdOf(gameData.placeId, gameData.universeId, s.placeId),
+							Views = number(stats.views),
+							Verified = author.isScripterVerified == true,
+							Universal = universal,
+							KeySystem = flags.keySystem == true,
+							Patched = flags.patched == true,
+							RawUrl = type(s.links) == "table" and type(s.links.raw) == "string" and s.links.raw or nil,
+						})
+					end
+				end
+				return out
+			end,
+		},
+	}
+
+	local hubProviderByKey = {}
+	for _, provider in ipairs(hubProviders) do
+		hubProviderByKey[provider.Key] = provider
+	end
+
+	local hubEntries = {}
+	local hubSeen = {}
+	local hubQuery = ""
+	local hubPage = 1
+	local hubHasMore = true
+	local hubLoading = false
+	local hubRequestId = 0
+	local hubDetailToken = 0
+	local isHubOpen = false
+	local hubDetailEntry = nil
+	local toggleHub
+
+	-- === Disclaimer (shown once, then remembered) ===
+	local disclaimerOverlay = Instance.new("TextButton", screenGui)
+	disclaimerOverlay.Name = "ScriptHubDisclaimerOverlay"
+	disclaimerOverlay.Size = UDim2.new(1, 0, 1, 0)
+	disclaimerOverlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	disclaimerOverlay.BackgroundTransparency = 1
+	disclaimerOverlay.Text = ""
+	disclaimerOverlay.AutoButtonColor = false
+	disclaimerOverlay.Visible = false
+	disclaimerOverlay.ZIndex = 22
+
+	local disclaimerFrame = Instance.new("Frame", screenGui)
+	disclaimerFrame.Name = "ScriptHubDisclaimer"
+	disclaimerFrame.Size = UDim2.new(0.8, 0, 0.7, 0)
+	disclaimerFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+	disclaimerFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+	disclaimerFrame.BackgroundColor3 = CONFIG.Colors.Background
+	disclaimerFrame.BackgroundTransparency = 0.05
+	disclaimerFrame.Visible = false
+	disclaimerFrame.ZIndex = 23
+	Instance.new("UICorner", disclaimerFrame).CornerRadius = UDim.new(0, 10)
+	local disclaimerLimit = Instance.new("UISizeConstraint", disclaimerFrame)
+	disclaimerLimit.MaxSize = Vector2.new(460, 420)
+	disclaimerLimit.MinSize = Vector2.new(280, 260)
+	local disclaimerScale = Instance.new("UIScale", disclaimerFrame)
+	disclaimerScale.Scale = 0
+	local disclaimerStroke = Instance.new("UIStroke", disclaimerFrame)
+	disclaimerStroke.Color = CONFIG.Colors.Warning
+	disclaimerStroke.Thickness = 2
+
+	local disclaimerTitle = Instance.new("TextLabel", disclaimerFrame)
+	disclaimerTitle.Size = UDim2.new(1, -24, 0, 30)
+	disclaimerTitle.Position = UDim2.new(0, 12, 0, 10)
+	disclaimerTitle.BackgroundTransparency = 1
+	disclaimerTitle.Font = CONFIG.BoldFont
+	disclaimerTitle.TextColor3 = CONFIG.Colors.Warning
+	disclaimerTitle.TextSize = 18
+	disclaimerTitle.TextXAlignment = Enum.TextXAlignment.Left
+	disclaimerTitle.Text = "⚠️ " .. tr("Script Hub: usage warning")
+	disclaimerTitle.ZIndex = 24
+	registerLocalizedString("Script Hub: usage warning")
+
+	local disclaimerBodyText = table.concat({
+		"The scripts listed here come from third-party libraries (ScriptBlox, Rscripts, RobloxScripts and HaxHell) and are not written, reviewed or maintained by the World team.",
+		"",
+		"Before you run anything, understand that:",
+		"• Script sources may be obfuscated or loaded through loadstring.",
+		"• Scripts may contain vulnerabilities or unsafe behaviour.",
+		"• Some scripts are gated behind a key system or are already patched.",
+		"• Listings are moderated by their libraries, but unverified content can slip through.",
+		"",
+		"Using the hub also means agreeing to the terms, privacy policies and rules of those libraries. If you find a malicious script, report it in our Discord so it can be taken down.",
+	}, "\n")
+	registerLocalizedString(disclaimerBodyText)
+
+	local disclaimerScroll = Instance.new("ScrollingFrame", disclaimerFrame)
+	disclaimerScroll.Position = UDim2.new(0, 12, 0, 46)
+	disclaimerScroll.Size = UDim2.new(1, -24, 1, -104)
+	disclaimerScroll.BackgroundTransparency = 1
+	disclaimerScroll.BorderSizePixel = 0
+	disclaimerScroll.ScrollBarThickness = 4
+	disclaimerScroll.ScrollBarImageColor3 = CONFIG.Colors.PrimaryAccent
+	disclaimerScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+	disclaimerScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	disclaimerScroll.ScrollingDirection = Enum.ScrollingDirection.Y
+	disclaimerScroll.ZIndex = 24
+	safeSetCursor(disclaimerScroll, "rbxasset://SystemCursor/Arrow")
+
+	local disclaimerBody = Instance.new("TextLabel", disclaimerScroll)
+	disclaimerBody.Size = UDim2.new(1, -8, 0, 0)
+	disclaimerBody.AutomaticSize = Enum.AutomaticSize.Y
+	disclaimerBody.BackgroundTransparency = 1
+	disclaimerBody.Font = CONFIG.Font
+	disclaimerBody.TextColor3 = CONFIG.Colors.Text
+	disclaimerBody.TextSize = 13
+	disclaimerBody.TextWrapped = true
+	disclaimerBody.TextXAlignment = Enum.TextXAlignment.Left
+	disclaimerBody.TextYAlignment = Enum.TextYAlignment.Top
+	disclaimerBody.Text = tr(disclaimerBodyText)
+	disclaimerBody.ZIndex = 24
+
+	local declineBtn = Instance.new("TextButton", disclaimerFrame)
+	declineBtn.Size = UDim2.new(0.5, -18, 0, 34)
+	declineBtn.Position = UDim2.new(0, 12, 1, -46)
+	declineBtn.BackgroundColor3 = CONFIG.Colors.UtilButton
+	declineBtn.Font = CONFIG.BoldFont
+	declineBtn.Text = tr("Cancel")
+	declineBtn.TextColor3 = CONFIG.Colors.Text
+	declineBtn.TextSize = 14
+	declineBtn.ZIndex = 24
+	Instance.new("UICorner", declineBtn).CornerRadius = UDim.new(0, 6)
+	addDepthGradient(declineBtn)
+	safeSetCursor(declineBtn, "rbxasset://SystemCursor/Arrow")
+	registerLocalizedString("Cancel")
+
+	local acceptBtn = Instance.new("TextButton", disclaimerFrame)
+	acceptBtn.Size = UDim2.new(0.5, -18, 0, 34)
+	acceptBtn.Position = UDim2.new(1, -12, 1, -46)
+	acceptBtn.AnchorPoint = Vector2.new(1, 0)
+	acceptBtn.BackgroundColor3 = CONFIG.Colors.SecondaryAccent
+	acceptBtn.Font = CONFIG.BoldFont
+	acceptBtn.Text = tr("I understand")
+	acceptBtn.TextColor3 = Color3.new(1, 1, 1)
+	acceptBtn.TextSize = 14
+	acceptBtn.ZIndex = 24
+	Instance.new("UICorner", acceptBtn).CornerRadius = UDim.new(0, 6)
+	addDepthGradient(acceptBtn)
+	safeSetCursor(acceptBtn, "rbxasset://SystemCursor/Arrow")
+	registerLocalizedString("I understand")
+
+	local function setDisclaimerVisible(visible)
+		if visible then
+			disclaimerOverlay.Visible = true
+			disclaimerFrame.Visible = true
+			disclaimerScroll.CanvasPosition = Vector2.new(0, 0)
+			TweenService:Create(disclaimerOverlay, TweenInfo.new(0.3), { BackgroundTransparency = 0.6 }):Play()
+			disclaimerScale.Scale = 0
+			TweenService
+				:Create(disclaimerScale, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+					Scale = 1,
+				})
+				:Play()
+		else
+			TweenService:Create(disclaimerOverlay, TweenInfo.new(0.25), { BackgroundTransparency = 1 }):Play()
+			local tween = TweenService:Create(
+				disclaimerScale,
+				TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.In),
+				{ Scale = 0 }
+			)
+			tween:Play()
+			tween.Completed:Wait()
+			disclaimerOverlay.Visible = false
+			disclaimerFrame.Visible = false
+		end
+	end
+
+	-- === Hub panel ===
+	local hubOverlay = Instance.new("TextButton", screenGui)
+	hubOverlay.Name = "ScriptHubOverlay"
+	hubOverlay.Size = UDim2.new(1, 0, 1, 0)
+	hubOverlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	hubOverlay.BackgroundTransparency = 1
+	hubOverlay.Text = ""
+	hubOverlay.AutoButtonColor = false
+	hubOverlay.Visible = false
+	hubOverlay.ZIndex = 16
+
+	local hubFrame = Instance.new("Frame", screenGui)
+	hubFrame.Name = "ScriptHubFrame"
+	hubFrame.Size = UDim2.new(0.86, 0, 0.82, 0)
+	hubFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+	hubFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+	hubFrame.BackgroundColor3 = CONFIG.Colors.Background
+	hubFrame.BackgroundTransparency = 0.05
+	hubFrame.Visible = false
+	hubFrame.ZIndex = 17
+	Instance.new("UICorner", hubFrame).CornerRadius = UDim.new(0, 10)
+	local hubSizeLimit = Instance.new("UISizeConstraint", hubFrame)
+	hubSizeLimit.MaxSize = Vector2.new(620, 560)
+	hubSizeLimit.MinSize = Vector2.new(300, 300)
+	local hubScale = Instance.new("UIScale", hubFrame)
+	hubScale.Scale = 0
+	local hubStroke = Instance.new("UIStroke", hubFrame)
+	hubStroke.Color = CONFIG.Colors.PrimaryAccent
+	hubStroke.Thickness = 2
+
+	local hubTitle = Instance.new("TextLabel", hubFrame)
+	hubTitle.Size = UDim2.new(1, -60, 0, 30)
+	hubTitle.Position = UDim2.new(0, 12, 0, 8)
+	hubTitle.BackgroundTransparency = 1
+	hubTitle.Font = CONFIG.BoldFont
+	hubTitle.TextColor3 = CONFIG.Colors.Text
+	hubTitle.TextSize = 18
+	hubTitle.TextXAlignment = Enum.TextXAlignment.Left
+	hubTitle.Text = "📚 " .. tr("Script Hub")
+	hubTitle.ZIndex = 18
+	registerLocalizedString("Script Hub")
+	registerLocalizedRefresher(function()
+		hubTitle.Text = "📚 " .. tr("Script Hub")
+		disclaimerTitle.Text = "⚠️ " .. tr("Script Hub: usage warning")
+		disclaimerBody.Text = tr(disclaimerBodyText)
+		declineBtn.Text = tr("Cancel")
+		acceptBtn.Text = tr("I understand")
+	end)
+
+	local hubCloseBtn = createIconButton(hubFrame, "✖️", 26, "UtilButton")
+	hubCloseBtn.Position = UDim2.new(1, -12, 0, 10)
+	hubCloseBtn.AnchorPoint = Vector2.new(1, 0)
+	hubCloseBtn.ZIndex = 18
+
+	local searchBox = Instance.new("TextBox", hubFrame)
+	searchBox.Size = UDim2.new(1, -100, 0, 30)
+	searchBox.Position = UDim2.new(0, 12, 0, 44)
+	searchBox.BackgroundColor3 = CONFIG.Colors.UtilButton
+	searchBox.BackgroundTransparency = 0.25
+	searchBox.Font = CONFIG.Font
+	searchBox.PlaceholderText = tr("Search scripts or a game name...")
+	searchBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+	searchBox.Text = ""
+	searchBox.TextColor3 = CONFIG.Colors.Text
+	searchBox.TextSize = 14
+	searchBox.ClearTextOnFocus = false
+	searchBox.TextXAlignment = Enum.TextXAlignment.Left
+	searchBox.ZIndex = 18
+	Instance.new("UICorner", searchBox).CornerRadius = UDim.new(0, 6)
+	Instance.new("UIPadding", searchBox).PaddingLeft = UDim.new(0, 8)
+	safeSetCursor(searchBox, "rbxasset://SystemCursor/Arrow")
+	registerLocalizedString("Search scripts or a game name...")
+	registerLocalizedRefresher(function()
+		searchBox.PlaceholderText = tr("Search scripts or a game name...")
+	end)
+	liftPanelWhileTyping(hubFrame, searchBox)
+
+	-- Fills the search box with the name of the experience the player is
+	-- currently in - the in-client version of the web app's "Find Game Scripts".
+	local thisGameBtn = createIconButton(hubFrame, "🎮", 30, "UtilButton")
+	thisGameBtn.Position = UDim2.new(1, -50, 0, 44)
+	thisGameBtn.AnchorPoint = Vector2.new(1, 0)
+	thisGameBtn.ZIndex = 18
+
+	local searchBtn = createIconButton(hubFrame, "🔍", 30, "SecondaryAccent")
+	searchBtn.Position = UDim2.new(1, -12, 0, 44)
+	searchBtn.AnchorPoint = Vector2.new(1, 0)
+	searchBtn.ZIndex = 18
+
+	local chipRow = Instance.new("ScrollingFrame", hubFrame)
+	chipRow.Position = UDim2.new(0, 12, 0, 82)
+	chipRow.Size = UDim2.new(1, -24, 0, 28)
+	chipRow.BackgroundTransparency = 1
+	chipRow.BorderSizePixel = 0
+	chipRow.ScrollBarThickness = 0
+	chipRow.CanvasSize = UDim2.new(0, 0, 0, 0)
+	chipRow.AutomaticCanvasSize = Enum.AutomaticSize.X
+	chipRow.ScrollingDirection = Enum.ScrollingDirection.X
+	chipRow.ZIndex = 18
+	local chipLayout = Instance.new("UIListLayout", chipRow)
+	chipLayout.FillDirection = Enum.FillDirection.Horizontal
+	chipLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+	chipLayout.Padding = UDim.new(0, 6)
+	chipLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+	local hubStatus = Instance.new("TextLabel", hubFrame)
+	hubStatus.Position = UDim2.new(0, 12, 0, 116)
+	hubStatus.Size = UDim2.new(1, -24, 0, 18)
+	hubStatus.BackgroundTransparency = 1
+	hubStatus.Font = CONFIG.Font
+	hubStatus.TextColor3 = CONFIG.Colors.InputEcho
+	hubStatus.TextSize = 12
+	hubStatus.TextXAlignment = Enum.TextXAlignment.Left
+	hubStatus.TextTruncate = Enum.TextTruncate.AtEnd
+	hubStatus.Text = ""
+	hubStatus.ZIndex = 18
+
+	local resultScroll = Instance.new("ScrollingFrame", hubFrame)
+	resultScroll.Position = UDim2.new(0, 12, 0, 138)
+	resultScroll.Size = UDim2.new(1, -24, 1, -150)
+	resultScroll.BackgroundTransparency = 1
+	resultScroll.BorderSizePixel = 0
+	resultScroll.ScrollBarThickness = 4
+	resultScroll.ScrollBarImageColor3 = CONFIG.Colors.PrimaryAccent
+	resultScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+	resultScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	resultScroll.ScrollingDirection = Enum.ScrollingDirection.Y
+	resultScroll.ZIndex = 18
+	safeSetCursor(resultScroll, "rbxasset://SystemCursor/Arrow")
+	local resultLayout = Instance.new("UIListLayout", resultScroll)
+	resultLayout.Padding = UDim.new(0, 8)
+	resultLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+	local function setHubStatus(message, isError)
+		hubStatus.Text = message or ""
+		hubStatus.TextColor3 = isError and CONFIG.Colors.Error or CONFIG.Colors.InputEcho
+	end
+
+	-- === Detail page ===
+	local detailOverlay = Instance.new("TextButton", screenGui)
+	detailOverlay.Name = "ScriptHubDetailOverlay"
+	detailOverlay.Size = UDim2.new(1, 0, 1, 0)
+	detailOverlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	detailOverlay.BackgroundTransparency = 1
+	detailOverlay.Text = ""
+	detailOverlay.AutoButtonColor = false
+	detailOverlay.Visible = false
+	detailOverlay.ZIndex = 19
+
+	local detailFrame = Instance.new("Frame", screenGui)
+	detailFrame.Name = "ScriptHubDetailFrame"
+	detailFrame.Size = UDim2.new(0.86, 0, 0.82, 0)
+	detailFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+	detailFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+	detailFrame.BackgroundColor3 = CONFIG.Colors.Background
+	detailFrame.BackgroundTransparency = 0.05
+	detailFrame.Visible = false
+	detailFrame.ZIndex = 20
+	Instance.new("UICorner", detailFrame).CornerRadius = UDim.new(0, 10)
+	local detailSizeLimit = Instance.new("UISizeConstraint", detailFrame)
+	detailSizeLimit.MaxSize = Vector2.new(620, 560)
+	detailSizeLimit.MinSize = Vector2.new(300, 300)
+	local detailScale = Instance.new("UIScale", detailFrame)
+	detailScale.Scale = 0
+	local detailStroke = Instance.new("UIStroke", detailFrame)
+	detailStroke.Color = CONFIG.Colors.PrimaryAccent
+	detailStroke.Thickness = 2
+
+	local detailBackBtn = createIconButton(detailFrame, "⬅️", 26, "UtilButton")
+	detailBackBtn.Position = UDim2.new(0, 12, 0, 10)
+	detailBackBtn.ZIndex = 21
+
+	local detailThumb = Instance.new("ImageLabel", detailFrame)
+	detailThumb.Size = UDim2.new(0, 46, 0, 46)
+	detailThumb.Position = UDim2.new(0, 46, 0, 10)
+	detailThumb.BackgroundColor3 = CONFIG.Colors.UtilButton
+	detailThumb.BackgroundTransparency = 0.3
+	detailThumb.Image = ""
+	detailThumb.ScaleType = Enum.ScaleType.Crop
+	detailThumb.ZIndex = 21
+	Instance.new("UICorner", detailThumb).CornerRadius = UDim.new(0, 6)
+
+	local detailThumbGlyph = Instance.new("TextLabel", detailThumb)
+	detailThumbGlyph.Size = UDim2.new(1, 0, 1, 0)
+	detailThumbGlyph.BackgroundTransparency = 1
+	detailThumbGlyph.Font = Enum.Font.SourceSans
+	detailThumbGlyph.Text = HUB_FALLBACK_GLYPH
+	detailThumbGlyph.TextColor3 = Color3.new(1, 1, 1)
+	detailThumbGlyph.TextSize = 22
+	detailThumbGlyph.ZIndex = 21
+
+	local detailTitle = Instance.new("TextLabel", detailFrame)
+	detailTitle.Size = UDim2.new(1, -110, 0, 20)
+	detailTitle.Position = UDim2.new(0, 100, 0, 12)
+	detailTitle.BackgroundTransparency = 1
+	detailTitle.Font = CONFIG.BoldFont
+	detailTitle.TextColor3 = CONFIG.Colors.Text
+	detailTitle.TextSize = 16
+	detailTitle.TextXAlignment = Enum.TextXAlignment.Left
+	detailTitle.TextTruncate = Enum.TextTruncate.AtEnd
+	detailTitle.Text = ""
+	detailTitle.ZIndex = 21
+
+	local detailMeta = Instance.new("TextLabel", detailFrame)
+	detailMeta.Size = UDim2.new(1, -110, 0, 32)
+	detailMeta.Position = UDim2.new(0, 100, 0, 32)
+	detailMeta.BackgroundTransparency = 1
+	detailMeta.Font = CONFIG.Font
+	detailMeta.TextColor3 = CONFIG.Colors.InputEcho
+	detailMeta.TextSize = 12
+	detailMeta.TextWrapped = true
+	detailMeta.TextXAlignment = Enum.TextXAlignment.Left
+	detailMeta.TextYAlignment = Enum.TextYAlignment.Top
+	detailMeta.Text = ""
+	detailMeta.ZIndex = 21
+
+	local codeScroll = Instance.new("ScrollingFrame", detailFrame)
+	codeScroll.Position = UDim2.new(0, 12, 0, 68)
+	codeScroll.Size = UDim2.new(1, -24, 1, -122)
+	codeScroll.BackgroundColor3 = CONFIG.Colors.UtilButton
+	codeScroll.BackgroundTransparency = 0.55
+	codeScroll.BorderSizePixel = 0
+	codeScroll.ScrollBarThickness = 4
+	codeScroll.ScrollBarImageColor3 = CONFIG.Colors.PrimaryAccent
+	codeScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+	codeScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	codeScroll.ScrollingDirection = Enum.ScrollingDirection.Y
+	codeScroll.ZIndex = 21
+	Instance.new("UICorner", codeScroll).CornerRadius = UDim.new(0, 6)
+	safeSetCursor(codeScroll, "rbxasset://SystemCursor/Arrow")
+	local codePadding = Instance.new("UIPadding", codeScroll)
+	codePadding.PaddingLeft = UDim.new(0, 8)
+	codePadding.PaddingRight = UDim.new(0, 8)
+	codePadding.PaddingTop = UDim.new(0, 6)
+	codePadding.PaddingBottom = UDim.new(0, 6)
+
+	local codeLabel = Instance.new("TextLabel", codeScroll)
+	codeLabel.Size = UDim2.new(1, -6, 0, 0)
+	codeLabel.AutomaticSize = Enum.AutomaticSize.Y
+	codeLabel.BackgroundTransparency = 1
+	codeLabel.Font = Enum.Font.Code
+	codeLabel.TextColor3 = CONFIG.Colors.Text
+	codeLabel.TextSize = 12
+	codeLabel.TextWrapped = true
+	codeLabel.TextXAlignment = Enum.TextXAlignment.Left
+	codeLabel.TextYAlignment = Enum.TextYAlignment.Top
+	codeLabel.Text = ""
+	codeLabel.ZIndex = 21
+
+	local actionRow = Instance.new("Frame", detailFrame)
+	actionRow.Position = UDim2.new(0, 12, 1, -46)
+	actionRow.Size = UDim2.new(1, -24, 0, 34)
+	actionRow.BackgroundTransparency = 1
+	actionRow.ZIndex = 21
+	local actionLayout = Instance.new("UIListLayout", actionRow)
+	actionLayout.FillDirection = Enum.FillDirection.Horizontal
+	actionLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+	actionLayout.Padding = UDim.new(0, 6)
+	actionLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+	local function createActionButton(label, colorType, order)
+		local btn = Instance.new("TextButton", actionRow)
+		btn.Size = UDim2.new(0.25, -5, 1, 0)
+		btn.LayoutOrder = order
+		btn.BackgroundColor3 = CONFIG.Colors[colorType]
+		btn:SetAttribute("ColorType", colorType)
+		btn.Font = CONFIG.BoldFont
+		btn.Text = label
+		btn.TextColor3 = Color3.new(1, 1, 1)
+		btn.TextSize = 13
+		btn.TextTruncate = Enum.TextTruncate.AtEnd
+		btn.ZIndex = 21
+		Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+		addDepthGradient(btn)
+		safeSetCursor(btn, "rbxasset://SystemCursor/Arrow")
+		return btn
+	end
+
+	local copyBtn = createActionButton("📋 " .. tr("Copy"), "UtilButton", 1)
+	local editorBtn = createActionButton("📥 " .. tr("Editor"), "UtilButton", 2)
+	local saveBtn = createActionButton("💾 " .. tr("Save"), "UtilButton", 3)
+	local runBtn = createActionButton("▶ " .. tr("Run"), "SecondaryAccent", 4)
+	registerLocalizedString("Copy")
+	registerLocalizedString("Editor")
+	registerLocalizedString("Save")
+	registerLocalizedString("Run")
+	registerLocalizedRefresher(function()
+		copyBtn.Text = "📋 " .. tr("Copy")
+		editorBtn.Text = "📥 " .. tr("Editor")
+		saveBtn.Text = "💾 " .. tr("Save")
+		runBtn.Text = "▶ " .. tr("Run")
+	end)
+
+	local function thumbnailFor(entry)
+		if entry.PlaceId and entry.PlaceId > 0 then
+			return ("rbxthumb://type=GameIcon&id=%d&w=150&h=150"):format(entry.PlaceId)
+		end
+		return HUB_FALLBACK_THUMB
+	end
+
+	local function tagsFor(entry)
+		local tags = {}
+		if entry.Verified then
+			table.insert(tags, "✔ Verified")
+		end
+		if entry.Universal then
+			table.insert(tags, "🌐 Universal")
+		end
+		if entry.KeySystem then
+			table.insert(tags, "🔑 Key system")
+		end
+		if entry.Patched then
+			table.insert(tags, "⛔ Patched")
+		end
+		return tags
+	end
+
+	-- === Source resolution ===
+	-- Some libraries inline the source in the listing, some only give a raw
+	-- URL, and ScriptBlox occasionally needs a second call for it.
+	local function resolveSource(entry)
+		if type(entry.Source) == "string" and entry.Source ~= "" then
+			return entry.Source
+		end
+		if type(entry.RawUrl) == "string" and entry.RawUrl ~= "" then
+			local body = httpGet(entry.RawUrl)
+			if type(body) == "string" and body ~= "" then
+				return body
+			end
+		end
+		local provider = hubProviderByKey[entry.Provider]
+		if provider and provider.DetailUrl and provider.DetailParse then
+			local data = hubJson(provider.DetailUrl(entry))
+			if data then
+				local source = provider.DetailParse(data)
+				if type(source) == "string" and source ~= "" then
+					return source
+				end
+			end
+		end
+		return nil
+	end
+
+	local function closeDetail()
+		if not detailFrame.Visible then
+			return
+		end
+		hubDetailToken += 1
+		TweenService:Create(detailOverlay, TweenInfo.new(0.2), { BackgroundTransparency = 1 }):Play()
+		local tween = TweenService:Create(
+			detailScale,
+			TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.In),
+			{ Scale = 0 }
+		)
+		tween:Play()
+		tween.Completed:Wait()
+		detailOverlay.Visible = false
+		detailFrame.Visible = false
+		hubDetailEntry = nil
+	end
+
+	local function openDetail(entry)
+		hubDetailEntry = entry
+		hubDetailToken += 1
+		local token = hubDetailToken
+
+		detailTitle.Text = entry.Title
+		local metaParts = {
+			entry.ProviderName,
+			entry.Game,
+			"👤 " .. entry.Creator,
+			"👁 " .. formatCount(entry.Views),
+		}
+		for _, tag in ipairs(tagsFor(entry)) do
+			table.insert(metaParts, tag)
+		end
+		detailMeta.Text = table.concat(metaParts, "  •  ")
+
+		local thumb = thumbnailFor(entry)
+		detailThumb.Image = thumb
+		detailThumbGlyph.Visible = thumb == ""
+
+		codeLabel.Text = tr("Loading script source...")
+		codeScroll.CanvasPosition = Vector2.new(0, 0)
+
+		detailOverlay.Visible = true
+		detailFrame.Visible = true
+		TweenService:Create(detailOverlay, TweenInfo.new(0.25), { BackgroundTransparency = 0.5 }):Play()
+		detailScale.Scale = 0
+		TweenService
+			:Create(detailScale, TweenInfo.new(0.28, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 })
+			:Play()
+
+		task.spawn(function()
+			local source = resolveSource(entry)
+			if token ~= hubDetailToken then
+				return
+			end
+			if source then
+				entry.Source = source
+				if #source > HUB_PREVIEW_LIMIT then
+					codeLabel.Text = source:sub(1, HUB_PREVIEW_LIMIT)
+						.. "\n\n-- "
+						.. tr("Preview truncated - Copy, Editor, Save and Run still use the full script.")
+				else
+					codeLabel.Text = source
+				end
+			else
+				codeLabel.Text = tr("Failed to load this script's source.")
+			end
+		end)
+	end
+
+	registerLocalizedString("Loading script source...")
+	registerLocalizedString("Failed to load this script's source.")
+	registerLocalizedString("Preview truncated - Copy, Editor, Save and Run still use the full script.")
+
+	-- Actions all need the full source, which may still be downloading when
+	-- the button is tapped, so each one resolves it again before acting.
+	local function withSource(button, handler)
+		-- The spinner replaces the label while the download runs, so a second
+		-- tap has to be ignored or it would capture "⏳" as the label to restore.
+		local busy = false
+		table.insert(
+			connections,
+			button.MouseButton1Click:Connect(function()
+				local entry = hubDetailEntry
+				if not entry or busy then
+					return
+				end
+				busy = true
+				local originalText = button.Text
+				button.Text = "⏳"
+				createClickParticles(button)
+				task.spawn(function()
+					local source = resolveSource(entry)
+					button.Text = originalText
+					busy = false
+					if not source then
+						log("Script Hub: could not download '" .. entry.Title .. "'.", "Error")
+						return
+					end
+					entry.Source = source
+					handler(entry, source)
+				end)
+			end)
+		)
+	end
+
+	withSource(copyBtn, function(entry, source)
+		local ok = pcall(setclipboard, source)
+		if ok then
+			log("Copied '" .. entry.Title .. "' to the clipboard.", "Info")
+		else
+			log("This executor does not expose setclipboard.", "Error")
+		end
+	end)
+
+	withSource(editorBtn, function(entry, source)
+		inputBox.Text = source
+		closeDetail()
+		if isHubOpen then
+			toggleHub()
+		end
+		log("Loaded '" .. entry.Title .. "' into the editor.", "Info")
+	end)
+
+	withSource(saveBtn, function(entry, source)
+		if not scriptHub.AddSaved then
+			log("Saved scripts are unavailable on this executor.", "Error")
+			return
+		end
+		local name = scriptHub.AddSaved(entry.Title, source)
+		if name then
+			log("Saved '" .. name .. "' to your script library.", "Info")
+		else
+			log("Could not save '" .. entry.Title .. "'.", "Error")
+		end
+	end)
+
+	withSource(runBtn, function(entry, source)
+		if not isExecuteScriptEnabled then
+			log("Cannot run '" .. entry.Title .. "': no executor available.", "Error")
+			return
+		end
+		log("Running '" .. entry.Title .. "'...", "Info")
+		task.spawn(function()
+			local ok, err = pcall(executeScript, source)
+			if not ok then
+				log("Runtime Error: " .. tostring(err), "Error")
+			end
+		end)
+	end)
+
+	table.insert(connections, detailBackBtn.MouseButton1Click:Connect(closeDetail))
+	table.insert(connections, detailOverlay.MouseButton1Click:Connect(closeDetail))
+
+	-- === Result cards ===
+	local function createCard(entry, order)
+		local card = Instance.new("TextButton", resultScroll)
+		card.Name = "HubCard"
+		card.Size = UDim2.new(1, -6, 0, 74)
+		card.LayoutOrder = order
+		card.BackgroundColor3 = CONFIG.Colors.UtilButton
+		card.BackgroundTransparency = 0.2
+		card.AutoButtonColor = false
+		card.Text = ""
+		card.ZIndex = 18
+		Instance.new("UICorner", card).CornerRadius = UDim.new(0, 8)
+		addDepthGradient(card)
+		safeSetCursor(card, "rbxasset://SystemCursor/Arrow")
+
+		local thumb = Instance.new("ImageLabel", card)
+		thumb.Size = UDim2.new(0, 56, 0, 56)
+		thumb.Position = UDim2.new(0, 9, 0, 9)
+		thumb.BackgroundColor3 = CONFIG.Colors.Background
+		thumb.BackgroundTransparency = 0.2
+		thumb.ScaleType = Enum.ScaleType.Crop
+		thumb.Image = thumbnailFor(entry)
+		thumb.ZIndex = 19
+		Instance.new("UICorner", thumb).CornerRadius = UDim.new(0, 6)
+
+		local thumbGlyph = Instance.new("TextLabel", thumb)
+		thumbGlyph.Size = UDim2.new(1, 0, 1, 0)
+		thumbGlyph.BackgroundTransparency = 1
+		thumbGlyph.Font = Enum.Font.SourceSans
+		thumbGlyph.Text = HUB_FALLBACK_GLYPH
+		thumbGlyph.TextColor3 = Color3.new(1, 1, 1)
+		thumbGlyph.TextSize = 24
+		thumbGlyph.Visible = thumb.Image == ""
+		thumbGlyph.ZIndex = 19
+
+		local title = Instance.new("TextLabel", card)
+		title.Size = UDim2.new(1, -82, 0, 18)
+		title.Position = UDim2.new(0, 74, 0, 9)
+		title.BackgroundTransparency = 1
+		title.Font = CONFIG.BoldFont
+		title.TextColor3 = CONFIG.Colors.Text
+		title.TextSize = 14
+		title.TextXAlignment = Enum.TextXAlignment.Left
+		title.TextTruncate = Enum.TextTruncate.AtEnd
+		title.Text = entry.Title
+		title.ZIndex = 19
+
+		-- The provider badge: an ImageLabel once the logo asset is filled in,
+		-- otherwise the provider's glyph.
+		local provider = hubProviderByKey[entry.Provider]
+		local badge
+		if provider and provider.Icon ~= "" then
+			badge = Instance.new("ImageLabel", card)
+			badge.Image = provider.Icon
+			badge.BackgroundTransparency = 1
+		else
+			badge = Instance.new("TextLabel", card)
+			badge.BackgroundTransparency = 1
+			badge.Font = Enum.Font.SourceSans
+			badge.Text = provider and provider.Glyph or "❔"
+			badge.TextColor3 = CONFIG.Colors.Text
+			badge.TextSize = 14
+		end
+		badge.Size = UDim2.new(0, 14, 0, 14)
+		badge.Position = UDim2.new(0, 74, 0, 30)
+		badge.ZIndex = 19
+
+		local meta = Instance.new("TextLabel", card)
+		meta.Size = UDim2.new(1, -104, 0, 14)
+		meta.Position = UDim2.new(0, 92, 0, 30)
+		meta.BackgroundTransparency = 1
+		meta.Font = CONFIG.Font
+		meta.TextColor3 = CONFIG.Colors.InputEcho
+		meta.TextSize = 12
+		meta.TextXAlignment = Enum.TextXAlignment.Left
+		meta.TextTruncate = Enum.TextTruncate.AtEnd
+		meta.Text = entry.ProviderName .. "  •  " .. entry.Game
+		meta.ZIndex = 19
+
+		local statsParts = { "👤 " .. entry.Creator, "👁 " .. formatCount(entry.Views) }
+		for _, tag in ipairs(tagsFor(entry)) do
+			table.insert(statsParts, tag)
+		end
+
+		local stats = Instance.new("TextLabel", card)
+		stats.Size = UDim2.new(1, -86, 0, 14)
+		stats.Position = UDim2.new(0, 74, 0, 48)
+		stats.BackgroundTransparency = 1
+		stats.Font = CONFIG.Font
+		stats.TextColor3 = CONFIG.Colors.InputEcho
+		stats.TextSize = 11
+		stats.TextXAlignment = Enum.TextXAlignment.Left
+		stats.TextTruncate = Enum.TextTruncate.AtEnd
+		stats.Text = table.concat(statsParts, "  •  ")
+		stats.ZIndex = 19
+
+		table.insert(
+			connections,
+			card.MouseEnter:Connect(function()
+				TweenService:Create(card, TweenInfo.new(0.15), { BackgroundColor3 = CONFIG.Colors.UtilButtonHover })
+					:Play()
+			end)
+		)
+		table.insert(
+			connections,
+			card.MouseLeave:Connect(function()
+				TweenService:Create(card, TweenInfo.new(0.15), { BackgroundColor3 = CONFIG.Colors.UtilButton }):Play()
+			end)
+		)
+		table.insert(
+			connections,
+			card.MouseButton1Click:Connect(function()
+				openDetail(entry)
+			end)
+		)
+	end
+
+	local loadMoreBtn = Instance.new("TextButton", resultScroll)
+	loadMoreBtn.Name = "LoadMore"
+	loadMoreBtn.Size = UDim2.new(1, -6, 0, 34)
+	loadMoreBtn.LayoutOrder = 1000000
+	loadMoreBtn.BackgroundColor3 = CONFIG.Colors.SecondaryAccent
+	loadMoreBtn.Font = CONFIG.BoldFont
+	loadMoreBtn.Text = tr("Load more")
+	loadMoreBtn.TextColor3 = Color3.new(1, 1, 1)
+	loadMoreBtn.TextSize = 14
+	loadMoreBtn.Visible = false
+	loadMoreBtn.ZIndex = 18
+	Instance.new("UICorner", loadMoreBtn).CornerRadius = UDim.new(0, 6)
+	addDepthGradient(loadMoreBtn)
+	safeSetCursor(loadMoreBtn, "rbxasset://SystemCursor/Arrow")
+	registerLocalizedString("Load more")
+	registerLocalizedRefresher(function()
+		loadMoreBtn.Text = tr("Load more")
+	end)
+
+	local function clearCards()
+		for _, child in ipairs(resultScroll:GetChildren()) do
+			if child.Name == "HubCard" then
+				child:Destroy()
+			end
+		end
+	end
+
+	local function fetchHubPage(reset)
+		if hubLoading then
+			return
+		end
+		if not reset and not hubHasMore then
+			return
+		end
+
+		hubLoading = true
+		loadMoreBtn.Visible = false
+		if reset then
+			hubRequestId += 1
+			hubPage = 1
+			hubHasMore = true
+			table.clear(hubEntries)
+			table.clear(hubSeen)
+			clearCards()
+			resultScroll.CanvasPosition = Vector2.new(0, 0)
+		end
+
+		local requestId = hubRequestId
+		local page = hubPage
+		local query = hubQuery
+		setHubStatus(reset and tr("Loading scripts...") or tr("Loading more scripts..."))
+
+		task.spawn(function()
+			local active = {}
+			for _, provider in ipairs(hubProviders) do
+				if scriptHub.Providers[provider.Key] then
+					table.insert(active, provider)
+				end
+			end
+
+			if #active == 0 then
+				hubLoading = false
+				if requestId == hubRequestId then
+					setHubStatus(tr("Enable at least one provider to see scripts."), true)
+				end
+				return
+			end
+
+			-- One thread per provider so a slow library never holds up the rest.
+			local batches = {}
+			local remaining = #active
+			for index, provider in ipairs(active) do
+				task.spawn(function()
+					local ok, parsed = pcall(function()
+						local data = hubJson(provider.Url(query, page))
+						return data and provider.Parse(data) or {}
+					end)
+					batches[index] = (ok and type(parsed) == "table") and parsed or {}
+					for _, entry in ipairs(batches[index]) do
+						entry.Provider = provider.Key
+						entry.ProviderName = provider.Name
+					end
+					if provider.Enrich then
+						pcall(provider.Enrich, batches[index])
+					end
+					remaining -= 1
+				end)
+			end
+
+			local deadline = os.clock() + HUB_REQUEST_TIMEOUT
+			while remaining > 0 and os.clock() < deadline do
+				task.wait(0.1)
+			end
+
+			if requestId ~= hubRequestId then
+				hubLoading = false
+				return
+			end
+
+			-- Interleave the providers so no single library dominates the feed.
+			local longest = 0
+			for index = 1, #active do
+				longest = math.max(longest, #(batches[index] or {}))
+			end
+
+			local added = 0
+			for row = 1, longest do
+				for index = 1, #active do
+					local entry = batches[index] and batches[index][row]
+					if entry then
+						local key = entry.Provider .. ":" .. entry.Id
+						if not hubSeen[key] then
+							hubSeen[key] = true
+							table.insert(hubEntries, entry)
+							createCard(entry, #hubEntries)
+							added += 1
+						end
+					end
+				end
+			end
+
+			hubLoading = false
+			hubPage = page + 1
+			hubHasMore = added > 0
+
+			if #hubEntries == 0 then
+				setHubStatus(tr("No scripts found. Try a different search."))
+			else
+				setHubStatus(("%d "):format(#hubEntries) .. tr("scripts loaded"))
+			end
+			loadMoreBtn.Visible = hubHasMore and #hubEntries > 0
+		end)
+	end
+
+	registerLocalizedString("Loading scripts...")
+	registerLocalizedString("Loading more scripts...")
+	registerLocalizedString("No scripts found. Try a different search.")
+	registerLocalizedString("scripts loaded")
+	registerLocalizedString("Enable at least one provider to see scripts.")
+
+	-- === Provider chips ===
+	local chipRefreshers = {}
+	for order, provider in ipairs(hubProviders) do
+		local chip = Instance.new("TextButton", chipRow)
+		chip.Name = provider.Key
+		chip.AutomaticSize = Enum.AutomaticSize.X
+		chip.Size = UDim2.new(0, 0, 0, 24)
+		chip.LayoutOrder = order
+		chip.AutoButtonColor = false
+		chip.Text = ""
+		chip.BackgroundColor3 = CONFIG.Colors.UtilButton
+		chip.ZIndex = 18
+		Instance.new("UICorner", chip).CornerRadius = UDim.new(1, 0)
+		addDepthGradient(chip)
+		safeSetCursor(chip, "rbxasset://SystemCursor/Arrow")
+
+		local chipPad = Instance.new("UIPadding", chip)
+		chipPad.PaddingLeft = UDim.new(0, 8)
+		chipPad.PaddingRight = UDim.new(0, 10)
+
+		local chipLayoutInner = Instance.new("UIListLayout", chip)
+		chipLayoutInner.FillDirection = Enum.FillDirection.Horizontal
+		chipLayoutInner.VerticalAlignment = Enum.VerticalAlignment.Center
+		chipLayoutInner.Padding = UDim.new(0, 5)
+
+		-- Same story as the card badge: swap in the uploaded logo when the
+		-- asset id is filled in at the top of this block.
+		local chipIcon
+		if provider.Icon ~= "" then
+			chipIcon = Instance.new("ImageLabel", chip)
+			chipIcon.Image = provider.Icon
+			chipIcon.BackgroundTransparency = 1
+		else
+			chipIcon = Instance.new("TextLabel", chip)
+			chipIcon.BackgroundTransparency = 1
+			chipIcon.Font = Enum.Font.SourceSans
+			chipIcon.Text = provider.Glyph
+			chipIcon.TextColor3 = Color3.new(1, 1, 1)
+			chipIcon.TextSize = 14
+		end
+		chipIcon.Size = UDim2.new(0, 14, 0, 14)
+		chipIcon.LayoutOrder = 1
+		chipIcon.ZIndex = 19
+
+		local chipLabel = Instance.new("TextLabel", chip)
+		chipLabel.AutomaticSize = Enum.AutomaticSize.X
+		chipLabel.Size = UDim2.new(0, 0, 1, 0)
+		chipLabel.LayoutOrder = 2
+		chipLabel.BackgroundTransparency = 1
+		chipLabel.Font = CONFIG.Font
+		chipLabel.Text = provider.Name
+		chipLabel.TextColor3 = CONFIG.Colors.Text
+		chipLabel.TextSize = 12
+		chipLabel.ZIndex = 19
+
+		local function paintChip()
+			local enabled = scriptHub.Providers[provider.Key] == true
+			TweenService:Create(chip, TweenInfo.new(0.15), {
+				BackgroundColor3 = enabled and CONFIG.Colors.SecondaryAccent or CONFIG.Colors.UtilButton,
+				BackgroundTransparency = enabled and 0 or 0.45,
+			}):Play()
+			chipLabel.TextTransparency = enabled and 0 or 0.35
+		end
+		paintChip()
+		table.insert(chipRefreshers, paintChip)
+
+		table.insert(
+			connections,
+			chip.MouseButton1Click:Connect(function()
+				scriptHub.Providers[provider.Key] = not scriptHub.Providers[provider.Key]
+				paintChip()
+				saveSettings()
+				fetchHubPage(true)
+			end)
+		)
+	end
+
+	-- === Open / close ===
+	function toggleHub()
+		isHubOpen = not isHubOpen
+		if isHubOpen and settingsFrame.Visible then
+			toggleSettings()
+		end
+		if isHubOpen then
+			hubOverlay.Visible = true
+			hubFrame.Visible = true
+			TweenService:Create(hubOverlay, TweenInfo.new(0.3), { BackgroundTransparency = 0.6 }):Play()
+			hubScale.Scale = 0
+			TweenService
+				:Create(hubScale, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 })
+				:Play()
+			if #hubEntries == 0 and not hubLoading then
+				fetchHubPage(true)
+			end
+		else
+			closeDetail()
+			TweenService:Create(hubOverlay, TweenInfo.new(0.3), { BackgroundTransparency = 1 }):Play()
+			local tween = TweenService:Create(
+				hubScale,
+				TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.In),
+				{ Scale = 0 }
+			)
+			tween:Play()
+			tween.Completed:Wait()
+			hubOverlay.Visible = false
+			hubFrame.Visible = false
+		end
+	end
+
+	table.insert(
+		connections,
+		acceptBtn.MouseButton1Click:Connect(function()
+			scriptHub.Accepted = true
+			saveSettings()
+			setDisclaimerVisible(false)
+			if not isHubOpen then
+				toggleHub()
+			end
+		end)
+	)
+	table.insert(
+		connections,
+		declineBtn.MouseButton1Click:Connect(function()
+			setDisclaimerVisible(false)
+		end)
+	)
+	table.insert(
+		connections,
+		disclaimerOverlay.MouseButton1Click:Connect(function()
+			setDisclaimerVisible(false)
+		end)
+	)
+
+	table.insert(
+		connections,
+		scriptHub.Button.MouseButton1Click:Connect(function()
+			if isHubOpen then
+				toggleHub()
+			elseif scriptHub.Accepted then
+				toggleHub()
+			else
+				setDisclaimerVisible(true)
+			end
+		end)
+	)
+	table.insert(
+		connections,
+		hubCloseBtn.MouseButton1Click:Connect(function()
+			if isHubOpen then
+				toggleHub()
+			end
+		end)
+	)
+	table.insert(
+		connections,
+		hubOverlay.MouseButton1Click:Connect(function()
+			if isHubOpen then
+				toggleHub()
+			end
+		end)
+	)
+
+	local function runSearch()
+		hubQuery = searchBox.Text:gsub("^%s+", ""):gsub("%s+$", "")
+		fetchHubPage(true)
+	end
+
+	table.insert(connections, searchBtn.MouseButton1Click:Connect(runSearch))
+	table.insert(
+		connections,
+		searchBox.FocusLost:Connect(function(enterPressed)
+			if enterPressed then
+				runSearch()
+			end
+		end)
+	)
+	table.insert(
+		connections,
+		loadMoreBtn.MouseButton1Click:Connect(function()
+			createClickParticles(loadMoreBtn)
+			fetchHubPage(false)
+		end)
+	)
+
+	registerLocalizedString("Reading the current experience name...")
+	table.insert(
+		connections,
+		thisGameBtn.MouseButton1Click:Connect(function()
+			setHubStatus(tr("Reading the current experience name..."))
+			task.spawn(function()
+				local ok, info = pcall(function()
+					return game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId)
+				end)
+				local name = ok and type(info) == "table" and type(info.Name) == "string" and info.Name or nil
+				if not name then
+					setHubStatus(tr("Could not read this experience's name."), true)
+					return
+				end
+				searchBox.Text = name
+				runSearch()
+			end)
+		end)
+	)
+	registerLocalizedString("Could not read this experience's name.")
+
+	table.insert(themedUpdaters, function(theme, fontData)
+		tintTween(hubFrame, { BackgroundColor3 = theme.Background })
+		tintTween(hubStroke, { Color = theme.PrimaryAccent })
+		tintTween(hubTitle, { TextColor3 = theme.Text })
+		hubTitle.Font = fontData.Bold
+		tintTween(searchBox, { BackgroundColor3 = theme.UtilButton, TextColor3 = theme.Text })
+		searchBox.Font = fontData.Font
+		tintTween(hubStatus, { TextColor3 = theme.InputEcho })
+		hubStatus.Font = fontData.Font
+		tintTween(resultScroll, { ScrollBarImageColor3 = theme.PrimaryAccent })
+		tintTween(loadMoreBtn, { BackgroundColor3 = theme.SecondaryAccent })
+		loadMoreBtn.Font = fontData.Bold
+
+		tintTween(detailFrame, { BackgroundColor3 = theme.Background })
+		tintTween(detailStroke, { Color = theme.PrimaryAccent })
+		tintTween(detailTitle, { TextColor3 = theme.Text })
+		detailTitle.Font = fontData.Bold
+		tintTween(detailMeta, { TextColor3 = theme.InputEcho })
+		detailMeta.Font = fontData.Font
+		tintTween(codeScroll, { BackgroundColor3 = theme.UtilButton, ScrollBarImageColor3 = theme.PrimaryAccent })
+		tintTween(codeLabel, { TextColor3 = theme.Text })
+		tintTween(detailThumb, { BackgroundColor3 = theme.UtilButton })
+		for _, btn in ipairs({ copyBtn, editorBtn, saveBtn, runBtn }) do
+			tintTween(btn, { BackgroundColor3 = theme[btn:GetAttribute("ColorType")] })
+			btn.Font = fontData.Bold
+		end
+
+		tintTween(disclaimerFrame, { BackgroundColor3 = theme.Background })
+		tintTween(disclaimerStroke, { Color = theme.Warning })
+		tintTween(disclaimerTitle, { TextColor3 = theme.Warning })
+		disclaimerTitle.Font = fontData.Bold
+		tintTween(disclaimerBody, { TextColor3 = theme.Text })
+		disclaimerBody.Font = fontData.Font
+		tintTween(disclaimerScroll, { ScrollBarImageColor3 = theme.PrimaryAccent })
+		tintTween(declineBtn, { BackgroundColor3 = theme.UtilButton, TextColor3 = theme.Text })
+		declineBtn.Font = fontData.Bold
+		tintTween(acceptBtn, { BackgroundColor3 = theme.SecondaryAccent })
+		acceptBtn.Font = fontData.Bold
+
+		for _, refresh in ipairs(chipRefreshers) do
+			refresh()
+		end
+		for _, child in ipairs(resultScroll:GetChildren()) do
+			if child.Name == "HubCard" then
+				tintTween(child, { BackgroundColor3 = theme.UtilButton })
+			end
+		end
+	end)
+end
+
+scriptHub.Build()
+scriptHub.Build = nil
 
 table.insert(
 	connections,
