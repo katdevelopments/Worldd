@@ -5419,6 +5419,15 @@ scriptHub.Build = function()
 		return imageAssets[url] or nil
 	end
 
+	-- Provider logos: every library publishes only a .ico, and Roblox decodes
+	-- neither ICO nor the BMP most of them wrap. Google's favicon service
+	-- re-encodes the same icon as a PNG, which does decode, so it is the default
+	-- source. Set a provider's Icon to an uploaded decal id to skip the download
+	-- entirely; that always wins over this.
+	local function faviconUrl(domain)
+		return ("https://www.google.com/s2/favicons?domain=%s&sz=64"):format(domain)
+	end
+
 	-- Swaps artwork in once it has downloaded, provided the label is still on
 	-- screen - searching and paging destroy cards while their images are in
 	-- flight.
@@ -5443,11 +5452,7 @@ scriptHub.Build = function()
 			Key = "scriptblox",
 			Name = "ScriptBlox",
 			Icon = "",
-			-- Downloaded and decoded at runtime (see the artwork block above).
-			-- ScriptBlox wraps a PNG inside its .ico, so this one renders as-is;
-			-- a provider whose favicon is BMP-encoded keeps the glyph until an
-			-- Icon decal id is filled in above.
-			IconUrl = "https://scriptblox.com/favicon.ico",
+			IconUrl = faviconUrl("scriptblox.com"),
 			Glyph = "🅱️",
 			Url = function(query, page)
 				if query == "" then
@@ -5554,7 +5559,7 @@ scriptHub.Build = function()
 			Key = "rscripts",
 			Name = "Rscripts",
 			Icon = "",
-			IconUrl = "https://rscripts.net/favicon.ico",
+			IconUrl = faviconUrl("rscripts.net"),
 			Glyph = "🇷",
 			Url = function(query, page)
 				if query == "" then
@@ -5605,7 +5610,7 @@ scriptHub.Build = function()
 			Key = "robloxscripts",
 			Name = "Roblox Scripts",
 			Icon = "",
-			IconUrl = "https://robloxscripts.com/favicon.ico",
+			IconUrl = faviconUrl("robloxscripts.com"),
 			Glyph = "🟥",
 			Url = function(query, page)
 				if query == "" then
@@ -5663,7 +5668,7 @@ scriptHub.Build = function()
 			Key = "haxhell",
 			Name = "HaxHell",
 			Icon = "",
-			IconUrl = "https://haxhell.com/favicon.ico",
+			IconUrl = faviconUrl("haxhell.com"),
 			Glyph = "😈",
 			Url = function(query, page)
 				if query == "" then
