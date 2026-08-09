@@ -5207,11 +5207,7 @@ scriptHub.Build = function()
 	local HUB_REQUEST_TIMEOUT = 20
 	local HUB_ENRICH_TIMEOUT = 8
 
-	-- Provider artwork has to live on Roblox, so each logo is referenced by an
-	-- asset id. Once the decals are uploaded, paste the id into Icon (e.g.
-	-- Icon = "rbxassetid://1234567890") and it is used everywhere that
-	-- provider appears; until then Glyph is drawn in its place.
-	local HUB_FALLBACK_THUMB = ""
+	-- Shown behind artwork that has not arrived (or cannot be decoded).
 	local HUB_FALLBACK_GLYPH = "🎮"
 
 	local function hubJson(url)
@@ -5283,11 +5279,175 @@ scriptHub.Build = function()
 		return tostring(math.floor(n))
 	end
 
+	local function absoluteUrl(url, base)
+		if type(url) ~= "string" or url == "" then
+			return nil
+		end
+		if url:match("^https?://") then
+			return url
+		end
+		return base .. (url:sub(1, 1) == "/" and url or "/" .. url)
+	end
+
+	-- === Web artwork ===
+	-- Every library hands back plain https image URLs, and an ImageLabel only
+	-- takes content ids, so the bytes have to be downloaded, written to disk and
+	-- passed through the executor's getcustomasset. Results are cached by URL,
+	-- so an image is fetched once per session however many cards use it, and the
+	-- files survive as a disk cache between sessions.
+	local IMAGE_FOLDER = "WorldClient_Images"
+	local IMAGE_MAX_BYTES = 2 * 1024 * 1024
+	local PNG_MAGIC = "\137PNG\13\10\26\10"
+	local JPEG_MAGIC = "\255\216\255"
+
+	local getCustomAsset = getcustomasset or getsynasset or (syn and syn.getcustomasset)
+	local canLoadWebImages = type(getCustomAsset) == "function" and type(writefile) == "function"
+
+	-- rbxcdn serves the same asset in several formats and sizes. Roblox decodes
+	-- PNG and JPEG but not WebP, and the large variants run to hundreds of
+	-- kilobytes for artwork drawn at 56px, so both get rewritten before the
+	-- download. Only the sizes rbxcdn actually publishes are substituted.
+	local rbxcdnSizes = {
+		["/512/512/"] = "/150/150/",
+		["/420/420/"] = "/150/150/",
+		["/768/432/"] = "/480/270/",
+	}
+
+	local function normalizeImageUrl(url)
+		if type(url) ~= "string" or not url:match("^https?://") then
+			return nil
+		end
+		if url:find("rbxcdn.com", 1, true) then
+			url = url:gsub("/Image/Webp/", "/Image/Png/")
+			for from, to in pairs(rbxcdnSizes) do
+				url = url:gsub(from, to, 1)
+			end
+			return url
+		end
+		-- Anything served from a library's own CDN has to already be in a format
+		-- Roblox can decode; most of them publish WebP, which it cannot.
+		local lowered = url:lower()
+		if lowered:find("%.webp") or lowered:find("%.gif") or lowered:find("%.svg") then
+			return nil
+		end
+		return url
+	end
+
+	-- FNV-1a over the URL: a stable file name, so the same artwork reuses the
+	-- same cache file instead of being downloaded again next session.
+	local function imagePathFor(url)
+		local hash = 2166136261
+		for index = 1, #url do
+			hash = bit32.bxor(hash, string.byte(url, index))
+			hash = (hash * 16777619) % 4294967296
+		end
+		return ("%s/%08x.png"):format(IMAGE_FOLDER, hash)
+	end
+
+	-- Favicons are .ico containers, which Roblox cannot decode - but a modern
+	-- one usually just wraps a PNG, and that can be lifted out untouched. Older
+	-- BMP-encoded icons have no PNG inside and fall back to the glyph.
+	local function extractIcoPng(data)
+		if #data < 22 or data:sub(1, 4) ~= "\0\0\1\0" then
+			return nil
+		end
+		local ok, result = pcall(function()
+			local count = string.unpack("<I2", data, 5)
+			for index = 0, count - 1 do
+				local size, offset = string.unpack("<I4I4", data, 15 + index * 16)
+				local blob = data:sub(offset + 1, offset + size)
+				if blob:sub(1, 8) == PNG_MAGIC then
+					return blob
+				end
+			end
+			return nil
+		end)
+		return ok and result or nil
+	end
+
+	local imageAssets = {} -- normalized url -> content id, or false once it has failed
+	local imageLoading = {} -- normalized url -> true while a thread is fetching it
+
+	local function resolveImageAsset(url)
+		local cached = imageAssets[url]
+		if cached ~= nil then
+			return cached or nil
+		end
+		if not canLoadWebImages then
+			imageAssets[url] = false
+			return nil
+		end
+		-- A provider logo is shared by every card on the page, so wait on the
+		-- thread already fetching it rather than starting a dozen more.
+		if imageLoading[url] then
+			local deadline = os.clock() + 10
+			while imageLoading[url] and os.clock() < deadline do
+				task.wait(0.05)
+			end
+			return imageAssets[url] or nil
+		end
+
+		imageLoading[url] = true
+		local body = httpGet(url)
+
+		if type(body) == "string" and #body > 0 and #body <= IMAGE_MAX_BYTES then
+			if body:sub(1, 8) ~= PNG_MAGIC and body:sub(1, 3) ~= JPEG_MAGIC then
+				body = extractIcoPng(body)
+			end
+		else
+			body = nil
+		end
+
+		local asset
+		if body then
+			pcall(function()
+				if
+					type(isfolder) == "function"
+					and type(makefolder) == "function"
+					and not isfolder(IMAGE_FOLDER)
+				then
+					makefolder(IMAGE_FOLDER)
+				end
+				local path = imagePathFor(url)
+				writefile(path, body)
+				asset = getCustomAsset(path)
+			end)
+		end
+
+		imageAssets[url] = (type(asset) == "string" and asset ~= "" and asset) or false
+		imageLoading[url] = nil
+		return imageAssets[url] or nil
+	end
+
+	-- Swaps artwork in once it has downloaded, provided the label is still on
+	-- screen - searching and paging destroy cards while their images are in
+	-- flight.
+	local function applyImageAsync(imageLabel, glyphLabel, url)
+		local normalized = normalizeImageUrl(url)
+		if not normalized then
+			return
+		end
+		task.spawn(function()
+			local asset = resolveImageAsset(normalized)
+			if asset and imageLabel.Parent then
+				imageLabel.Image = asset
+				if glyphLabel then
+					glyphLabel.Visible = false
+				end
+			end
+		end)
+	end
+
 	local hubProviders = {
 		{
 			Key = "scriptblox",
 			Name = "ScriptBlox",
 			Icon = "",
+			-- Downloaded and decoded at runtime (see the artwork block above).
+			-- ScriptBlox wraps a PNG inside its .ico, so this one renders as-is;
+			-- a provider whose favicon is BMP-encoded keeps the glyph until an
+			-- Icon decal id is filled in above.
+			IconUrl = "https://scriptblox.com/favicon.ico",
 			Glyph = "🅱️",
 			Url = function(query, page)
 				if query == "" then
@@ -5316,6 +5476,8 @@ scriptHub.Build = function()
 							Game = universal and "Universal Script" or text(gameData.name, "Unknown Game"),
 							PlaceId = universal and 0 or placeIdOf(gameData.gameId, gameData.placeId, s.placeId),
 							Views = number(s.views),
+							ImageUrl = normalizeImageUrl(gameData.imageUrl)
+								or normalizeImageUrl(absoluteUrl(s.image, "https://scriptblox.com")),
 							Verified = s.verified == true,
 							Universal = universal,
 							KeySystem = s.key == true or s.keySystem == true,
@@ -5334,7 +5496,11 @@ scriptHub.Build = function()
 			Enrich = function(entries)
 				local pending = {}
 				for _, entry in ipairs(entries) do
-					if entry.Creator == "Unknown" or (not entry.Universal and entry.PlaceId == 0) then
+					if
+					entry.Creator == "Unknown"
+					or not entry.ImageUrl
+					or (not entry.Universal and entry.PlaceId == 0)
+				then
 						table.insert(pending, entry)
 					end
 				end
@@ -5357,6 +5523,10 @@ scriptHub.Build = function()
 							end
 							if not entry.Source and type(detail.script) == "string" then
 								entry.Source = detail.script
+							end
+							if not entry.ImageUrl then
+								entry.ImageUrl = normalizeImageUrl(gameData.imageUrl)
+									or normalizeImageUrl(absoluteUrl(detail.image, "https://scriptblox.com"))
 							end
 						end
 						remaining -= 1
@@ -5384,6 +5554,7 @@ scriptHub.Build = function()
 			Key = "rscripts",
 			Name = "Rscripts",
 			Icon = "",
+			IconUrl = "https://rscripts.net/favicon.ico",
 			Glyph = "🇷",
 			Url = function(query, page)
 				if query == "" then
@@ -5413,6 +5584,11 @@ scriptHub.Build = function()
 							Game = universal and "Universal Script" or gameName,
 							PlaceId = universal and 0 or placeIdOf(gameData.gameId, gameData.placeId, s.placeId),
 							Views = number(s.views),
+							-- s.image is WebP on the Rscripts CDN; the rbxcdn copies
+							-- on the game record convert cleanly, so prefer those.
+							ImageUrl = normalizeImageUrl(gameData.imgurl)
+								or normalizeImageUrl(gameData.gameLogo)
+								or normalizeImageUrl(s.image),
 							Verified = user.verified == true,
 							Universal = universal,
 							KeySystem = s.keySystem == true,
@@ -5429,6 +5605,7 @@ scriptHub.Build = function()
 			Key = "robloxscripts",
 			Name = "Roblox Scripts",
 			Icon = "",
+			IconUrl = "https://robloxscripts.com/favicon.ico",
 			Glyph = "🟥",
 			Url = function(query, page)
 				if query == "" then
@@ -5463,6 +5640,9 @@ scriptHub.Build = function()
 							Game = universal and "Universal Script" or gameName,
 							PlaceId = universal and 0 or placeIdOf(gameData.placeId, s.placeId, gameData.universeId),
 							Views = number(s.views ~= nil and s.views or (type(s.stats) == "table" and s.stats.views)),
+							ImageUrl = normalizeImageUrl(gameData.iconUrl)
+								or normalizeImageUrl(gameData.thumbnailUrl)
+								or normalizeImageUrl(s.image),
 							Verified = s.verified == true or author.verified == true or author.isVerified == true,
 							Universal = universal,
 							KeySystem = s.key == true or s.keySystem == true or flags.keySystem == true,
@@ -5483,6 +5663,7 @@ scriptHub.Build = function()
 			Key = "haxhell",
 			Name = "HaxHell",
 			Icon = "",
+			IconUrl = "https://haxhell.com/favicon.ico",
 			Glyph = "😈",
 			Url = function(query, page)
 				if query == "" then
@@ -5514,6 +5695,9 @@ scriptHub.Build = function()
 							Game = universal and "Universal Script" or text(gameData.name, "Unknown Game"),
 							PlaceId = universal and 0 or placeIdOf(gameData.placeId, gameData.universeId, s.placeId),
 							Views = number(stats.views),
+							ImageUrl = normalizeImageUrl(gameData.thumbnailUrl)
+								or normalizeImageUrl(gameData.iconUrl)
+								or normalizeImageUrl(type(s.media) == "table" and s.media.thumbnailUrl or nil),
 							Verified = author.isScripterVerified == true,
 							Universal = universal,
 							KeySystem = flags.keySystem == true,
@@ -5973,11 +6157,46 @@ scriptHub.Build = function()
 		runBtn.Text = "▶ " .. tr("Run")
 	end)
 
+	-- rbxthumb resolves natively and instantly, so a known place id paints the
+	-- game's icon straight away; the library's own banner art is nicer but has
+	-- to be downloaded, so it is swapped in over the top once it lands.
 	local function thumbnailFor(entry)
 		if entry.PlaceId and entry.PlaceId > 0 then
 			return ("rbxthumb://type=GameIcon&id=%d&w=150&h=150"):format(entry.PlaceId)
 		end
-		return HUB_FALLBACK_THUMB
+		return ""
+	end
+
+	local function paintThumbnail(imageLabel, glyphLabel, entry)
+		local instant = thumbnailFor(entry)
+		imageLabel.Image = instant
+		glyphLabel.Visible = instant == ""
+		applyImageAsync(imageLabel, glyphLabel, entry.ImageUrl)
+	end
+
+	-- Provider badge: an uploaded decal wins, then the site's own icon fetched
+	-- at runtime, and the glyph stands in until (or unless) one of those lands.
+	local function createProviderBadge(parent, provider, size, zIndex)
+		local badge = Instance.new("ImageLabel", parent)
+		badge.Size = UDim2.new(0, size, 0, size)
+		badge.BackgroundTransparency = 1
+		badge.Image = provider and provider.Icon or ""
+		badge.ZIndex = zIndex
+
+		local glyph = Instance.new("TextLabel", badge)
+		glyph.Size = UDim2.new(1, 0, 1, 0)
+		glyph.BackgroundTransparency = 1
+		glyph.Font = Enum.Font.SourceSans
+		glyph.Text = provider and provider.Glyph or "❔"
+		glyph.TextColor3 = CONFIG.Colors.Text
+		glyph.TextSize = size
+		glyph.Visible = badge.Image == ""
+		glyph.ZIndex = zIndex
+
+		if provider and badge.Image == "" then
+			applyImageAsync(badge, glyph, provider.IconUrl)
+		end
+		return badge
 	end
 
 	local function tagsFor(entry)
@@ -6058,9 +6277,7 @@ scriptHub.Build = function()
 		end
 		detailMeta.Text = table.concat(metaParts, "  •  ")
 
-		local thumb = thumbnailFor(entry)
-		detailThumb.Image = thumb
-		detailThumbGlyph.Visible = thumb == ""
+		paintThumbnail(detailThumb, detailThumbGlyph, entry)
 
 		codeLabel.Text = tr("Loading script source...")
 		codeScroll.CanvasPosition = Vector2.new(0, 0)
@@ -6198,7 +6415,6 @@ scriptHub.Build = function()
 		thumb.BackgroundColor3 = CONFIG.Colors.Background
 		thumb.BackgroundTransparency = 0.2
 		thumb.ScaleType = Enum.ScaleType.Crop
-		thumb.Image = thumbnailFor(entry)
 		thumb.ZIndex = 19
 		Instance.new("UICorner", thumb).CornerRadius = UDim.new(0, 6)
 
@@ -6209,8 +6425,8 @@ scriptHub.Build = function()
 		thumbGlyph.Text = HUB_FALLBACK_GLYPH
 		thumbGlyph.TextColor3 = Color3.new(1, 1, 1)
 		thumbGlyph.TextSize = 24
-		thumbGlyph.Visible = thumb.Image == ""
 		thumbGlyph.ZIndex = 19
+		paintThumbnail(thumb, thumbGlyph, entry)
 
 		local title = Instance.new("TextLabel", card)
 		title.Size = UDim2.new(1, -82, 0, 18)
@@ -6224,25 +6440,8 @@ scriptHub.Build = function()
 		title.Text = entry.Title
 		title.ZIndex = 19
 
-		-- The provider badge: an ImageLabel once the logo asset is filled in,
-		-- otherwise the provider's glyph.
-		local provider = hubProviderByKey[entry.Provider]
-		local badge
-		if provider and provider.Icon ~= "" then
-			badge = Instance.new("ImageLabel", card)
-			badge.Image = provider.Icon
-			badge.BackgroundTransparency = 1
-		else
-			badge = Instance.new("TextLabel", card)
-			badge.BackgroundTransparency = 1
-			badge.Font = Enum.Font.SourceSans
-			badge.Text = provider and provider.Glyph or "❔"
-			badge.TextColor3 = CONFIG.Colors.Text
-			badge.TextSize = 14
-		end
-		badge.Size = UDim2.new(0, 14, 0, 14)
+		local badge = createProviderBadge(card, hubProviderByKey[entry.Provider], 14, 19)
 		badge.Position = UDim2.new(0, 74, 0, 30)
-		badge.ZIndex = 19
 
 		local meta = Instance.new("TextLabel", card)
 		meta.Size = UDim2.new(1, -104, 0, 14)
@@ -6459,24 +6658,8 @@ scriptHub.Build = function()
 		chipLayoutInner.VerticalAlignment = Enum.VerticalAlignment.Center
 		chipLayoutInner.Padding = UDim.new(0, 5)
 
-		-- Same story as the card badge: swap in the uploaded logo when the
-		-- asset id is filled in at the top of this block.
-		local chipIcon
-		if provider.Icon ~= "" then
-			chipIcon = Instance.new("ImageLabel", chip)
-			chipIcon.Image = provider.Icon
-			chipIcon.BackgroundTransparency = 1
-		else
-			chipIcon = Instance.new("TextLabel", chip)
-			chipIcon.BackgroundTransparency = 1
-			chipIcon.Font = Enum.Font.SourceSans
-			chipIcon.Text = provider.Glyph
-			chipIcon.TextColor3 = Color3.new(1, 1, 1)
-			chipIcon.TextSize = 14
-		end
-		chipIcon.Size = UDim2.new(0, 14, 0, 14)
+		local chipIcon = createProviderBadge(chip, provider, 14, 19)
 		chipIcon.LayoutOrder = 1
-		chipIcon.ZIndex = 19
 
 		local chipLabel = Instance.new("TextLabel", chip)
 		chipLabel.AutomaticSize = Enum.AutomaticSize.X
