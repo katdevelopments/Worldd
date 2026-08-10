@@ -5451,7 +5451,7 @@ scriptHub.Build = function()
 		{
 			Key = "scriptblox",
 			Name = "ScriptBlox",
-			Icon = "",
+			Icon = "rbxassetid://133394455676372",
 			IconUrl = faviconUrl("scriptblox.com"),
 			Glyph = "🅱️",
 			Url = function(query, page)
@@ -5558,7 +5558,7 @@ scriptHub.Build = function()
 		{
 			Key = "rscripts",
 			Name = "Rscripts",
-			Icon = "",
+			Icon = "rbxassetid://107527701431712",
 			IconUrl = faviconUrl("rscripts.net"),
 			Glyph = "🇷",
 			Url = function(query, page)
@@ -5609,7 +5609,7 @@ scriptHub.Build = function()
 		{
 			Key = "robloxscripts",
 			Name = "Roblox Scripts",
-			Icon = "",
+			Icon = "rbxassetid://108219075398216",
 			IconUrl = faviconUrl("robloxscripts.com"),
 			Glyph = "🟥",
 			Url = function(query, page)
@@ -5667,7 +5667,7 @@ scriptHub.Build = function()
 		{
 			Key = "haxhell",
 			Name = "HaxHell",
-			Icon = "",
+			Icon = "rbxassetid://74042163033078",
 			IconUrl = faviconUrl("haxhell.com"),
 			Glyph = "😈",
 			Url = function(query, page)
@@ -6198,8 +6198,26 @@ scriptHub.Build = function()
 		glyph.Visible = badge.Image == ""
 		glyph.ZIndex = zIndex
 
-		if provider and badge.Image == "" then
-			applyImageAsync(badge, glyph, provider.IconUrl)
+		if provider then
+			if badge.Image == "" then
+				applyImageAsync(badge, glyph, provider.IconUrl)
+			else
+				-- An uploaded asset that is still pending moderation, or was
+				-- rejected, never finishes loading and would leave an empty
+				-- square. Give it a moment, then fall back to the downloaded
+				-- favicon rather than showing nothing.
+				task.spawn(function()
+					local deadline = os.clock() + 5
+					while not badge.IsLoaded and os.clock() < deadline do
+						task.wait(0.25)
+					end
+					if not badge.IsLoaded and badge.Parent then
+						badge.Image = ""
+						glyph.Visible = true
+						applyImageAsync(badge, glyph, provider.IconUrl)
+					end
+				end)
+			end
 		end
 		return badge
 	end
