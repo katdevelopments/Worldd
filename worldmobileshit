@@ -499,6 +499,8 @@ local scriptHub = {
 	},
 	Button = nil,
 	AddSaved = nil,
+	-- How many result cards sit side by side in the hub grid.
+	Columns = 3,
 }
 
 -- === Google Translate integration ===
@@ -781,6 +783,7 @@ local function saveSettings()
 				tutorialCompleted = tutorialCompleted,
 				scriptHubAccepted = scriptHub.Accepted,
 				scriptHubProviders = scriptHub.Providers,
+				scriptHubColumns = scriptHub.Columns,
 				customTheme = customTheme,
 			})
 		)
@@ -849,6 +852,9 @@ local function loadSettings()
 	end
 	if type(data.scriptHubAccepted) == "boolean" then
 		scriptHub.Accepted = data.scriptHubAccepted
+	end
+	if type(data.scriptHubColumns) == "number" then
+		scriptHub.Columns = math.clamp(math.floor(data.scriptHubColumns), 1, 4)
 	end
 	if type(data.scriptHubProviders) == "table" then
 		for key in pairs(scriptHub.Providers) do
@@ -5968,7 +5974,7 @@ scriptHub.Build = function()
 	hubStroke.Thickness = 2
 
 	local hubTitle = Instance.new("TextLabel", hubFrame)
-	hubTitle.Size = UDim2.new(1, -60, 0, 30)
+	hubTitle.Size = UDim2.new(1, -92, 0, 30)
 	hubTitle.Position = UDim2.new(0, 12, 0, 8)
 	hubTitle.BackgroundTransparency = 1
 	hubTitle.Font = CONFIG.BoldFont
@@ -6059,6 +6065,14 @@ scriptHub.Build = function()
 	hubStatus.Text = ""
 	hubStatus.ZIndex = 18
 
+	-- Cycles how many cards sit side by side. Keycap emoji so the current
+	-- count reads at a glance without a separate label.
+	local COLUMN_GLYPHS = { "1️⃣", "2️⃣", "3️⃣", "4️⃣" }
+	local columnsBtn = createIconButton(hubFrame, COLUMN_GLYPHS[scriptHub.Columns], 26, "UtilButton")
+	columnsBtn.Position = UDim2.new(1, -44, 0, 10)
+	columnsBtn.AnchorPoint = Vector2.new(1, 0)
+	columnsBtn.ZIndex = 18
+
 	local resultScroll = Instance.new("ScrollingFrame", hubFrame)
 	resultScroll.Position = UDim2.new(0, 12, 0, 138)
 	resultScroll.Size = UDim2.new(1, -24, 1, -150)
@@ -6071,9 +6085,11 @@ scriptHub.Build = function()
 	resultScroll.ScrollingDirection = Enum.ScrollingDirection.Y
 	resultScroll.ZIndex = 18
 	safeSetCursor(resultScroll, "rbxasset://SystemCursor/Arrow")
-	local resultLayout = Instance.new("UIListLayout", resultScroll)
-	resultLayout.Padding = UDim.new(0, 8)
+	local CARD_GAP = 8
+	local resultLayout = Instance.new("UIGridLayout", resultScroll)
+	resultLayout.CellPadding = UDim2.new(0, CARD_GAP, 0, CARD_GAP)
 	resultLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	resultLayout.CellSize = UDim2.new(0, 100, 0, 140)
 
 	local function setHubStatus(message, isError)
 		hubStatus.Text = message or ""
@@ -6576,7 +6592,6 @@ scriptHub.Build = function()
 	local function createCard(entry, order)
 		local card = Instance.new("TextButton", resultScroll)
 		card.Name = "HubCard"
-		card.Size = UDim2.new(1, -6, 0, CARD_HEIGHT)
 		card.LayoutOrder = order
 		card.BackgroundColor3 = Color3.new(0, 0, 0)
 		card.BackgroundTransparency = 0
@@ -6629,6 +6644,7 @@ scriptHub.Build = function()
 		badge.Position = UDim2.new(0, 10, 0, 9)
 
 		local providerName = Instance.new("TextLabel", card)
+		providerName.Name = "ProviderName"
 		providerName.Size = UDim2.new(0, 0, 0, 18)
 		providerName.AutomaticSize = Enum.AutomaticSize.X
 		providerName.Position = UDim2.new(0, 33, 0, 9)
@@ -6642,6 +6658,7 @@ scriptHub.Build = function()
 
 		-- Everything below the artwork stacks upward from the bottom edge.
 		local content = Instance.new("Frame", card)
+		content.Name = "Content"
 		content.Size = UDim2.new(1, -20, 1, -40)
 		content.Position = UDim2.new(0, 10, 1, -9)
 		content.AnchorPoint = Vector2.new(0, 1)
@@ -6665,6 +6682,7 @@ scriptHub.Build = function()
 		title.ZIndex = 21
 
 		local meta = Instance.new("TextLabel", content)
+		meta.Name = "Meta"
 		meta.Size = UDim2.new(1, 0, 0, 14)
 		meta.LayoutOrder = 2
 		meta.BackgroundTransparency = 1
@@ -6677,6 +6695,7 @@ scriptHub.Build = function()
 		meta.ZIndex = 21
 
 		local tagRow = Instance.new("Frame", content)
+		tagRow.Name = "Tags"
 		tagRow.Size = UDim2.new(1, 0, 0, 16)
 		tagRow.LayoutOrder = 3
 		tagRow.BackgroundTransparency = 1
@@ -6720,6 +6739,7 @@ scriptHub.Build = function()
 		refreshStats()
 
 		local actionRow = Instance.new("Frame", content)
+		actionRow.Name = "Actions"
 		actionRow.Size = UDim2.new(1, 0, 0, 26)
 		actionRow.LayoutOrder = 5
 		actionRow.BackgroundTransparency = 1
@@ -6804,10 +6824,12 @@ scriptHub.Build = function()
 		)
 	end
 
-	local loadMoreBtn = Instance.new("TextButton", resultScroll)
+	-- Sits below the grid rather than inside it: every child of a UIGridLayout
+	-- becomes a cell, and a full-width button is not a card.
+	local loadMoreBtn = Instance.new("TextButton", hubFrame)
 	loadMoreBtn.Name = "LoadMore"
-	loadMoreBtn.Size = UDim2.new(1, -6, 0, 34)
-	loadMoreBtn.LayoutOrder = 1000000
+	loadMoreBtn.Size = UDim2.new(1, -24, 0, 32)
+	loadMoreBtn.Position = UDim2.new(0, 12, 1, -42)
 	loadMoreBtn.BackgroundColor3 = CONFIG.Colors.SecondaryAccent
 	loadMoreBtn.Font = CONFIG.BoldFont
 	loadMoreBtn.Text = tr("Load more")
@@ -6830,6 +6852,107 @@ scriptHub.Build = function()
 			end
 		end
 	end
+
+	local function setLoadMoreVisible(visible)
+		loadMoreBtn.Visible = visible
+		-- The button lives below the grid, so the grid has to give up the room.
+		resultScroll.Size = visible and UDim2.new(1, -24, 1, -186) or UDim2.new(1, -24, 1, -150)
+	end
+
+	-- === Grid sizing ===
+	-- Cells are sized in pixels from the measured width of the scroll frame:
+	-- a scale-based cell cannot account for the gaps between columns, and the
+	-- panel is resizable, so the maths is redone whenever the width changes.
+	--
+	-- Card contents are dropped as the cells get narrower. Three across on a
+	-- phone leaves well under 100px per card, which fits a title and little
+	-- else, so the tag pills and the action row bow out and tapping the card
+	-- opens the detail page instead - where those actions live anyway.
+	local ACTIONS_MIN_WIDTH = 210
+	local TAGS_MIN_WIDTH = 150
+	local PROVIDER_NAME_MIN_WIDTH = 130
+	local META_MIN_WIDTH = 115
+	-- Row heights, mirroring the sizes createCard gives them.
+	local ROW_HEIGHTS = { Title = 19, Meta = 14, Tags = 16, Stats = 13, Actions = 26 }
+	local ROW_GAP, CONTENT_INSET = 3, 40
+
+	local function updateGrid()
+		local columns = math.clamp(scriptHub.Columns or 3, 1, 4)
+		local available = resultScroll.AbsoluteSize.X - resultScroll.ScrollBarThickness - 2
+		if available <= 0 then
+			return
+		end
+
+		local cellWidth = math.max(math.floor((available - CARD_GAP * (columns - 1)) / columns), 60)
+		local showActions = cellWidth >= ACTIONS_MIN_WIDTH
+		local showTags = cellWidth >= TAGS_MIN_WIDTH
+		local showMeta = cellWidth >= META_MIN_WIDTH
+		local showProviderName = cellWidth >= PROVIDER_NAME_MIN_WIDTH
+
+		-- The card only has to be as tall as the rows it is actually showing,
+		-- so a narrow three-across card is a compact poster rather than a
+		-- tall strip padded out with empty space.
+		local stack, rows = ROW_HEIGHTS.Title + ROW_HEIGHTS.Stats, 2
+		if showMeta then
+			stack += ROW_HEIGHTS.Meta
+			rows += 1
+		end
+		if showTags then
+			stack += ROW_HEIGHTS.Tags
+			rows += 1
+		end
+		if showActions then
+			stack += ROW_HEIGHTS.Actions
+			rows += 1
+		end
+		local minHeight = stack + ROW_GAP * (rows - 1) + CONTENT_INSET
+
+		local cellHeight
+		if columns == 1 then
+			cellHeight = CARD_HEIGHT
+		else
+			-- Two across still reads as a banner; three or four are posters.
+			local ratio = columns == 2 and 0.75 or 1.1
+			cellHeight = math.clamp(math.floor(cellWidth * ratio), minHeight, 230)
+		end
+		resultLayout.CellSize = UDim2.new(0, cellWidth, 0, cellHeight)
+
+		for _, entry in ipairs(hubEntries) do
+			local card = entry.Card
+			if card and card.Parent then
+				local content = card:FindFirstChild("Content")
+				if content then
+					for name, visible in pairs({
+						Actions = showActions,
+						Tags = showTags,
+						Meta = showMeta,
+					}) do
+						local row = content:FindFirstChild(name)
+						if row then
+							row.Visible = visible
+						end
+					end
+				end
+				local name = card:FindFirstChild("ProviderName")
+				if name then
+					name.Visible = showProviderName
+				end
+			end
+		end
+	end
+
+	table.insert(connections, resultScroll:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateGrid))
+
+	table.insert(
+		connections,
+		columnsBtn.MouseButton1Click:Connect(function()
+			scriptHub.Columns = (math.clamp(scriptHub.Columns or 3, 1, 4) % 4) + 1
+			columnsBtn.Text = COLUMN_GLYPHS[scriptHub.Columns]
+			createClickParticles(columnsBtn)
+			updateGrid()
+			saveSettings()
+		end)
+	)
 
 	-- === Filtering ===
 	-- Runs over the entries already loaded and shows or hides their cards, so
@@ -7022,7 +7145,7 @@ scriptHub.Build = function()
 		end
 
 		hubLoading = true
-		loadMoreBtn.Visible = false
+		setLoadMoreVisible(false)
 		if reset then
 			hubRequestId += 1
 			hubPage = 1
@@ -7116,9 +7239,10 @@ scriptHub.Build = function()
 			if #hubEntries == 0 then
 				setHubStatus(tr("No scripts found. Try a different search."))
 			else
+				updateGrid()
 				applyFilters()
 			end
-			loadMoreBtn.Visible = hubHasMore and #hubEntries > 0
+			setLoadMoreVisible(hubHasMore and #hubEntries > 0)
 
 			-- Player counts and visits are a nicety, so they are fetched after
 			-- the cards are already on screen rather than delaying them.
@@ -7502,6 +7626,7 @@ scriptHub.Build = function()
 			TweenService
 				:Create(hubScale, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 })
 				:Play()
+			updateGrid()
 			if #hubEntries == 0 and not hubLoading then
 				fetchHubPage(true)
 			end
