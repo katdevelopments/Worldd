@@ -5487,6 +5487,7 @@ scriptHub.Build = function()
 							Universal = universal,
 							KeySystem = s.key == true or s.keySystem == true,
 							Patched = s.isPatched == true or s.patched == true,
+							Mobile = s.mobile == true,
 							Source = type(s.script) == "string" and s.script or nil,
 						})
 					end
@@ -5598,6 +5599,7 @@ scriptHub.Build = function()
 							Universal = universal,
 							KeySystem = s.keySystem == true,
 							Patched = s.patched == true,
+							Mobile = s.mobileReady == true,
 							-- Rscripts hands back a URL rather than the source.
 							RawUrl = type(s.rawScript) == "string" and s.rawScript or nil,
 						})
@@ -5652,6 +5654,7 @@ scriptHub.Build = function()
 							Universal = universal,
 							KeySystem = s.key == true or s.keySystem == true or flags.keySystem == true,
 							Patched = s.patched == true or flags.patched == true,
+							Mobile = s.mobile == true or s.mobileSupported == true or flags.mobileSupported == true,
 							Source = type(s.script) == "string" and s.script or nil,
 							-- The listing calls it rawScriptUrl; keep the other two
 							-- spellings as a fallback in case the field is renamed.
@@ -5707,6 +5710,7 @@ scriptHub.Build = function()
 							Universal = universal,
 							KeySystem = flags.keySystem == true,
 							Patched = flags.patched == true,
+							Mobile = flags.mobileSupported == true,
 							RawUrl = type(s.links) == "table" and type(s.links.raw) == "string" and s.links.raw or nil,
 						})
 					end
@@ -5732,6 +5736,70 @@ scriptHub.Build = function()
 	local isHubOpen = false
 	local hubDetailEntry = nil
 	local toggleHub
+	local applyFilters
+
+	-- === Filters ===
+	-- Same set the web hub offers. "all" is the reset switch: while it is on
+	-- every other toggle is ignored, and turning any other one on clears it.
+	-- The rest combine with AND, so picking Verified and Mobile shows only
+	-- scripts that are both.
+	local FILTER_DEFS = {
+		{ Key = "all", Label = "All", Icon = "▦" },
+		{ Key = "favorites", Label = "Favorites", Icon = "⭐" },
+		{ Key = "popular", Label = "Popular", Icon = "🔥" },
+		{ Key = "good", Label = "Good reviews", Icon = "👍" },
+		{ Key = "bad", Label = "Bad reviews", Icon = "👎" },
+		{ Key = "verified", Label = "Verified", Icon = "🛡" },
+		{ Key = "universal", Label = "Universal", Icon = "🌐" },
+		{ Key = "undefined", Label = "Undefined", Icon = "❔" },
+		{ Key = "patched", Label = "Patched", Icon = "⛔" },
+		{ Key = "mobile", Label = "Mobile", Icon = "📱" },
+		{ Key = "keysystem", Label = "Key system", Icon = "🔑" },
+		{ Key = "hidden", Label = "Hidden", Icon = "🙈" },
+	}
+	local activeFilters = { all = true }
+	-- Numeric filters, kept apart because they read from text boxes rather
+	-- than toggles and apply on top of whatever the toggles allow.
+	local rangeFilters = { placeId = "", minViews = "", maxViews = "", minPlayers = "", maxPlayers = "" }
+
+	-- Favourites and hidden scripts are remembered between sessions as sets of
+	-- "provider:id" keys; the feed itself is always re-fetched, so there is no
+	-- point storing whole records.
+	local HUB_MARKS_FILE = "WorldClient_HubMarks.json"
+	local favoriteKeys, hiddenKeys = {}, {}
+
+	pcall(function()
+		local data = HttpService:JSONDecode(readfile(HUB_MARKS_FILE))
+		if type(data) == "table" then
+			for _, key in ipairs(type(data.favorites) == "table" and data.favorites or {}) do
+				if type(key) == "string" then
+					favoriteKeys[key] = true
+				end
+			end
+			for _, key in ipairs(type(data.hidden) == "table" and data.hidden or {}) do
+				if type(key) == "string" then
+					hiddenKeys[key] = true
+				end
+			end
+		end
+	end)
+
+	local function saveHubMarks()
+		pcall(function()
+			local favorites, hidden = {}, {}
+			for key in pairs(favoriteKeys) do
+				table.insert(favorites, key)
+			end
+			for key in pairs(hiddenKeys) do
+				table.insert(hidden, key)
+			end
+			writefile(HUB_MARKS_FILE, HttpService:JSONEncode({ favorites = favorites, hidden = hidden }))
+		end)
+	end
+
+	local function entryKey(entry)
+		return entry.Provider .. ":" .. entry.Id
+	end
 
 	-- === Disclaimer (shown once, then remembered) ===
 	local disclaimerOverlay = Instance.new("TextButton", screenGui)
@@ -5924,7 +5992,7 @@ scriptHub.Build = function()
 	hubCloseBtn.ZIndex = 18
 
 	local searchBox = Instance.new("TextBox", hubFrame)
-	searchBox.Size = UDim2.new(1, -100, 0, 30)
+	searchBox.Size = UDim2.new(1, -138, 0, 30)
 	searchBox.Position = UDim2.new(0, 12, 0, 44)
 	searchBox.BackgroundColor3 = CONFIG.Colors.UtilButton
 	searchBox.BackgroundTransparency = 0.25
@@ -5952,6 +6020,11 @@ scriptHub.Build = function()
 	thisGameBtn.Position = UDim2.new(1, -50, 0, 44)
 	thisGameBtn.AnchorPoint = Vector2.new(1, 0)
 	thisGameBtn.ZIndex = 18
+
+	local filtersBtn = createIconButton(hubFrame, "🎛️", 30, "UtilButton")
+	filtersBtn.Position = UDim2.new(1, -88, 0, 44)
+	filtersBtn.AnchorPoint = Vector2.new(1, 0)
+	filtersBtn.ZIndex = 18
 
 	local searchBtn = createIconButton(hubFrame, "🔍", 30, "SecondaryAccent")
 	searchBtn.Position = UDim2.new(1, -12, 0, 44)
@@ -6222,19 +6295,44 @@ scriptHub.Build = function()
 		return badge
 	end
 
+	-- The view thresholds the web hub uses to label a script popular or
+	-- well/poorly reviewed, kept here so the tags and the filters agree.
+	local POPULAR_VIEWS = 500000
+	local GOOD_REVIEW_VIEWS = 100000
+
+	local function isUndefinedEntry(entry)
+		return not entry.Verified and not entry.Universal
+	end
+
+	-- Dark chips read as warnings, light chips as neutral facts - the same
+	-- split the web cards make.
 	local function tagsFor(entry)
 		local tags = {}
+		if entry.Views > POPULAR_VIEWS then
+			table.insert(tags, { Label = "🔥 Popular" })
+		end
+		if entry.Views > GOOD_REVIEW_VIEWS then
+			table.insert(tags, { Label = "👍 Good reviews" })
+		else
+			table.insert(tags, { Label = "👎 Bad reviews", Dark = true })
+		end
 		if entry.Verified then
-			table.insert(tags, "✔ Verified")
+			table.insert(tags, { Label = "🛡 Verified" })
 		end
 		if entry.Universal then
-			table.insert(tags, "🌐 Universal")
+			table.insert(tags, { Label = "🌐 Universal" })
+		end
+		if isUndefinedEntry(entry) then
+			table.insert(tags, { Label = "❔ Undefined" })
 		end
 		if entry.KeySystem then
-			table.insert(tags, "🔑 Key system")
+			table.insert(tags, { Label = "🔑 Key", Dark = true })
 		end
 		if entry.Patched then
-			table.insert(tags, "⛔ Patched")
+			table.insert(tags, { Label = "⛔ Patched", Dark = true })
+		end
+		if entry.Mobile then
+			table.insert(tags, { Label = "📱 Mobile" })
 		end
 		return tags
 	end
@@ -6296,7 +6394,7 @@ scriptHub.Build = function()
 			"👁 " .. formatCount(entry.Views),
 		}
 		for _, tag in ipairs(tagsFor(entry)) do
-			table.insert(metaParts, tag)
+			table.insert(metaParts, tag.Label)
 		end
 		detailMeta.Text = table.concat(metaParts, "  •  ")
 
@@ -6337,175 +6435,352 @@ scriptHub.Build = function()
 	registerLocalizedString("Failed to load this script's source.")
 	registerLocalizedString("Preview truncated - Copy, Editor, Save and Run still use the full script.")
 
-	-- Actions all need the full source, which may still be downloading when
-	-- the button is tapped, so each one resolves it again before acting.
-	local function withSource(button, handler)
-		-- The spinner replaces the label while the download runs, so a second
-		-- tap has to be ignored or it would capture "⏳" as the label to restore.
-		local busy = false
+	-- === Actions ===
+	-- Copy / Editor / Save / Run behave identically on a result card and on the
+	-- detail page, so both routes go through here. The source may still be
+	-- downloading when the button is tapped, so it is resolved first either way.
+	local function performAction(entry, action, source)
+		if action == "copy" then
+			if pcall(setclipboard, source) then
+				log("Copied '" .. entry.Title .. "' to the clipboard.", "Info")
+			else
+				log("This executor does not expose setclipboard.", "Error")
+			end
+		elseif action == "editor" then
+			inputBox.Text = source
+			closeDetail()
+			if isHubOpen then
+				toggleHub()
+			end
+			log("Loaded '" .. entry.Title .. "' into the editor.", "Info")
+		elseif action == "save" then
+			if not scriptHub.AddSaved then
+				log("Saved scripts are unavailable on this executor.", "Error")
+				return
+			end
+			local name = scriptHub.AddSaved(entry.Title, source)
+			if name then
+				log("Saved '" .. name .. "' to your script library.", "Info")
+			else
+				log("Could not save '" .. entry.Title .. "'.", "Error")
+			end
+		elseif action == "run" then
+			if not isExecuteScriptEnabled then
+				log("Cannot run '" .. entry.Title .. "': no executor available.", "Error")
+				return
+			end
+			log("Running '" .. entry.Title .. "'...", "Info")
+			task.spawn(function()
+				local ok, err = pcall(executeScript, source)
+				if not ok then
+					log("Runtime Error: " .. tostring(err), "Error")
+				end
+			end)
+		end
+	end
+
+	-- The spinner replaces the button label while the download runs, so a
+	-- second tap has to be ignored or it would capture "⏳" as the label to
+	-- restore afterwards.
+	local busyButtons = {}
+	local function runEntryAction(entry, action, button)
+		if not entry or busyButtons[button] then
+			return
+		end
+		busyButtons[button] = true
+		local originalText = button.Text
+		button.Text = "⏳"
+		createClickParticles(button)
+		task.spawn(function()
+			local source = resolveSource(entry)
+			if button.Parent then
+				button.Text = originalText
+			end
+			busyButtons[button] = nil
+			if not source then
+				log("Script Hub: could not download '" .. entry.Title .. "'.", "Error")
+				return
+			end
+			entry.Source = source
+			performAction(entry, action, source)
+		end)
+	end
+
+	for button, action in pairs({ [copyBtn] = "copy", [editorBtn] = "editor", [saveBtn] = "save", [runBtn] = "run" }) do
 		table.insert(
 			connections,
 			button.MouseButton1Click:Connect(function()
-				local entry = hubDetailEntry
-				if not entry or busy then
-					return
-				end
-				busy = true
-				local originalText = button.Text
-				button.Text = "⏳"
-				createClickParticles(button)
-				task.spawn(function()
-					local source = resolveSource(entry)
-					button.Text = originalText
-					busy = false
-					if not source then
-						log("Script Hub: could not download '" .. entry.Title .. "'.", "Error")
-						return
-					end
-					entry.Source = source
-					handler(entry, source)
-				end)
+				runEntryAction(hubDetailEntry, action, button)
 			end)
 		)
 	end
-
-	withSource(copyBtn, function(entry, source)
-		local ok = pcall(setclipboard, source)
-		if ok then
-			log("Copied '" .. entry.Title .. "' to the clipboard.", "Info")
-		else
-			log("This executor does not expose setclipboard.", "Error")
-		end
-	end)
-
-	withSource(editorBtn, function(entry, source)
-		inputBox.Text = source
-		closeDetail()
-		if isHubOpen then
-			toggleHub()
-		end
-		log("Loaded '" .. entry.Title .. "' into the editor.", "Info")
-	end)
-
-	withSource(saveBtn, function(entry, source)
-		if not scriptHub.AddSaved then
-			log("Saved scripts are unavailable on this executor.", "Error")
-			return
-		end
-		local name = scriptHub.AddSaved(entry.Title, source)
-		if name then
-			log("Saved '" .. name .. "' to your script library.", "Info")
-		else
-			log("Could not save '" .. entry.Title .. "'.", "Error")
-		end
-	end)
-
-	withSource(runBtn, function(entry, source)
-		if not isExecuteScriptEnabled then
-			log("Cannot run '" .. entry.Title .. "': no executor available.", "Error")
-			return
-		end
-		log("Running '" .. entry.Title .. "'...", "Info")
-		task.spawn(function()
-			local ok, err = pcall(executeScript, source)
-			if not ok then
-				log("Runtime Error: " .. tostring(err), "Error")
-			end
-		end)
-	end)
 
 	table.insert(connections, detailBackBtn.MouseButton1Click:Connect(closeDetail))
 	table.insert(connections, detailOverlay.MouseButton1Click:Connect(closeDetail))
 
 	-- === Result cards ===
+	-- Laid out like the web hub's cards: the game artwork fills the whole card,
+	-- a dark gradient scrim rises from the bottom so text stays legible over
+	-- any image, and the details and actions sit on top of it.
+	local CARD_HEIGHT = 140
+
+	-- Small rounded pill, the in-engine equivalent of the web hub's tag chips.
+	local function addTagChip(parent, label, dark)
+		local chip = Instance.new("TextLabel", parent)
+		chip.AutomaticSize = Enum.AutomaticSize.X
+		chip.Size = UDim2.new(0, 0, 1, 0)
+		chip.BackgroundColor3 = dark and Color3.new(0, 0, 0) or Color3.new(1, 1, 1)
+		chip.BackgroundTransparency = dark and 0.45 or 0.16
+		chip.Font = CONFIG.BoldFont
+		chip.Text = label
+		chip.TextColor3 = dark and Color3.new(1, 1, 1) or Color3.new(0, 0, 0)
+		chip.TextSize = 10
+		chip.ZIndex = 21
+		Instance.new("UICorner", chip).CornerRadius = UDim.new(1, 0)
+		local pad = Instance.new("UIPadding", chip)
+		pad.PaddingLeft = UDim.new(0, 6)
+		pad.PaddingRight = UDim.new(0, 6)
+		return chip
+	end
+
+	local function createCardAction(parent, glyph, order, tooltip)
+		local btn = Instance.new("TextButton", parent)
+		btn.Size = UDim2.new(0, 26, 0, 26)
+		btn.LayoutOrder = order
+		btn.BackgroundColor3 = Color3.new(0, 0, 0)
+		btn.BackgroundTransparency = 0.35
+		btn.AutoButtonColor = false
+		btn.Font = Enum.Font.SourceSans
+		btn.Text = glyph
+		btn.TextColor3 = Color3.new(1, 1, 1)
+		btn.TextSize = 15
+		btn.Name = tooltip
+		btn.ZIndex = 21
+		Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+		safeSetCursor(btn, "rbxasset://SystemCursor/Arrow")
+		table.insert(
+			connections,
+			btn.MouseEnter:Connect(function()
+				TweenService:Create(btn, TweenInfo.new(0.12), { BackgroundTransparency = 0.1 }):Play()
+			end)
+		)
+		table.insert(
+			connections,
+			btn.MouseLeave:Connect(function()
+				TweenService:Create(btn, TweenInfo.new(0.12), { BackgroundTransparency = 0.35 }):Play()
+			end)
+		)
+		return btn
+	end
+
 	local function createCard(entry, order)
 		local card = Instance.new("TextButton", resultScroll)
 		card.Name = "HubCard"
-		card.Size = UDim2.new(1, -6, 0, 74)
+		card.Size = UDim2.new(1, -6, 0, CARD_HEIGHT)
 		card.LayoutOrder = order
-		card.BackgroundColor3 = CONFIG.Colors.UtilButton
-		card.BackgroundTransparency = 0.2
+		card.BackgroundColor3 = Color3.new(0, 0, 0)
+		card.BackgroundTransparency = 0
 		card.AutoButtonColor = false
 		card.Text = ""
+		card.ClipsDescendants = true
 		card.ZIndex = 18
 		Instance.new("UICorner", card).CornerRadius = UDim.new(0, 8)
-		addDepthGradient(card)
 		safeSetCursor(card, "rbxasset://SystemCursor/Arrow")
+		entry.Card = card
 
-		local thumb = Instance.new("ImageLabel", card)
-		thumb.Size = UDim2.new(0, 56, 0, 56)
-		thumb.Position = UDim2.new(0, 9, 0, 9)
-		thumb.BackgroundColor3 = CONFIG.Colors.Background
-		thumb.BackgroundTransparency = 0.2
-		thumb.ScaleType = Enum.ScaleType.Crop
-		thumb.ZIndex = 19
-		Instance.new("UICorner", thumb).CornerRadius = UDim.new(0, 6)
+		local stroke = Instance.new("UIStroke", card)
+		stroke.Color = CONFIG.Colors.PrimaryAccent
+		stroke.Thickness = 1
+		stroke.Transparency = 0.75
 
-		local thumbGlyph = Instance.new("TextLabel", thumb)
-		thumbGlyph.Size = UDim2.new(1, 0, 1, 0)
-		thumbGlyph.BackgroundTransparency = 1
-		thumbGlyph.Font = Enum.Font.SourceSans
-		thumbGlyph.Text = HUB_FALLBACK_GLYPH
-		thumbGlyph.TextColor3 = Color3.new(1, 1, 1)
-		thumbGlyph.TextSize = 24
-		thumbGlyph.ZIndex = 19
-		paintThumbnail(thumb, thumbGlyph, entry)
+		-- The artwork fills the card rather than sitting in a corner.
+		local art = Instance.new("ImageLabel", card)
+		art.Size = UDim2.new(1, 0, 1, 0)
+		art.BackgroundTransparency = 1
+		art.ScaleType = Enum.ScaleType.Crop
+		art.ZIndex = 18
 
-		local title = Instance.new("TextLabel", card)
-		title.Size = UDim2.new(1, -82, 0, 18)
-		title.Position = UDim2.new(0, 74, 0, 9)
+		local artGlyph = Instance.new("TextLabel", card)
+		artGlyph.Size = UDim2.new(1, 0, 1, 0)
+		artGlyph.BackgroundTransparency = 1
+		artGlyph.Font = Enum.Font.SourceSans
+		artGlyph.Text = HUB_FALLBACK_GLYPH
+		artGlyph.TextColor3 = Color3.fromRGB(90, 90, 90)
+		artGlyph.TextSize = 38
+		artGlyph.ZIndex = 18
+		paintThumbnail(art, artGlyph, entry)
+
+		-- Opaque along the bottom, clear at the top: the same top-to-transparent
+		-- scrim the web cards use to keep the copy readable on bright artwork.
+		local scrim = Instance.new("Frame", card)
+		scrim.Size = UDim2.new(1, 0, 1, 0)
+		scrim.BackgroundColor3 = Color3.new(0, 0, 0)
+		scrim.BorderSizePixel = 0
+		scrim.ZIndex = 19
+		local scrimGradient = Instance.new("UIGradient", scrim)
+		scrimGradient.Rotation = 90
+		scrimGradient.Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0.95),
+			NumberSequenceKeypoint.new(0.35, 0.6),
+			NumberSequenceKeypoint.new(1, 0.05),
+		})
+
+		local badge = createProviderBadge(card, hubProviderByKey[entry.Provider], 18, 21)
+		badge.Position = UDim2.new(0, 10, 0, 9)
+
+		local providerName = Instance.new("TextLabel", card)
+		providerName.Size = UDim2.new(0, 0, 0, 18)
+		providerName.AutomaticSize = Enum.AutomaticSize.X
+		providerName.Position = UDim2.new(0, 33, 0, 9)
+		providerName.BackgroundTransparency = 1
+		providerName.Font = CONFIG.BoldFont
+		providerName.Text = entry.ProviderName
+		providerName.TextColor3 = Color3.new(1, 1, 1)
+		providerName.TextSize = 11
+		providerName.TextXAlignment = Enum.TextXAlignment.Left
+		providerName.ZIndex = 21
+
+		-- Everything below the artwork stacks upward from the bottom edge.
+		local content = Instance.new("Frame", card)
+		content.Size = UDim2.new(1, -20, 1, -40)
+		content.Position = UDim2.new(0, 10, 1, -9)
+		content.AnchorPoint = Vector2.new(0, 1)
+		content.BackgroundTransparency = 1
+		content.ZIndex = 20
+		local contentLayout = Instance.new("UIListLayout", content)
+		contentLayout.SortOrder = Enum.SortOrder.LayoutOrder
+		contentLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
+		contentLayout.Padding = UDim.new(0, 3)
+
+		local title = Instance.new("TextLabel", content)
+		title.Size = UDim2.new(1, 0, 0, 19)
+		title.LayoutOrder = 1
 		title.BackgroundTransparency = 1
 		title.Font = CONFIG.BoldFont
-		title.TextColor3 = CONFIG.Colors.Text
-		title.TextSize = 14
+		title.TextColor3 = Color3.new(1, 1, 1)
+		title.TextSize = 15
 		title.TextXAlignment = Enum.TextXAlignment.Left
 		title.TextTruncate = Enum.TextTruncate.AtEnd
 		title.Text = entry.Title
-		title.ZIndex = 19
+		title.ZIndex = 21
 
-		local badge = createProviderBadge(card, hubProviderByKey[entry.Provider], 14, 19)
-		badge.Position = UDim2.new(0, 74, 0, 30)
-
-		local meta = Instance.new("TextLabel", card)
-		meta.Size = UDim2.new(1, -104, 0, 14)
-		meta.Position = UDim2.new(0, 92, 0, 30)
+		local meta = Instance.new("TextLabel", content)
+		meta.Size = UDim2.new(1, 0, 0, 14)
+		meta.LayoutOrder = 2
 		meta.BackgroundTransparency = 1
 		meta.Font = CONFIG.Font
-		meta.TextColor3 = CONFIG.Colors.InputEcho
+		meta.TextColor3 = Color3.fromRGB(210, 210, 210)
 		meta.TextSize = 12
 		meta.TextXAlignment = Enum.TextXAlignment.Left
 		meta.TextTruncate = Enum.TextTruncate.AtEnd
-		meta.Text = entry.ProviderName .. "  •  " .. entry.Game
-		meta.ZIndex = 19
+		meta.Text = "👤 " .. entry.Creator .. "  •  " .. entry.Game
+		meta.ZIndex = 21
 
-		local statsParts = { "👤 " .. entry.Creator, "👁 " .. formatCount(entry.Views) }
+		local tagRow = Instance.new("Frame", content)
+		tagRow.Size = UDim2.new(1, 0, 0, 16)
+		tagRow.LayoutOrder = 3
+		tagRow.BackgroundTransparency = 1
+		tagRow.ClipsDescendants = true
+		tagRow.ZIndex = 20
+		local tagLayout = Instance.new("UIListLayout", tagRow)
+		tagLayout.FillDirection = Enum.FillDirection.Horizontal
+		tagLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+		tagLayout.Padding = UDim.new(0, 4)
 		for _, tag in ipairs(tagsFor(entry)) do
-			table.insert(statsParts, tag)
+			addTagChip(tagRow, tag.Label, tag.Dark)
 		end
 
-		local stats = Instance.new("TextLabel", card)
-		stats.Size = UDim2.new(1, -86, 0, 14)
-		stats.Position = UDim2.new(0, 74, 0, 48)
+		local stats = Instance.new("TextLabel", content)
+		stats.Size = UDim2.new(1, 0, 0, 13)
+		stats.LayoutOrder = 4
 		stats.BackgroundTransparency = 1
 		stats.Font = CONFIG.Font
-		stats.TextColor3 = CONFIG.Colors.InputEcho
+		stats.TextColor3 = Color3.fromRGB(190, 190, 190)
 		stats.TextSize = 11
 		stats.TextXAlignment = Enum.TextXAlignment.Left
 		stats.TextTruncate = Enum.TextTruncate.AtEnd
-		stats.Text = table.concat(statsParts, "  •  ")
-		stats.ZIndex = 19
+		stats.ZIndex = 21
+
+		-- Player counts and visits arrive later from the Roblox games API, so
+		-- the line is rebuilt in place whenever the numbers land.
+		local function refreshStats()
+			local parts = { "👁 " .. formatCount(entry.Views) }
+			if entry.PlaceId and entry.PlaceId > 0 then
+				table.insert(parts, "#" .. entry.PlaceId)
+				if entry.ActivePlayers then
+					table.insert(parts, "👥 " .. formatCount(entry.ActivePlayers))
+				end
+				if entry.Visits then
+					table.insert(parts, "📈 " .. formatCount(entry.Visits))
+				end
+			end
+			stats.Text = table.concat(parts, "  •  ")
+		end
+		entry.RefreshStats = refreshStats
+		refreshStats()
+
+		local actionRow = Instance.new("Frame", content)
+		actionRow.Size = UDim2.new(1, 0, 0, 26)
+		actionRow.LayoutOrder = 5
+		actionRow.BackgroundTransparency = 1
+		actionRow.ZIndex = 20
+		local actionRowLayout = Instance.new("UIListLayout", actionRow)
+		actionRowLayout.FillDirection = Enum.FillDirection.Horizontal
+		actionRowLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+		actionRowLayout.Padding = UDim.new(0, 5)
+
+		local key = entryKey(entry)
+		local favBtn = createCardAction(actionRow, favoriteKeys[key] and "★" or "☆", 1, "Favorite")
+		local hideBtn = createCardAction(actionRow, hiddenKeys[key] and "🙉" or "🙈", 2, "Hide")
+
+		local spacer = Instance.new("Frame", actionRow)
+		spacer.Size = UDim2.new(1, -190, 0, 1)
+		spacer.LayoutOrder = 3
+		spacer.BackgroundTransparency = 1
+
+		local copyBtn = createCardAction(actionRow, "📋", 4, "Copy")
+		local editorBtn = createCardAction(actionRow, "📥", 5, "Editor")
+		local saveBtn = createCardAction(actionRow, "💾", 6, "Save")
+		local runBtn = createCardAction(actionRow, "▶", 7, "Run")
+
+		table.insert(
+			connections,
+			favBtn.MouseButton1Click:Connect(function()
+				favoriteKeys[key] = (not favoriteKeys[key]) or nil
+				favBtn.Text = favoriteKeys[key] and "★" or "☆"
+				createClickParticles(favBtn)
+				saveHubMarks()
+				applyFilters()
+			end)
+		)
+		table.insert(
+			connections,
+			hideBtn.MouseButton1Click:Connect(function()
+				hiddenKeys[key] = (not hiddenKeys[key]) or nil
+				hideBtn.Text = hiddenKeys[key] and "🙉" or "🙈"
+				saveHubMarks()
+				applyFilters()
+			end)
+		)
+		for btn, action in pairs({ [copyBtn] = "copy", [editorBtn] = "editor", [saveBtn] = "save", [runBtn] = "run" }) do
+			table.insert(
+				connections,
+				btn.MouseButton1Click:Connect(function()
+					runEntryAction(entry, action, btn)
+				end)
+			)
+		end
 
 		table.insert(
 			connections,
 			card.MouseEnter:Connect(function()
-				TweenService:Create(card, TweenInfo.new(0.15), { BackgroundColor3 = CONFIG.Colors.UtilButtonHover })
-					:Play()
+				TweenService:Create(stroke, TweenInfo.new(0.15), { Transparency = 0.15 }):Play()
 			end)
 		)
 		table.insert(
 			connections,
 			card.MouseLeave:Connect(function()
-				TweenService:Create(card, TweenInfo.new(0.15), { BackgroundColor3 = CONFIG.Colors.UtilButton }):Play()
+				TweenService:Create(stroke, TweenInfo.new(0.15), { Transparency = 0.75 }):Play()
 			end)
 		)
 		table.insert(
@@ -6539,6 +6814,188 @@ scriptHub.Build = function()
 		for _, child in ipairs(resultScroll:GetChildren()) do
 			if child.Name == "HubCard" then
 				child:Destroy()
+			end
+		end
+	end
+
+	-- === Filtering ===
+	-- Runs over the entries already loaded and shows or hides their cards, so
+	-- changing a filter is instant and never refetches. Hidden scripts are
+	-- always excluded unless the Hidden filter is the one asking for them.
+	local function passesRangeFilters(entry)
+		local placeIdText = rangeFilters.placeId
+		if placeIdText ~= "" then
+			local id = tostring(entry.PlaceId or 0)
+			if id == "0" or not id:find(placeIdText, 1, true) then
+				return false
+			end
+		end
+
+		local minViews = tonumber(rangeFilters.minViews)
+		local maxViews = tonumber(rangeFilters.maxViews)
+		if (minViews and entry.Views < minViews) or (maxViews and entry.Views > maxViews) then
+			return false
+		end
+
+		local minPlayers = tonumber(rangeFilters.minPlayers)
+		local maxPlayers = tonumber(rangeFilters.maxPlayers)
+		if minPlayers or maxPlayers then
+			-- Player counts arrive from the Roblox API after the page renders;
+			-- an entry with no number yet cannot satisfy a player filter.
+			local players = entry.ActivePlayers
+			if not players then
+				return false
+			end
+			if (minPlayers and players < minPlayers) or (maxPlayers and players > maxPlayers) then
+				return false
+			end
+		end
+		return true
+	end
+
+	local function passesFilters(entry)
+		local key = entryKey(entry)
+		-- Both sides have to be normalised to booleans: an unmarked script is
+		-- nil in the set, not false, and nil ~= false would reject everything.
+		if (hiddenKeys[key] == true) ~= (activeFilters.hidden == true) then
+			return false
+		end
+		if not passesRangeFilters(entry) then
+			return false
+		end
+		if activeFilters.all then
+			return true
+		end
+		for filter, on in pairs(activeFilters) do
+			if on and filter ~= "hidden" then
+				local ok
+				if filter == "favorites" then
+					ok = favoriteKeys[key] == true
+				elseif filter == "popular" then
+					ok = entry.Views > POPULAR_VIEWS
+				elseif filter == "good" then
+					ok = entry.Views > GOOD_REVIEW_VIEWS
+				elseif filter == "bad" then
+					ok = entry.Views <= GOOD_REVIEW_VIEWS
+				elseif filter == "verified" then
+					ok = entry.Verified == true
+				elseif filter == "universal" then
+					ok = entry.Universal == true
+				elseif filter == "undefined" then
+					ok = isUndefinedEntry(entry)
+				elseif filter == "patched" then
+					ok = entry.Patched == true
+				elseif filter == "mobile" then
+					ok = entry.Mobile == true
+				elseif filter == "keysystem" then
+					ok = entry.KeySystem == true
+				else
+					ok = true
+				end
+				if not ok then
+					return false
+				end
+			end
+		end
+		return true
+	end
+
+	function applyFilters()
+		local shown = 0
+		for _, entry in ipairs(hubEntries) do
+			if entry.Card and entry.Card.Parent then
+				local visible = passesFilters(entry)
+				entry.Card.Visible = visible
+				if visible then
+					shown += 1
+				end
+			end
+		end
+
+		if #hubEntries == 0 then
+			return shown
+		end
+		if shown == 0 then
+			setHubStatus(tr("Nothing matches these filters - clear one or load more."))
+		else
+			setHubStatus(("%d/%d "):format(shown, #hubEntries) .. tr("scripts shown"))
+		end
+		return shown
+	end
+
+	registerLocalizedString("Nothing matches these filters - clear one or load more.")
+	registerLocalizedString("scripts shown")
+
+	-- === Live game data ===
+	-- Place ids alone give a thumbnail; the player count and visit total the
+	-- cards show come from Roblox, one universe lookup per place and then a
+	-- single batched games call. Runs after a page renders and updates the
+	-- cards in place.
+	local universeCache = {}
+	local function enrichGameStats(entries)
+		local places = {}
+		for _, entry in ipairs(entries) do
+			local id = entry.PlaceId
+			if id and id > 0 and not universeCache[id] then
+				places[id] = true
+			end
+		end
+
+		local pending = {}
+		for id in pairs(places) do
+			table.insert(pending, id)
+		end
+		if #pending == 0 then
+			return
+		end
+
+		local remaining = #pending
+		for _, id in ipairs(pending) do
+			task.spawn(function()
+				local data = hubJson(("https://apis.roblox.com/universes/v1/places/%d/universe"):format(id))
+				universeCache[id] = data and number(data.universeId) or false
+				remaining -= 1
+			end)
+		end
+		local deadline = os.clock() + 10
+		while remaining > 0 and os.clock() < deadline do
+			task.wait(0.1)
+		end
+
+		local universeIds, byUniverse = {}, {}
+		for _, id in ipairs(pending) do
+			local universeId = universeCache[id]
+			if universeId and universeId > 0 then
+				table.insert(universeIds, tostring(universeId))
+				byUniverse[universeId] = id
+			end
+		end
+		if #universeIds == 0 then
+			return
+		end
+
+		local stats = {}
+		-- The games endpoint caps a request at 100 ids; a page never comes
+		-- close, but chunking keeps it honest if the page size grows.
+		for start = 1, #universeIds, 50 do
+			local chunk = table.concat(universeIds, ",", start, math.min(start + 49, #universeIds))
+			local data = hubJson("https://games.roblox.com/v1/games?universeIds=" .. chunk)
+			for _, game in ipairs(data and type(data.data) == "table" and data.data or {}) do
+				local placeId = byUniverse[number(game.id)]
+				if placeId then
+					stats[placeId] = { Playing = number(game.playing), Visits = number(game.visits) }
+				end
+			end
+		end
+
+		for _, entry in ipairs(entries) do
+			local stat = stats[entry.PlaceId]
+			if stat then
+				entry.ActivePlayers = stat.Playing
+				entry.Visits = stat.Visits
+				if entry.RefreshStats and entry.Card and entry.Card.Parent then
+					entry.RefreshStats()
+				end
 			end
 		end
 	end
@@ -6622,14 +7079,16 @@ scriptHub.Build = function()
 			end
 
 			local added = 0
+			local fresh = {}
 			for row = 1, longest do
 				for index = 1, #active do
 					local entry = batches[index] and batches[index][row]
 					if entry then
-						local key = entry.Provider .. ":" .. entry.Id
+						local key = entryKey(entry)
 						if not hubSeen[key] then
 							hubSeen[key] = true
 							table.insert(hubEntries, entry)
+							table.insert(fresh, entry)
 							createCard(entry, #hubEntries)
 							added += 1
 						end
@@ -6644,9 +7103,20 @@ scriptHub.Build = function()
 			if #hubEntries == 0 then
 				setHubStatus(tr("No scripts found. Try a different search."))
 			else
-				setHubStatus(("%d "):format(#hubEntries) .. tr("scripts loaded"))
+				applyFilters()
 			end
 			loadMoreBtn.Visible = hubHasMore and #hubEntries > 0
+
+			-- Player counts and visits are a nicety, so they are fetched after
+			-- the cards are already on screen rather than delaying them.
+			if #fresh > 0 then
+				task.spawn(function()
+					pcall(enrichGameStats, fresh)
+					if requestId == hubRequestId then
+						applyFilters()
+					end
+				end)
+			end
 		end)
 	end
 
@@ -6655,6 +7125,294 @@ scriptHub.Build = function()
 	registerLocalizedString("No scripts found. Try a different search.")
 	registerLocalizedString("scripts loaded")
 	registerLocalizedString("Enable at least one provider to see scripts.")
+
+	-- === Filter panel ===
+	-- The web hub keeps its filters in a permanent sidebar; there is no room
+	-- for that on a phone, so the same controls live in a panel behind the
+	-- 🎛️ button. Everything in here filters what is already loaded.
+	local filterOverlay = Instance.new("TextButton", screenGui)
+	filterOverlay.Name = "ScriptHubFilterOverlay"
+	filterOverlay.Size = UDim2.new(1, 0, 1, 0)
+	filterOverlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	filterOverlay.BackgroundTransparency = 1
+	filterOverlay.Text = ""
+	filterOverlay.AutoButtonColor = false
+	filterOverlay.Visible = false
+	filterOverlay.ZIndex = 19
+
+	local filterFrame = Instance.new("Frame", screenGui)
+	filterFrame.Name = "ScriptHubFilterFrame"
+	filterFrame.Size = UDim2.new(0.8, 0, 0.78, 0)
+	filterFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+	filterFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+	filterFrame.BackgroundColor3 = CONFIG.Colors.Background
+	filterFrame.BackgroundTransparency = 0.05
+	filterFrame.Visible = false
+	filterFrame.ZIndex = 20
+	Instance.new("UICorner", filterFrame).CornerRadius = UDim.new(0, 10)
+	local filterSizeLimit = Instance.new("UISizeConstraint", filterFrame)
+	filterSizeLimit.MaxSize = Vector2.new(420, 480)
+	filterSizeLimit.MinSize = Vector2.new(280, 300)
+	local filterScale = Instance.new("UIScale", filterFrame)
+	filterScale.Scale = 0
+	local filterStroke = Instance.new("UIStroke", filterFrame)
+	filterStroke.Color = CONFIG.Colors.PrimaryAccent
+	filterStroke.Thickness = 2
+
+	local filterTitle = Instance.new("TextLabel", filterFrame)
+	filterTitle.Size = UDim2.new(1, -60, 0, 28)
+	filterTitle.Position = UDim2.new(0, 12, 0, 10)
+	filterTitle.BackgroundTransparency = 1
+	filterTitle.Font = CONFIG.BoldFont
+	filterTitle.TextColor3 = CONFIG.Colors.Text
+	filterTitle.TextSize = 17
+	filterTitle.TextXAlignment = Enum.TextXAlignment.Left
+	filterTitle.Text = "🎛️ " .. tr("Filters")
+	filterTitle.ZIndex = 21
+	registerLocalizedString("Filters")
+
+	local filterCloseBtn = createIconButton(filterFrame, "✖️", 24, "UtilButton")
+	filterCloseBtn.Position = UDim2.new(1, -12, 0, 12)
+	filterCloseBtn.AnchorPoint = Vector2.new(1, 0)
+	filterCloseBtn.ZIndex = 21
+
+	local filterScroll = Instance.new("ScrollingFrame", filterFrame)
+	filterScroll.Position = UDim2.new(0, 12, 0, 46)
+	filterScroll.Size = UDim2.new(1, -24, 1, -92)
+	filterScroll.BackgroundTransparency = 1
+	filterScroll.BorderSizePixel = 0
+	filterScroll.ScrollBarThickness = 4
+	filterScroll.ScrollBarImageColor3 = CONFIG.Colors.PrimaryAccent
+	filterScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+	filterScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	filterScroll.ScrollingDirection = Enum.ScrollingDirection.Y
+	filterScroll.ZIndex = 21
+	safeSetCursor(filterScroll, "rbxasset://SystemCursor/Arrow")
+	local filterScrollLayout = Instance.new("UIListLayout", filterScroll)
+	filterScrollLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	filterScrollLayout.Padding = UDim.new(0, 8)
+
+	-- Toggles are laid out as a wrapping grid so a dozen of them fit without
+	-- scrolling on a phone.
+	local toggleGrid = Instance.new("Frame", filterScroll)
+	toggleGrid.Size = UDim2.new(1, -6, 0, 0)
+	toggleGrid.AutomaticSize = Enum.AutomaticSize.Y
+	toggleGrid.BackgroundTransparency = 1
+	toggleGrid.LayoutOrder = 1
+	toggleGrid.ZIndex = 21
+	local toggleGridLayout = Instance.new("UIGridLayout", toggleGrid)
+	toggleGridLayout.CellSize = UDim2.new(0.5, -4, 0, 28)
+	toggleGridLayout.CellPadding = UDim2.new(0, 8, 0, 6)
+	toggleGridLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+	local filterToggles = {}
+	local function paintFilterToggle(def)
+		local button = filterToggles[def.Key]
+		local on = activeFilters[def.Key] == true
+		TweenService:Create(button, TweenInfo.new(0.15), {
+			BackgroundColor3 = on and CONFIG.Colors.SecondaryAccent or CONFIG.Colors.UtilButton,
+			BackgroundTransparency = on and 0 or 0.45,
+		}):Play()
+		button.TextTransparency = on and 0 or 0.3
+	end
+
+	local function repaintAllToggles()
+		for _, def in ipairs(FILTER_DEFS) do
+			paintFilterToggle(def)
+		end
+	end
+
+	for order, def in ipairs(FILTER_DEFS) do
+		local button = Instance.new("TextButton", toggleGrid)
+		button.LayoutOrder = order
+		button.BackgroundColor3 = CONFIG.Colors.UtilButton
+		button.AutoButtonColor = false
+		button.Font = CONFIG.Font
+		button.Text = def.Icon .. " " .. tr(def.Label)
+		button.TextColor3 = CONFIG.Colors.Text
+		button.TextSize = 12
+		button.TextTruncate = Enum.TextTruncate.AtEnd
+		button.ZIndex = 22
+		Instance.new("UICorner", button).CornerRadius = UDim.new(0, 6)
+		addDepthGradient(button)
+		safeSetCursor(button, "rbxasset://SystemCursor/Arrow")
+		filterToggles[def.Key] = button
+		registerLocalizedString(def.Label)
+		registerLocalizedRefresher(function()
+			button.Text = def.Icon .. " " .. tr(def.Label)
+		end)
+
+		table.insert(
+			connections,
+			button.MouseButton1Click:Connect(function()
+				if def.Key == "all" then
+					-- "All" is the reset: turning it on drops every other toggle.
+					for _, other in ipairs(FILTER_DEFS) do
+						activeFilters[other.Key] = nil
+					end
+					activeFilters.all = true
+				else
+					activeFilters[def.Key] = (not activeFilters[def.Key]) or nil
+					activeFilters.all = nil
+					-- Nothing left selected means we are back to showing all.
+					local any = false
+					for _, other in ipairs(FILTER_DEFS) do
+						if other.Key ~= "all" and activeFilters[other.Key] then
+							any = true
+							break
+						end
+					end
+					if not any then
+						activeFilters.all = true
+					end
+				end
+				repaintAllToggles()
+				applyFilters()
+			end)
+		)
+	end
+	repaintAllToggles()
+
+	-- Numeric filters. Each row is a label plus one or two boxes; they read on
+	-- every keystroke so the feed narrows as you type.
+	local function addRangeRow(order, label, fields)
+		local row = Instance.new("Frame", filterScroll)
+		row.Size = UDim2.new(1, -6, 0, 46)
+		row.LayoutOrder = order
+		row.BackgroundTransparency = 1
+		row.ZIndex = 21
+
+		local caption = Instance.new("TextLabel", row)
+		caption.Size = UDim2.new(1, 0, 0, 14)
+		caption.BackgroundTransparency = 1
+		caption.Font = CONFIG.BoldFont
+		caption.TextColor3 = CONFIG.Colors.InputEcho
+		caption.TextSize = 11
+		caption.TextXAlignment = Enum.TextXAlignment.Left
+		caption.Text = tr(label)
+		caption.ZIndex = 22
+		registerLocalizedString(label)
+		registerLocalizedRefresher(function()
+			caption.Text = tr(label)
+		end)
+
+		local width = 1 / #fields
+		for index, field in ipairs(fields) do
+			local box = Instance.new("TextBox", row)
+			box.Size = UDim2.new(width, index < #fields and -4 or 0, 0, 26)
+			box.Position = UDim2.new(width * (index - 1), index > 1 and 4 or 0, 0, 18)
+			box.BackgroundColor3 = CONFIG.Colors.UtilButton
+			box.BackgroundTransparency = 0.25
+			box.Font = CONFIG.Font
+			box.PlaceholderText = tr(field.Placeholder)
+			box.PlaceholderColor3 = Color3.fromRGB(140, 140, 140)
+			box.Text = rangeFilters[field.Key]
+			box.TextColor3 = CONFIG.Colors.Text
+			box.TextSize = 12
+			box.ClearTextOnFocus = false
+			box.TextXAlignment = Enum.TextXAlignment.Left
+			box.ZIndex = 22
+			Instance.new("UICorner", box).CornerRadius = UDim.new(0, 6)
+			Instance.new("UIPadding", box).PaddingLeft = UDim.new(0, 6)
+			safeSetCursor(box, "rbxasset://SystemCursor/Arrow")
+			liftPanelWhileTyping(filterFrame, box)
+			registerLocalizedString(field.Placeholder)
+			registerLocalizedRefresher(function()
+				box.PlaceholderText = tr(field.Placeholder)
+			end)
+
+			table.insert(
+				connections,
+				box:GetPropertyChangedSignal("Text"):Connect(function()
+					rangeFilters[field.Key] = box.Text:gsub("%s", "")
+					applyFilters()
+				end)
+			)
+		end
+	end
+
+	addRangeRow(2, "Place ID", { { Key = "placeId", Placeholder = "e.g. 2753915549" } })
+	addRangeRow(3, "Views", { { Key = "minViews", Placeholder = "Min" }, { Key = "maxViews", Placeholder = "Any" } })
+	addRangeRow(
+		4,
+		"Active players",
+		{ { Key = "minPlayers", Placeholder = "Min" }, { Key = "maxPlayers", Placeholder = "Any" } }
+	)
+
+	local clearFiltersBtn = Instance.new("TextButton", filterFrame)
+	clearFiltersBtn.Size = UDim2.new(1, -24, 0, 32)
+	clearFiltersBtn.Position = UDim2.new(0, 12, 1, -42)
+	clearFiltersBtn.BackgroundColor3 = CONFIG.Colors.UtilButton
+	clearFiltersBtn.Font = CONFIG.BoldFont
+	clearFiltersBtn.Text = "↺ " .. tr("Clear filters")
+	clearFiltersBtn.TextColor3 = CONFIG.Colors.Text
+	clearFiltersBtn.TextSize = 13
+	clearFiltersBtn.ZIndex = 21
+	Instance.new("UICorner", clearFiltersBtn).CornerRadius = UDim.new(0, 6)
+	addDepthGradient(clearFiltersBtn)
+	safeSetCursor(clearFiltersBtn, "rbxasset://SystemCursor/Arrow")
+	registerLocalizedString("Clear filters")
+	registerLocalizedRefresher(function()
+		clearFiltersBtn.Text = "↺ " .. tr("Clear filters")
+		filterTitle.Text = "🎛️ " .. tr("Filters")
+	end)
+
+	local function setFilterPanelVisible(visible)
+		if visible then
+			filterOverlay.Visible = true
+			filterFrame.Visible = true
+			TweenService:Create(filterOverlay, TweenInfo.new(0.25), { BackgroundTransparency = 0.5 }):Play()
+			filterScale.Scale = 0
+			TweenService
+				:Create(filterScale, TweenInfo.new(0.28, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+					Scale = 1,
+				})
+				:Play()
+		else
+			TweenService:Create(filterOverlay, TweenInfo.new(0.2), { BackgroundTransparency = 1 }):Play()
+			local tween = TweenService:Create(
+				filterScale,
+				TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.In),
+				{ Scale = 0 }
+			)
+			tween:Play()
+			tween.Completed:Wait()
+			filterOverlay.Visible = false
+			filterFrame.Visible = false
+		end
+	end
+
+	table.insert(
+		connections,
+		clearFiltersBtn.MouseButton1Click:Connect(function()
+			for _, def in ipairs(FILTER_DEFS) do
+				activeFilters[def.Key] = nil
+			end
+			activeFilters.all = true
+			for _, child in ipairs(filterScroll:GetDescendants()) do
+				if child:IsA("TextBox") then
+					child.Text = ""
+				end
+			end
+			for key in pairs(rangeFilters) do
+				rangeFilters[key] = ""
+			end
+			repaintAllToggles()
+			applyFilters()
+		end)
+	)
+	table.insert(
+		connections,
+		filtersBtn.MouseButton1Click:Connect(function()
+			setFilterPanelVisible(not filterFrame.Visible)
+		end)
+	)
+	table.insert(connections, filterCloseBtn.MouseButton1Click:Connect(function()
+		setFilterPanelVisible(false)
+	end))
+	table.insert(connections, filterOverlay.MouseButton1Click:Connect(function()
+		setFilterPanelVisible(false)
+	end))
 
 	-- === Provider chips ===
 	local chipRefreshers = {}
@@ -6736,6 +7494,9 @@ scriptHub.Build = function()
 			end
 		else
 			closeDetail()
+			if filterFrame.Visible then
+				setFilterPanelVisible(false)
+			end
 			TweenService:Create(hubOverlay, TweenInfo.new(0.3), { BackgroundTransparency = 1 }):Play()
 			local tween = TweenService:Create(
 				hubScale,
@@ -6883,6 +7644,24 @@ scriptHub.Build = function()
 		declineBtn.Font = fontData.Bold
 		tintTween(acceptBtn, { BackgroundColor3 = theme.SecondaryAccent })
 		acceptBtn.Font = fontData.Bold
+
+		tintTween(filterFrame, { BackgroundColor3 = theme.Background })
+		tintTween(filterStroke, { Color = theme.PrimaryAccent })
+		tintTween(filterTitle, { TextColor3 = theme.Text })
+		filterTitle.Font = fontData.Bold
+		tintTween(filterScroll, { ScrollBarImageColor3 = theme.PrimaryAccent })
+		tintTween(clearFiltersBtn, { BackgroundColor3 = theme.UtilButton, TextColor3 = theme.Text })
+		clearFiltersBtn.Font = fontData.Bold
+		for _, child in ipairs(filterScroll:GetDescendants()) do
+			if child:IsA("TextBox") then
+				tintTween(child, { BackgroundColor3 = theme.UtilButton, TextColor3 = theme.Text })
+				child.Font = fontData.Font
+			elseif child:IsA("TextLabel") then
+				tintTween(child, { TextColor3 = theme.InputEcho })
+				child.Font = fontData.Bold
+			end
+		end
+		repaintAllToggles()
 
 		for _, refresh in ipairs(chipRefreshers) do
 			refresh()
