@@ -5453,7 +5453,7 @@ scriptHub.Build = function()
 			Name = "ScriptBlox",
 			Icon = "rbxassetid://133394455676372",
 			IconUrl = faviconUrl("scriptblox.com"),
-			Glyph = "🅱️",
+			Glyph = "📜",
 			Url = function(query, page)
 				if query == "" then
 					return ("https://scriptblox.com/api/script/fetch?page=%d"):format(page)
@@ -5561,7 +5561,7 @@ scriptHub.Build = function()
 			Name = "Rscripts",
 			Icon = "rbxassetid://107527701431712",
 			IconUrl = faviconUrl("rscripts.net"),
-			Glyph = "🇷",
+			Glyph = "📘",
 			Url = function(query, page)
 				if query == "" then
 					return ("https://rscripts.net/api/v2/scripts?page=%d"):format(page)
@@ -5613,7 +5613,7 @@ scriptHub.Build = function()
 			Name = "Roblox Scripts",
 			Icon = "rbxassetid://108219075398216",
 			IconUrl = faviconUrl("robloxscripts.com"),
-			Glyph = "🟥",
+			Glyph = "🟡",
 			Url = function(query, page)
 				if query == "" then
 					return ("https://robloxscripts.com/api/v1/scripts?page=%d&limit=%d"):format(page, HUB_PAGE_SIZE)
@@ -5672,7 +5672,7 @@ scriptHub.Build = function()
 			Name = "HaxHell",
 			Icon = "rbxassetid://74042163033078",
 			IconUrl = faviconUrl("haxhell.com"),
-			Glyph = "😈",
+			Glyph = "🔥",
 			Url = function(query, page)
 				if query == "" then
 					return ("https://haxhell.com/api/v1/scripts?page=%d&limit=%d"):format(page, HUB_PAGE_SIZE)
@@ -5744,12 +5744,12 @@ scriptHub.Build = function()
 	-- The rest combine with AND, so picking Verified and Mobile shows only
 	-- scripts that are both.
 	local FILTER_DEFS = {
-		{ Key = "all", Label = "All", Icon = "▦" },
+		{ Key = "all", Label = "All", Icon = "🗂️" },
 		{ Key = "favorites", Label = "Favorites", Icon = "⭐" },
 		{ Key = "popular", Label = "Popular", Icon = "🔥" },
 		{ Key = "good", Label = "Good reviews", Icon = "👍" },
 		{ Key = "bad", Label = "Bad reviews", Icon = "👎" },
-		{ Key = "verified", Label = "Verified", Icon = "🛡" },
+		{ Key = "verified", Label = "Verified", Icon = "🛡️" },
 		{ Key = "universal", Label = "Universal", Icon = "🌐" },
 		{ Key = "undefined", Label = "Undefined", Icon = "❔" },
 		{ Key = "patched", Label = "Patched", Icon = "⛔" },
@@ -6223,7 +6223,7 @@ scriptHub.Build = function()
 	local copyBtn = createActionButton("📋 " .. tr("Copy"), "UtilButton", 1)
 	local editorBtn = createActionButton("📥 " .. tr("Editor"), "UtilButton", 2)
 	local saveBtn = createActionButton("💾 " .. tr("Save"), "UtilButton", 3)
-	local runBtn = createActionButton("▶ " .. tr("Run"), "SecondaryAccent", 4)
+	local runBtn = createActionButton("▶️ " .. tr("Run"), "SecondaryAccent", 4)
 	registerLocalizedString("Copy")
 	registerLocalizedString("Editor")
 	registerLocalizedString("Save")
@@ -6232,7 +6232,7 @@ scriptHub.Build = function()
 		copyBtn.Text = "📋 " .. tr("Copy")
 		editorBtn.Text = "📥 " .. tr("Editor")
 		saveBtn.Text = "💾 " .. tr("Save")
-		runBtn.Text = "▶ " .. tr("Run")
+		runBtn.Text = "▶️ " .. tr("Run")
 	end)
 
 	-- rbxthumb resolves natively and instantly, so a known place id paints the
@@ -6317,7 +6317,7 @@ scriptHub.Build = function()
 			table.insert(tags, { Label = "👎 Bad reviews", Dark = true })
 		end
 		if entry.Verified then
-			table.insert(tags, { Label = "🛡 Verified" })
+			table.insert(tags, { Label = "🛡️ Verified" })
 		end
 		if entry.Universal then
 			table.insert(tags, { Label = "🌐 Universal" })
@@ -6391,7 +6391,7 @@ scriptHub.Build = function()
 			entry.ProviderName,
 			entry.Game,
 			"👤 " .. entry.Creator,
-			"👁 " .. formatCount(entry.Views),
+			"👁️ " .. formatCount(entry.Views),
 		}
 		for _, tag in ipairs(tagsFor(entry)) do
 			table.insert(metaParts, tag.Label)
@@ -6704,7 +6704,7 @@ scriptHub.Build = function()
 		-- Player counts and visits arrive later from the Roblox games API, so
 		-- the line is rebuilt in place whenever the numbers land.
 		local function refreshStats()
-			local parts = { "👁 " .. formatCount(entry.Views) }
+			local parts = { "👁️ " .. formatCount(entry.Views) }
 			if entry.PlaceId and entry.PlaceId > 0 then
 				table.insert(parts, "#" .. entry.PlaceId)
 				if entry.ActivePlayers then
@@ -6730,8 +6730,21 @@ scriptHub.Build = function()
 		actionRowLayout.Padding = UDim.new(0, 5)
 
 		local key = entryKey(entry)
-		local favBtn = createCardAction(actionRow, favoriteKeys[key] and "★" or "☆", 1, "Favorite")
-		local hideBtn = createCardAction(actionRow, hiddenKeys[key] and "🙉" or "🙈", 2, "Hide")
+		-- There is no emoji for an outlined star, and the dingbat ☆ renders as
+		-- a blank box here, so favouriting is shown by lighting the one star up
+		-- rather than by swapping the glyph. The hide button does swap, between
+		-- the two eye emoji, which both render.
+		local favBtn = createCardAction(actionRow, "⭐", 1, "Favorite")
+		local hideBtn = createCardAction(actionRow, hiddenKeys[key] and "👁️" or "🙈", 2, "Hide")
+
+		local function paintFavorite()
+			local on = favoriteKeys[key] == true
+			favBtn.TextTransparency = on and 0 or 0.55
+			TweenService:Create(favBtn, TweenInfo.new(0.12), {
+				BackgroundColor3 = on and CONFIG.Colors.SecondaryAccent or Color3.new(0, 0, 0),
+			}):Play()
+		end
+		paintFavorite()
 
 		local spacer = Instance.new("Frame", actionRow)
 		spacer.Size = UDim2.new(1, -190, 0, 1)
@@ -6741,13 +6754,13 @@ scriptHub.Build = function()
 		local copyBtn = createCardAction(actionRow, "📋", 4, "Copy")
 		local editorBtn = createCardAction(actionRow, "📥", 5, "Editor")
 		local saveBtn = createCardAction(actionRow, "💾", 6, "Save")
-		local runBtn = createCardAction(actionRow, "▶", 7, "Run")
+		local runBtn = createCardAction(actionRow, "▶️", 7, "Run")
 
 		table.insert(
 			connections,
 			favBtn.MouseButton1Click:Connect(function()
 				favoriteKeys[key] = (not favoriteKeys[key]) or nil
-				favBtn.Text = favoriteKeys[key] and "★" or "☆"
+				paintFavorite()
 				createClickParticles(favBtn)
 				saveHubMarks()
 				applyFilters()
@@ -6757,7 +6770,7 @@ scriptHub.Build = function()
 			connections,
 			hideBtn.MouseButton1Click:Connect(function()
 				hiddenKeys[key] = (not hiddenKeys[key]) or nil
-				hideBtn.Text = hiddenKeys[key] and "🙉" or "🙈"
+				hideBtn.Text = hiddenKeys[key] and "👁️" or "🙈"
 				saveHubMarks()
 				applyFilters()
 			end)
@@ -7344,7 +7357,7 @@ scriptHub.Build = function()
 	clearFiltersBtn.Position = UDim2.new(0, 12, 1, -42)
 	clearFiltersBtn.BackgroundColor3 = CONFIG.Colors.UtilButton
 	clearFiltersBtn.Font = CONFIG.BoldFont
-	clearFiltersBtn.Text = "↺ " .. tr("Clear filters")
+	clearFiltersBtn.Text = "🧹 " .. tr("Clear filters")
 	clearFiltersBtn.TextColor3 = CONFIG.Colors.Text
 	clearFiltersBtn.TextSize = 13
 	clearFiltersBtn.ZIndex = 21
@@ -7353,7 +7366,7 @@ scriptHub.Build = function()
 	safeSetCursor(clearFiltersBtn, "rbxasset://SystemCursor/Arrow")
 	registerLocalizedString("Clear filters")
 	registerLocalizedRefresher(function()
-		clearFiltersBtn.Text = "↺ " .. tr("Clear filters")
+		clearFiltersBtn.Text = "🧹 " .. tr("Clear filters")
 		filterTitle.Text = "🎛️ " .. tr("Filters")
 	end)
 
