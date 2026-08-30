@@ -3,13 +3,20 @@ local UserInputService = game:GetService("UserInputService")
 local HttpService = game:GetService("HttpService")
 local LogService = game:GetService("LogService")
 local RunService = game:GetService("RunService")
-local Players = game:GetService("Players")
-
-local player = Players.LocalPlayer
+local player = game:GetService("Players").LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
+
+-- Luau gives every function - the main chunk included - room for at most 200
+-- live locals, and this chunk builds the whole UI in one scope. Values that
+-- are only needed while something is being set up therefore live inside a
+-- `do ... end` block: their registers are released at the block's `end`, so
+-- the chunk keeps headroom instead of hitting "Out of local registers".
+local controls
+do
 local playerScripts = player:WaitForChild("PlayerScripts")
 local playerModule = require(playerScripts:WaitForChild("PlayerModule"))
-local controls = playerModule:GetControls()
+controls = playerModule:GetControls()
+end
 
 if playerGui:FindFirstChild("WorldClientGui") then
 	return
@@ -535,6 +542,10 @@ local log -- assigned further down; forward-declared so translation code can war
 
 -- Primary endpoint with a fallback for when gtx is rate-limited (HTTP 429)
 -- or blocked by the executor's HTTP allowlist.
+-- The endpoint helpers and their caches are only used by each other, so the
+-- whole translator is scoped and only queueTranslation escapes.
+local queueTranslation
+do
 local function requestGoogleTranslate(text, targetCode)
 	local body = httpGet(
 		"https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl="
@@ -622,7 +633,7 @@ end
 local pendingTranslations = {}
 local translateQueueRunning = false
 
-local function queueTranslation(text, targetCode, callback)
+function queueTranslation(text, targetCode, callback)
 	local cached = translateCache[targetCode .. "\1" .. text]
 	if cached ~= nil then
 		pcall(callback, cached ~= false and cached or nil)
@@ -684,26 +695,30 @@ local function queueTranslation(text, targetCode, callback)
 		translateQueueRunning = false
 	end)
 end
+end
 
 -- === UI localization ===
 -- Static UI strings are translated once per language pick; tr() resolves a
--- base English string to its current translation.
+-- base English string to its current translation. The backing tables never
+-- leave this block; only the entry points below do.
+local registerLocalizedString, tr, refreshLocalizedTexts, registerLocalizedRefresher, localizeUI
+do
 local uiTranslations = {}
 local localizableStrings = {}
 local localizedRefreshers = {}
 local localizeRefreshQueued = false
 
-local function registerLocalizedString(s)
+function registerLocalizedString(s)
 	if not table.find(localizableStrings, s) then
 		table.insert(localizableStrings, s)
 	end
 end
 
-local function tr(s)
+function tr(s)
 	return uiTranslations[s] or s
 end
 
-local function refreshLocalizedTexts()
+function refreshLocalizedTexts()
 	if localizeRefreshQueued then
 		return
 	end
@@ -716,11 +731,11 @@ local function refreshLocalizedTexts()
 	end)
 end
 
-local function registerLocalizedRefresher(fn)
+function registerLocalizedRefresher(fn)
 	table.insert(localizedRefreshers, fn)
 end
 
-local function localizeUI()
+function localizeUI()
 	table.clear(uiTranslations)
 	refreshLocalizedTexts()
 	local targetCode = languages[currentLanguageIndex].Code
@@ -736,23 +751,31 @@ local function localizeUI()
 		end)
 	end
 end
+end
 
 -- Animated restyling: tintTween eases a color change; widgets that must be
 -- restyled on every theme/font change register a function in themedUpdaters
 -- and applySettings (assigned later) runs them all.
+local tintTween
+do
 local themeTweenInfo = TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-local function tintTween(obj, props)
+function tintTween(obj, props)
 	if obj and obj.Parent then
 		TweenService:Create(obj, themeTweenInfo, props):Play()
 	end
+end
 end
 local themedUpdaters = {}
 local applySettings
 
 -- === Settings persistence (survives rejoins on executors with file APIs) ===
+-- saveSettings is called from all over the UI; the file name and the one-shot
+-- loader are not needed once the block has run.
+local saveSettings
+do
 local SETTINGS_FILE = "WorldClient_Settings.json"
 
-local function saveSettings()
+function saveSettings()
 	pcall(function()
 		local customTheme = {}
 		for key, color in pairs(customThemeColors) do
@@ -880,6 +903,8 @@ local function loadSettings()
 end
 
 loadSettings()
+end
+
 CONFIG.Colors = themes[currentThemeIndex].Colors
 CONFIG.Font = fontsList[currentFontIndex].Font
 CONFIG.BoldFont = fontsList[currentFontIndex].Bold
@@ -1007,8 +1032,10 @@ end
 -- (and OnScreenKeyboardSize is not reliably reported in every executor), so
 -- centered panels slide to the top of the screen while one of their text
 -- boxes is focused, then glide back on unfocus.
+local liftPanelWhileTyping
+do
 local liftTweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-local function liftPanelWhileTyping(panel, textBox)
+function liftPanelWhileTyping(panel, textBox)
 	-- Remember where the panel normally sits so it can glide back exactly,
 	-- regardless of its resting anchor/position (dialogs sit at different spots).
 	local restAnchor = panel.AnchorPoint
@@ -1040,6 +1067,7 @@ local function liftPanelWhileTyping(panel, textBox)
 			TweenService:Create(panel, liftTweenInfo, { Position = restPosition }):Play()
 		end)
 	)
+end
 end
 
 local screenGui = Instance.new("ScreenGui")
@@ -1106,12 +1134,14 @@ strokeGradient.Color = ColorSequence.new({
 })
 
 -- Subtle vertical shading on the panel background for depth
+do
 local bgDepthGradient = Instance.new("UIGradient", blurFrame)
 bgDepthGradient.Rotation = 90
 bgDepthGradient.Color = ColorSequence.new({
 	ColorSequenceKeypoint.new(0, Color3.new(1, 1, 1)),
 	ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 200, 200)),
 })
+end
 
 local function startGlow()
 	local pulseInfo = TweenInfo.new(1.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
@@ -1151,12 +1181,14 @@ icon.BackgroundTransparency = 1
 icon.Image = CONFIG.IconID
 icon.ZIndex = 3
 
+local startIconIdle, stopIconIdle
+do
 local iconScale = Instance.new("UIScale", icon)
 iconScale.Scale = 1
 
 -- A gentle looping pulse + sway that only runs while the client is minimized,
 -- so the bubble feels alive instead of static.
-local function startIconIdle()
+function startIconIdle()
 	if activeTweens.iconIdleScale then
 		activeTweens.iconIdleScale:Cancel()
 	end
@@ -1173,7 +1205,7 @@ local function startIconIdle()
 	activeTweens.iconIdleRot:Play()
 end
 
-local function stopIconIdle()
+function stopIconIdle()
 	if activeTweens.iconIdleScale then
 		activeTweens.iconIdleScale:Cancel()
 		activeTweens.iconIdleScale = nil
@@ -1184,6 +1216,7 @@ local function stopIconIdle()
 	end
 	TweenService:Create(iconScale, TweenInfo.new(0.2), { Scale = 1 }):Play()
 	TweenService:Create(icon, TweenInfo.new(0.2), { Rotation = 0 }):Play()
+end
 end
 
 local titleLabel = Instance.new("TextLabel", header)
@@ -1310,6 +1343,8 @@ local function createIconButton(parent, emoji, size, colorType)
 	return btn
 end
 
+local leftControls, rightControls
+do
 local allControls = Instance.new("Frame", header)
 allControls.Name = "AllControls"
 allControls.AutomaticSize = Enum.AutomaticSize.X
@@ -1324,7 +1359,7 @@ allControlsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
 allControlsLayout.VerticalAlignment = Enum.VerticalAlignment.Center
 allControlsLayout.Padding = UDim.new(0, 8)
 
-local leftControls = Instance.new("Frame", allControls)
+leftControls = Instance.new("Frame", allControls)
 leftControls.BackgroundTransparency = 1
 leftControls.AutomaticSize = Enum.AutomaticSize.X
 local leftControlsLayout = Instance.new("UIListLayout", leftControls)
@@ -1333,7 +1368,7 @@ leftControlsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
 leftControlsLayout.VerticalAlignment = Enum.VerticalAlignment.Center
 leftControlsLayout.Padding = UDim.new(0, 8)
 
-local rightControls = Instance.new("Frame", allControls)
+rightControls = Instance.new("Frame", allControls)
 rightControls.BackgroundTransparency = 1
 rightControls.AutomaticSize = Enum.AutomaticSize.X
 local rightControlsLayout = Instance.new("UIListLayout", rightControls)
@@ -1341,6 +1376,7 @@ rightControlsLayout.FillDirection = Enum.FillDirection.Horizontal
 rightControlsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
 rightControlsLayout.VerticalAlignment = Enum.VerticalAlignment.Center
 rightControlsLayout.Padding = UDim.new(0, 8)
+end
 
 local scriptsButton = createIconButton(leftControls, "📜", 28, "UtilButton")
 scriptHub.Button = createIconButton(leftControls, "📚", 28, "UtilButton")
@@ -1567,9 +1603,10 @@ Instance.new("UICorner", runButton).CornerRadius = UDim.new(0, 6)
 addDepthGradient(runButton)
 safeSetCursor(runButton, "rbxasset://SystemCursor/Arrow")
 
+local runButtonHovered = false
+do
 local runButtonScale = Instance.new("UIScale", runButton)
 runButtonScale.Scale = 1
-local runButtonHovered = false
 table.insert(
 	connections,
 	runButton.MouseEnter:Connect(function()
@@ -1610,6 +1647,7 @@ table.insert(
 		):Play()
 	end)
 )
+end
 
 registerLocalizedString("Run")
 registerLocalizedRefresher(function()
@@ -1995,10 +2033,12 @@ templateLog.Name = "LogFrame"
 templateLog.BackgroundTransparency = 1
 templateLog.Size = UDim2.new(1, 0, 0, 0)
 templateLog.AutomaticSize = Enum.AutomaticSize.Y
+do
 local templateLayout = Instance.new("UIListLayout", templateLog)
 templateLayout.FillDirection = Enum.FillDirection.Horizontal
 templateLayout.VerticalAlignment = Enum.VerticalAlignment.Top
 templateLayout.SortOrder = Enum.SortOrder.LayoutOrder
+end
 local templateLineNumber = Instance.new("TextLabel", templateLog)
 templateLineNumber.Name = "LineNumber"
 templateLineNumber.BackgroundTransparency = 1
@@ -2022,6 +2062,7 @@ templateEntry.TextXAlignment = Enum.TextXAlignment.Left
 templateEntry.Size = UDim2.new(1, uiSettings.consoleLineNumbers == true and -90 or -60, 0, 0)
 templateEntry.AutomaticSize = Enum.AutomaticSize.Y
 templateEntry.RichText = true
+do
 local templateActions = Instance.new("Frame", templateLog)
 templateActions.Name = "Actions"
 templateActions.LayoutOrder = 3
@@ -2034,6 +2075,7 @@ templateActionsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
 templateActionsLayout.Padding = UDim.new(0, 4)
 createIconButton(templateActions, "📋", 22, "UtilButton").Name = "CopyBtn"
 createIconButton(templateActions, "🗑️", 22, "UtilButton").Name = "DelBtn"
+end
 
 local function requestCanvasUpdate()
 	if not queuedCanvasUpdate then
@@ -2055,6 +2097,7 @@ local function updateInputControlsVisibility()
 	end)
 end
 
+do
 local function updateInputCanvas()
 	task.defer(function()
 		local padding = Vector2.new(20, 10)
@@ -2071,6 +2114,7 @@ end
 local debouncedUpdate = debounce(updateInputCanvas, 0.1)
 table.insert(connections, inputBox:GetPropertyChangedSignal("Text"):Connect(debouncedUpdate))
 table.insert(connections, inputContainer:GetPropertyChangedSignal("AbsoluteSize"):Connect(debouncedUpdate))
+end
 
 -- ============================================================================
 -- Editor tabs: multiple named scripts, drag to reorder, pin, close, hold for
@@ -3370,9 +3414,11 @@ settingsFrame.BackgroundTransparency = 0.05
 settingsFrame.ZIndex = 10
 settingsFrame.Visible = false
 Instance.new("UICorner", settingsFrame).CornerRadius = UDim.new(0, 10)
+do
 local settingsSizeLimit = Instance.new("UISizeConstraint", settingsFrame)
 settingsSizeLimit.MaxSize = Vector2.new(320, 440)
 settingsSizeLimit.MinSize = Vector2.new(320, 240)
+end
 local settingsScale = Instance.new("UIScale", settingsFrame)
 settingsScale.Scale = 0
 local settingsStroke = Instance.new("UIStroke", settingsFrame)
@@ -3405,9 +3451,11 @@ settingsScroll.ScrollBarImageColor3 = CONFIG.Colors.PrimaryAccent
 settingsScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
 settingsScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 settingsScroll.ScrollingDirection = Enum.ScrollingDirection.Y
+do
 local settingsListLayout = Instance.new("UIListLayout", settingsScroll)
 settingsListLayout.Padding = UDim.new(0, 8)
 settingsListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+end
 
 -- === Shared option picker (the "dropdown" panel) ===
 local pickerFrame = Instance.new("Frame", settingsFrame)
@@ -3468,8 +3516,10 @@ pickerSearch.TextXAlignment = Enum.TextXAlignment.Left
 pickerSearch.ZIndex = 13
 pickerSearch.Visible = false
 Instance.new("UICorner", pickerSearch).CornerRadius = UDim.new(0, 6)
+do
 local pickerSearchPad = Instance.new("UIPadding", pickerSearch)
 pickerSearchPad.PaddingLeft = UDim.new(0, 8)
+end
 safeSetCursor(pickerSearch, "rbxasset://SystemCursor/Arrow")
 registerLocalizedString("Search...")
 registerLocalizedRefresher(function()
@@ -3489,9 +3539,11 @@ pickerScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
 pickerScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 pickerScroll.ScrollingDirection = Enum.ScrollingDirection.Y
 pickerScroll.ZIndex = 13
+do
 local pickerLayout = Instance.new("UIListLayout", pickerScroll)
 pickerLayout.Padding = UDim.new(0, 6)
 pickerLayout.SortOrder = Enum.SortOrder.LayoutOrder
+end
 
 local isPickerOpen = false
 local currentPickerButtons = {}
