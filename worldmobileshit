@@ -510,28 +510,82 @@ local scriptHub = {
 	Columns = 3,
 }
 
--- === Google Translate integration ===
+-- === HTTP ===
 -- Works across executors: prefers the executor's request function, falls
 -- back to game:HttpGet.
-local function httpGet(url)
+--
+-- Executor request bridges are commonly built on a single shared coroutine, so
+-- two requests in flight at once make the bridge resume a coroutine that is
+-- already running and the executor throws "cannot resume non-suspended
+-- coroutine" from its own injected script. The script hub fans out a dozen
+-- lookups at a time (thumbnails, per-script detail) and the log translator
+-- runs its own queue, which is exactly the pattern that trips it. Requests are
+-- therefore serialised through a ticket queue: callers still spawn freely,
+-- they simply take turns inside httpGet, so the bridge only ever sees one call
+-- at a time.
+local httpGet
+do
+local ticketNext = 0
+local ticketServing = 0
+-- If a request hangs, later callers give up waiting rather than deadlocking
+-- the hub behind it.
+local QUEUE_TIMEOUT = 25
+-- Once the executor's own request function has failed this way, it is not
+-- going to recover; the rest of the session uses game:HttpGet.
+local requesterBroken = false
+
+local function executorRequest(url)
 	local requester = (syn and syn.request)
 		or (http and http.request)
 		or http_request
 		or (fluxus and fluxus.request)
 		or request
-	if requester then
-		local ok, res = pcall(requester, { Url = url, Method = "GET" })
-		if ok and type(res) == "table" and (res.StatusCode == 200 or res.Success) and type(res.Body) == "string" then
-			return res.Body
-		end
+	if not requester or requesterBroken then
+		return nil
 	end
-	local ok, body = pcall(function()
-		return game:HttpGet(url)
-	end)
-	if ok and type(body) == "string" then
-		return body
+	local ok, res = pcall(requester, { Url = url, Method = "GET" })
+	if not ok then
+		if type(res) == "string" and res:find("non%-suspended") then
+			requesterBroken = true
+		end
+		return nil
+	end
+	if type(res) == "table" and (res.StatusCode == 200 or res.Success) and type(res.Body) == "string" then
+		return res.Body
 	end
 	return nil
+end
+
+function httpGet(url)
+	ticketNext += 1
+	local ticket = ticketNext
+	local deadline = os.clock() + QUEUE_TIMEOUT
+	while ticketServing + 1 ~= ticket and os.clock() < deadline do
+		task.wait()
+	end
+
+	-- pcall so a caller erroring mid-request can never strand the queue.
+	local ok, body = pcall(executorRequest, url)
+	if not ok then
+		body = nil
+	end
+	if body == nil then
+		local fetched
+		ok, fetched = pcall(function()
+			return game:HttpGet(url)
+		end)
+		if ok and type(fetched) == "string" then
+			body = fetched
+		end
+	end
+
+	-- Tickets are only ever handed out in order, so serving catches up to this
+	-- one even when an earlier caller timed out ahead of its turn.
+	if ticketServing < ticket then
+		ticketServing = ticket
+	end
+	return body
+end
 end
 
 local function escapeRichText(s)
