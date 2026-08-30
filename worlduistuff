@@ -1,3 +1,18 @@
+-- World Client - desktop build
+--
+-- This is the Windows / Linux / macOS counterpart to worldmobileshit. The two
+-- share a codebase; everything that differs is sized, positioned or driven by
+-- the `desktop` table below, which reads the Roblox window instead of assuming
+-- a phone screen. The desktop build additionally gets a draggable title bar, a
+-- resize grip, and keyboard accelerators - none of which a touch device can
+-- offer - and it drops the on-screen-keyboard compensation the phone build
+-- needs.
+--
+-- Luau allows at most 200 live locals per function, and this file builds the
+-- whole UI in the main chunk, so anything only needed during setup lives in a
+-- `do ... end` block and desktop state is grouped into one table rather than
+-- spread across many top-level locals.
+
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local HttpService = game:GetService("HttpService")
@@ -465,8 +480,110 @@ local tutorialShown = false
 local tutorialCompleted = false
 local isInputMaximized = false
 local queuedCanvasUpdate = false
-local dragStart, frameStartPos, targetPosition, targetSize, dragStartTime
+local dragStart, frameStartPos, targetPosition
+local dragMode
 local lastMinimizedPosition = UDim2.new(0.5, 0, 0.05, 0)
+
+-- === Desktop metrics ===
+-- The phone build sizes the window as a fraction of the screen (0.8 x 0.7),
+-- which reads as a cramped strip on a 1366x768 laptop and as a 3000px-wide
+-- console on a 4K monitor. Here the window is measured in pixels against the
+-- Roblox window and clamped, and one scale factor - derived from the window
+-- height - drives every other fixed measurement so the panels grow with the
+-- display instead of staying phone-width. Everything lives on one table
+-- because top-level locals are a scarce resource in this chunk.
+local desktop = {
+	-- Multiplier applied to fixed pixel sizes; 1 at a 900px-tall window.
+	Scale = 1,
+	-- Current window size. Recomputed on every viewport change unless the
+	-- user has taken manual control by dragging the resize grip.
+	Size = UDim2.fromOffset(1040, 640),
+	MinSize = Vector2.new(680, 400),
+	UserSized = false,
+	-- Callbacks re-run whenever the Roblox window changes size.
+	OnLayout = {},
+}
+
+do
+-- Window height the fixed pixel measurements in this file were drawn against.
+local BASE_HEIGHT = 900
+-- Fraction of the window the console occupies before clamping.
+local FRACTION = Vector2.new(0.62, 0.68)
+-- Beyond this the console stops growing; a full-width window on a 4K display
+-- is harder to read, not easier.
+local MAX_SIZE = Vector2.new(1500, 940)
+-- Margin kept between the window edge and the screen edge.
+local MARGIN = 24
+
+function desktop.viewport()
+	local camera = workspace.CurrentCamera
+	return (camera and camera.ViewportSize) or Vector2.new(1280, 720)
+end
+
+-- Scales a measurement that was authored for a 900px-tall window.
+function desktop.px(n)
+	return math.floor(n * desktop.Scale + 0.5)
+end
+
+-- Keeps a requested size inside both the user's minimum and the window.
+function desktop.clampSize(width, height)
+	local vp = desktop.viewport()
+	local maxX = math.max(vp.X - MARGIN, 240)
+	local maxY = math.max(vp.Y - MARGIN, 180)
+	return Vector2.new(
+		math.clamp(width, math.min(desktop.MinSize.X, maxX), maxX),
+		math.clamp(height, math.min(desktop.MinSize.Y, maxY), maxY)
+	)
+end
+
+function desktop.defaultSize()
+	local vp = desktop.viewport()
+	local size = desktop.clampSize(
+		math.min(vp.X * FRACTION.X, MAX_SIZE.X * desktop.Scale),
+		math.min(vp.Y * FRACTION.Y, MAX_SIZE.Y * desktop.Scale)
+	)
+	return UDim2.fromOffset(size.X, size.Y)
+end
+
+-- Pulls a window position back inside the screen, used after the Roblox
+-- window shrinks under a console the user had dragged to an edge.
+function desktop.clampPosition(position, absoluteSize, anchor)
+	local vp = desktop.viewport()
+	local pixelX = position.X.Scale * vp.X + position.X.Offset
+	local pixelY = position.Y.Scale * vp.Y + position.Y.Offset
+	local minX, maxX = absoluteSize.X * anchor.X, vp.X - absoluteSize.X * (1 - anchor.X)
+	local minY, maxY = absoluteSize.Y * anchor.Y, vp.Y - absoluteSize.Y * (1 - anchor.Y)
+	if minX > maxX then
+		minX, maxX = vp.X * 0.5, vp.X * 0.5
+	end
+	if minY > maxY then
+		minY, maxY = vp.Y * 0.5, vp.Y * 0.5
+	end
+	return UDim2.new(
+		position.X.Scale,
+		math.clamp(pixelX, minX, maxX) - position.X.Scale * vp.X,
+		position.Y.Scale,
+		math.clamp(pixelY, minY, maxY) - position.Y.Scale * vp.Y
+	)
+end
+
+function desktop.refresh()
+	local vp = desktop.viewport()
+	desktop.Scale = math.clamp(vp.Y / BASE_HEIGHT, 0.8, 1.6)
+	desktop.MinSize = Vector2.new(desktop.px(680), desktop.px(400))
+	if desktop.UserSized then
+		local size = desktop.clampSize(desktop.Size.X.Offset, desktop.Size.Y.Offset)
+		desktop.Size = UDim2.fromOffset(size.X, size.Y)
+	else
+		desktop.Size = desktop.defaultSize()
+	end
+	for _, fn in ipairs(desktop.OnLayout) do
+		pcall(fn)
+	end
+end
+
+desktop.refresh()
+end
 
 -- User-toggleable effects (driven from the Settings panel)
 local uiSettings = {
@@ -506,8 +623,9 @@ local scriptHub = {
 	},
 	Button = nil,
 	AddSaved = nil,
-	-- How many result cards sit side by side in the hub grid.
-	Columns = 3,
+	-- How many result cards sit side by side in the hub grid. Desktop windows
+	-- are wide enough for four without the cards turning into slivers.
+	Columns = 4,
 }
 
 -- === HTTP ===
@@ -981,7 +1099,7 @@ local tutorialPages = {
 		Title = "Welcome!",
 		DynamicTitle = true,
 		Icon = "👋",
-		Text = "Welcome to the World Client - a fast, mobile-friendly Luau executor. This quick tour points out each feature. Tap the arrow (or swipe) to continue, or Skip anytime.",
+		Text = "Welcome to the World Client - a fast Luau executor for Windows, Linux and macOS. This quick tour points out each feature. Click the arrow to continue, or Skip anytime.",
 	},
 	{
 		Title = "The Console",
@@ -1011,12 +1129,12 @@ local tutorialPages = {
 	{
 		Title = "Full-Screen Editor",
 		Icon = "↗️",
-		Text = "Your code is syntax-highlighted as you type. Tap the expand button on the editor row to switch to a full-screen editor with optional line numbers.",
+		Text = "Your code is syntax-highlighted as you type. Click the expand button on the editor row - or press Ctrl+E - to switch to a full-screen editor with optional line numbers.",
 	},
 	{
 		Title = "Run from Clipboard",
 		Icon = "📥",
-		Text = "Copied a script from somewhere else? Tap 'Run from Clipboard' to execute it instantly - no pasting required.",
+		Text = "Copied a script from somewhere else? Click 'Run from Clipboard' to execute it instantly - no pasting required.",
 	},
 	{
 		Title = "Saved Scripts",
@@ -1026,7 +1144,7 @@ local tutorialPages = {
 	{
 		Title = "Script Hub",
 		Icon = "📚",
-		Text = "Tap the books button to browse thousands of community scripts from ScriptBlox, Rscripts, RobloxScripts and HaxHell. Search, filter by provider, then copy, load, save or run any script without leaving the client.",
+		Text = "Click the books button to browse thousands of community scripts from ScriptBlox, Rscripts, RobloxScripts and HaxHell. Search, filter by provider, then copy, load, save or run any script without leaving the client.",
 	},
 	{
 		Title = "Make It Yours",
@@ -1044,9 +1162,19 @@ local tutorialPages = {
 		Text = "Copy all logs with the clipboard button, clear them with the bin, or refresh with the arrows. The globe opens our website and the speech bubble opens our Discord.",
 	},
 	{
+		Title = "Made for desktop",
+		Icon = "🖱️",
+		Text = "Drag the title bar to move the window and the corner grip to resize it - the console remembers the size you pick. It also scales itself to your Roblox window, so it stays readable from a laptop up to a 4K display.",
+	},
+	{
+		Title = "Keyboard shortcuts",
+		Icon = "⌨️",
+		Text = "F2 shows and hides the client, Ctrl+Enter runs the editor, Ctrl+L clears the console, Ctrl+T opens a new tab, Ctrl+E toggles the full-screen editor and F5 refreshes the logs.",
+	},
+	{
 		Title = "You're all set!",
 		Icon = "✖️",
-		Text = "Tap the X to minimise me into a draggable bubble and start scripting. Reopen this tour any time from Settings > Replay Tutorial.",
+		Text = "Click the X to minimise me into a draggable bubble and start scripting. Reopen this tour any time from Settings > Replay Tutorial.",
 	},
 }
 for _, page in ipairs(tutorialPages) do
@@ -1152,7 +1280,7 @@ blur.Parent = game.Lighting
 
 local mainFrame = Instance.new("Frame", screenGui)
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0.8, 0, 0.7, 0)
+mainFrame.Size = desktop.Size
 mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
 mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 mainFrame.BackgroundTransparency = 1
@@ -1645,7 +1773,8 @@ end
 local EDITOR_ROW_Y = 36
 local runButton = Instance.new("TextButton", footer)
 runButton.Size = UDim2.new(0, 72, 0, FOOTER_H - EDITOR_ROW_Y - 6)
-runButton.Position = UDim2.new(1, -5, 1, -6)
+-- The right-hand 12px of the editor row is reserved for the resize grip.
+runButton.Position = UDim2.new(1, -17, 1, -6)
 runButton.AnchorPoint = Vector2.new(1, 1)
 runButton.BackgroundColor3 = CONFIG.Colors.SecondaryAccent
 runButton.Font = CONFIG.BoldFont
@@ -1713,7 +1842,7 @@ local clipboardRunButton = Instance.new("TextButton", footer)
 clipboardRunButton.Size = UDim2.new(0, 58, 0, FOOTER_H - EDITOR_ROW_Y - 6)
 clipboardRunButton.TextWrapped = true
 clipboardRunButton.TextScaled = true
-clipboardRunButton.Position = UDim2.new(1, -81, 1, -6)
+clipboardRunButton.Position = UDim2.new(1, -93, 1, -6)
 clipboardRunButton.AnchorPoint = Vector2.new(1, 1)
 clipboardRunButton.BackgroundColor3 = CONFIG.Colors.UtilButton
 clipboardRunButton:SetAttribute("ColorType", "UtilButton")
@@ -1756,7 +1885,7 @@ expandInputButton.ZIndex = 4
 expandInputButton.Visible = false
 
 local inputContainer = Instance.new("ScrollingFrame", footer)
-inputContainer.Size = UDim2.new(1, -148, 0, FOOTER_H - EDITOR_ROW_Y - 6)
+inputContainer.Size = UDim2.new(1, -160, 0, FOOTER_H - EDITOR_ROW_Y - 6)
 inputContainer.Position = UDim2.new(0, 5, 1, -6)
 inputContainer.AnchorPoint = Vector2.new(0, 1)
 inputContainer.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
@@ -2177,7 +2306,7 @@ end
 -- ============================================================================
 -- Exposed to the auto-execute panel and startup; the rest of the tab system
 -- is scoped inside the do-block below to keep the main chunk's local count low.
-local editorTabs, activeTabIndex, switchToTab, newTab
+local editorTabs, activeTabIndex, switchToTab, newTab, addTab
 
 do
 	local TABS_FILE = "WorldClient_Tabs.json"
@@ -2323,7 +2452,7 @@ do
 		return n
 	end
 
-	local addTabFn, closeTab, closeAllTabs, beginRenameTab
+	local closeTab, closeAllTabs, beginRenameTab
 
 	local function openTabMenu(tab)
 		for _, child in ipairs(tabMenu:GetChildren()) do
@@ -2742,7 +2871,7 @@ do
 		end)
 	)
 
-	function addTabFn()
+	function addTab()
 		if editorTabs[activeTabIndex] then
 			editorTabs[activeTabIndex].content = inputBox.Text
 		end
@@ -2793,7 +2922,7 @@ do
 		connections,
 		addTabButton.MouseButton1Click:Connect(function()
 			createClickParticles(addTabButton)
-			addTabFn()
+			addTab()
 		end)
 	)
 	table.insert(
@@ -2912,8 +3041,8 @@ local function showTutorial()
 	card.ZIndex = 45
 	card.Active = true
 	local cardSizeLimit = Instance.new("UISizeConstraint", card)
-	cardSizeLimit.MaxSize = Vector2.new(340, math.huge)
-	cardSizeLimit.MinSize = Vector2.new(220, 0)
+	cardSizeLimit.MaxSize = Vector2.new(desktop.px(420), math.huge)
+	cardSizeLimit.MinSize = Vector2.new(desktop.px(280), 0)
 	Instance.new("UICorner", card).CornerRadius = UDim.new(0, 10)
 	local cardScale = Instance.new("UIScale", card)
 	cardScale.Scale = 0
@@ -3470,8 +3599,12 @@ settingsFrame.Visible = false
 Instance.new("UICorner", settingsFrame).CornerRadius = UDim.new(0, 10)
 do
 local settingsSizeLimit = Instance.new("UISizeConstraint", settingsFrame)
-settingsSizeLimit.MaxSize = Vector2.new(320, 440)
-settingsSizeLimit.MinSize = Vector2.new(320, 240)
+settingsSizeLimit.MaxSize = Vector2.new(desktop.px(380), desktop.px(560))
+settingsSizeLimit.MinSize = Vector2.new(desktop.px(340), desktop.px(300))
+table.insert(desktop.OnLayout, function()
+	settingsSizeLimit.MaxSize = Vector2.new(desktop.px(380), desktop.px(560))
+	settingsSizeLimit.MinSize = Vector2.new(desktop.px(340), desktop.px(300))
+end)
 end
 local settingsScale = Instance.new("UIScale", settingsFrame)
 settingsScale.Scale = 0
@@ -4629,8 +4762,8 @@ do
 	scriptsFrame.Visible = false
 	Instance.new("UICorner", scriptsFrame).CornerRadius = UDim.new(0, 10)
 	local scriptsSizeLimit = Instance.new("UISizeConstraint", scriptsFrame)
-	scriptsSizeLimit.MaxSize = Vector2.new(320, 440)
-	scriptsSizeLimit.MinSize = Vector2.new(320, 240)
+	scriptsSizeLimit.MaxSize = Vector2.new(desktop.px(380), desktop.px(560))
+	scriptsSizeLimit.MinSize = Vector2.new(desktop.px(340), desktop.px(300))
 	local scriptsScale = Instance.new("UIScale", scriptsFrame)
 	scriptsScale.Scale = 0
 	local scriptsStroke = Instance.new("UIStroke", scriptsFrame)
@@ -4988,8 +5121,8 @@ do
 	aeFrame.Visible = false
 	Instance.new("UICorner", aeFrame).CornerRadius = UDim.new(0, 10)
 	local aeSizeLimit = Instance.new("UISizeConstraint", aeFrame)
-	aeSizeLimit.MaxSize = Vector2.new(340, 460)
-	aeSizeLimit.MinSize = Vector2.new(340, 260)
+	aeSizeLimit.MaxSize = Vector2.new(desktop.px(400), desktop.px(580))
+	aeSizeLimit.MinSize = Vector2.new(desktop.px(360), desktop.px(320))
 	local aeScale = Instance.new("UIScale", aeFrame)
 	aeScale.Scale = 0
 	local aeStroke = Instance.new("UIStroke", aeFrame)
@@ -5935,8 +6068,8 @@ scriptHub.Build = function()
 	disclaimerFrame.ZIndex = 23
 	Instance.new("UICorner", disclaimerFrame).CornerRadius = UDim.new(0, 10)
 	local disclaimerLimit = Instance.new("UISizeConstraint", disclaimerFrame)
-	disclaimerLimit.MaxSize = Vector2.new(460, 420)
-	disclaimerLimit.MinSize = Vector2.new(280, 260)
+	disclaimerLimit.MaxSize = Vector2.new(desktop.px(520), desktop.px(460))
+	disclaimerLimit.MinSize = Vector2.new(desktop.px(340), desktop.px(280))
 	local disclaimerScale = Instance.new("UIScale", disclaimerFrame)
 	disclaimerScale.Scale = 0
 	local disclaimerStroke = Instance.new("UIStroke", disclaimerFrame)
@@ -6071,8 +6204,8 @@ scriptHub.Build = function()
 	hubFrame.ZIndex = 17
 	Instance.new("UICorner", hubFrame).CornerRadius = UDim.new(0, 10)
 	local hubSizeLimit = Instance.new("UISizeConstraint", hubFrame)
-	hubSizeLimit.MaxSize = Vector2.new(620, 560)
-	hubSizeLimit.MinSize = Vector2.new(300, 300)
+	hubSizeLimit.MaxSize = Vector2.new(desktop.px(900), desktop.px(720))
+	hubSizeLimit.MinSize = Vector2.new(desktop.px(460), desktop.px(360))
 	local hubScale = Instance.new("UIScale", hubFrame)
 	hubScale.Scale = 0
 	local hubStroke = Instance.new("UIStroke", hubFrame)
@@ -6224,8 +6357,8 @@ scriptHub.Build = function()
 	detailFrame.ZIndex = 20
 	Instance.new("UICorner", detailFrame).CornerRadius = UDim.new(0, 10)
 	local detailSizeLimit = Instance.new("UISizeConstraint", detailFrame)
-	detailSizeLimit.MaxSize = Vector2.new(620, 560)
-	detailSizeLimit.MinSize = Vector2.new(300, 300)
+	detailSizeLimit.MaxSize = Vector2.new(desktop.px(820), desktop.px(680))
+	detailSizeLimit.MinSize = Vector2.new(desktop.px(460), desktop.px(360))
 	local detailScale = Instance.new("UIScale", detailFrame)
 	detailScale.Scale = 0
 	local detailStroke = Instance.new("UIStroke", detailFrame)
@@ -7394,8 +7527,8 @@ scriptHub.Build = function()
 	filterFrame.ZIndex = 20
 	Instance.new("UICorner", filterFrame).CornerRadius = UDim.new(0, 10)
 	local filterSizeLimit = Instance.new("UISizeConstraint", filterFrame)
-	filterSizeLimit.MaxSize = Vector2.new(420, 480)
-	filterSizeLimit.MinSize = Vector2.new(280, 300)
+	filterSizeLimit.MaxSize = Vector2.new(desktop.px(460), desktop.px(520))
+	filterSizeLimit.MinSize = Vector2.new(desktop.px(320), desktop.px(320))
 	local filterScale = Instance.new("UIScale", filterFrame)
 	filterScale.Scale = 0
 	local filterStroke = Instance.new("UIStroke", filterFrame)
@@ -7970,7 +8103,11 @@ local function toggleMinimize()
 		TweenService:Create(
 			mainFrame,
 			tweenInfo,
-			{ Size = UDim2.new(0, 60, 0, 60), Position = lastMinimizedPosition, AnchorPoint = Vector2.new(0.5, 0) }
+			{
+				Size = UDim2.fromOffset(desktop.px(58), desktop.px(58)),
+				Position = lastMinimizedPosition,
+				AnchorPoint = Vector2.new(0.5, 0),
+			}
 		):Play()
 
 		header.Size = UDim2.new(1, 0, 1, 0)
@@ -7992,7 +8129,7 @@ local function toggleMinimize()
 		TweenService:Create(mainCorner, tweenInfo, { CornerRadius = UDim.new(0, 8) }):Play()
 		TweenService:Create(blurCorner, tweenInfo, { CornerRadius = UDim.new(0, 8) }):Play()
 		TweenService:Create(mainFrame, tweenInfo, {
-			Size = UDim2.new(0.8, 0, 0.7, 0),
+			Size = desktop.Size,
 			Position = UDim2.new(0.5, 0, 0.5, 0),
 			AnchorPoint = Vector2.new(0.5, 0.5),
 		}):Play()
@@ -8382,17 +8519,17 @@ local function toggleScriptView()
 
 		runButton.Parent = footer
 		runButton.Size = UDim2.new(0, 72, 0, FOOTER_H - EDITOR_ROW_Y - 6)
-		runButton.Position = UDim2.new(1, -5, 1, -6)
+		runButton.Position = UDim2.new(1, -17, 1, -6)
 		runButton.AnchorPoint = Vector2.new(1, 1)
 
 		clipboardRunButton.AnchorPoint = Vector2.new(1, 1)
-		clipboardRunButton.Position = UDim2.new(1, -81, 1, -6)
+		clipboardRunButton.Position = UDim2.new(1, -93, 1, -6)
 		clipboardRunButton.Size = UDim2.new(0, 58, 0, FOOTER_H - EDITOR_ROW_Y - 6)
 
 		expandInputButton.AnchorPoint = Vector2.new(1, 1)
 		expandInputButton.Position = UDim2.new(1, -143, 1, -6)
 
-		inputContainer.Size = UDim2.new(1, -148, 0, FOOTER_H - EDITOR_ROW_Y - 6)
+		inputContainer.Size = UDim2.new(1, -160, 0, FOOTER_H - EDITOR_ROW_Y - 6)
 		inputContainer.Position = UDim2.new(0, 5, 1, -6)
 		inputContainer.AnchorPoint = Vector2.new(0, 1)
 	end
@@ -8418,73 +8555,158 @@ table.insert(
 	end)
 )
 
+-- The header doubles as a title bar: dragging it moves the open window, and
+-- dragging the minimised bubble moves the bubble. The phone build only allowed
+-- the latter, so on desktop the console could never be pushed out of the way.
 table.insert(
 	connections,
 	header.InputBegan:Connect(function(input)
-		if not isMinimized then
+		if
+			input.UserInputType ~= Enum.UserInputType.MouseButton1
+			and input.UserInputType ~= Enum.UserInputType.Touch
+		then
 			return
 		end
-		if
-			input.UserInputType == Enum.UserInputType.MouseButton1
-			or input.UserInputType == Enum.UserInputType.Touch
-		then
-			isDragging = true
-			dragStart = UserInputService:GetMouseLocation()
-			frameStartPos = mainFrame.Position
-			targetPosition = mainFrame.Position
-			targetSize = mainFrame.Size
-			dragStartTime = tick()
+		isDragging = true
+		dragMode = isMinimized and "bubble" or "window"
+		dragStart = UserInputService:GetMouseLocation()
+		frameStartPos = mainFrame.Position
+		targetPosition = mainFrame.Position
 
-			local changedConn
-			changedConn = input.Changed:Connect(function()
-				if input.UserInputState == Enum.UserInputState.End then
-					isDragging = false
-					local delta = (UserInputService:GetMouseLocation() - dragStart).Magnitude
-					if delta < 10 then
-						toggleMinimize()
-					end
-					changedConn:Disconnect()
+		local changedConn
+		changedConn = input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				-- A press that never travelled is a click, which opens the
+				-- bubble. Dragging the title bar of an open window is not.
+				local delta = (UserInputService:GetMouseLocation() - dragStart).Magnitude
+				if dragMode == "bubble" and delta < 10 then
+					toggleMinimize()
 				end
-			end)
-		end
+				isDragging = false
+				dragMode = nil
+				changedConn:Disconnect()
+			end
+		end)
 	end)
 )
 
 table.insert(
 	connections,
 	RunService.RenderStepped:Connect(function(dt)
-		if isDragging then
-			local viewportSize = workspace.CurrentCamera.ViewportSize
-			local mouseDelta = UserInputService:GetMouseLocation() - dragStart
-			local targetPixelX = (frameStartPos.X.Scale * viewportSize.X) + frameStartPos.X.Offset + mouseDelta.X
-			local targetPixelY = (frameStartPos.Y.Scale * viewportSize.Y) + frameStartPos.Y.Offset + mouseDelta.Y
+		if not isDragging or not dragMode then
+			return
+		end
+		local viewport = desktop.viewport()
+		local mouseDelta = UserInputService:GetMouseLocation() - dragStart
+		local targetPixelX = (frameStartPos.X.Scale * viewport.X) + frameStartPos.X.Offset + mouseDelta.X
+		local targetPixelY = (frameStartPos.Y.Scale * viewport.Y) + frameStartPos.Y.Offset + mouseDelta.Y
 
-			local frameSize = mainFrame.AbsoluteSize
-			local frameAnchor = mainFrame.AnchorPoint
+		local frameSize = mainFrame.AbsoluteSize
+		local frameAnchor = mainFrame.AnchorPoint
+		local minX, maxX = frameSize.X * frameAnchor.X, viewport.X - (frameSize.X * (1 - frameAnchor.X))
+		local minY, maxY = frameSize.Y * frameAnchor.Y, viewport.Y - (frameSize.Y * (1 - frameAnchor.Y))
 
-			local minX, maxX = frameSize.X * frameAnchor.X, viewportSize.X - (frameSize.X * (1 - frameAnchor.X))
-			local minY, maxY = frameSize.Y * frameAnchor.Y, viewportSize.Y - (frameSize.Y * (1 - frameAnchor.Y))
+		targetPosition = UDim2.new(
+			frameStartPos.X.Scale,
+			math.clamp(targetPixelX, minX, maxX) - (frameStartPos.X.Scale * viewport.X),
+			frameStartPos.Y.Scale,
+			math.clamp(targetPixelY, minY, maxY) - (frameStartPos.Y.Scale * viewport.Y)
+		)
 
-			local clampedPixelX = math.clamp(targetPixelX, minX, maxX)
-			local clampedPixelY = math.clamp(targetPixelY, minY, maxY)
-
-			local timeElapsed = tick() - dragStartTime
-			clampedPixelX += math.sin(timeElapsed * 12) * 1.5
-			clampedPixelY += math.cos(timeElapsed * 15) * 1.2
-
-			targetPosition = UDim2.new(
-				frameStartPos.X.Scale,
-				clampedPixelX - (frameStartPos.X.Scale * viewportSize.X),
-				frameStartPos.Y.Scale,
-				clampedPixelY - (frameStartPos.Y.Scale * viewportSize.Y)
-			)
-
-			mainFrame.Position = mainFrame.Position:Lerp(targetPosition, dt * 8)
-			local wobbleScale = 1 + math.sin(timeElapsed * 10) * 0.08
-			mainFrame.Size = mainFrame.Size:Lerp(UDim2.new(0, 60 * wobbleScale, 0, 60 * wobbleScale), dt * 8)
+		if dragMode == "window" then
+			-- A mouse pointer is precise and a window is expected to sit
+			-- exactly where it is dropped, so no smoothing and none of the
+			-- touch build's wobble.
+			mainFrame.Position = targetPosition
+		else
+			mainFrame.Position = mainFrame.Position:Lerp(targetPosition, math.min(dt * 16, 1))
 		end
 	end)
 )
+
+-- === Resize grip ===
+-- Desktop users expect to be able to resize a window; the grip drives the same
+-- clamped size the layout pass uses, and taking hold of it hands sizing over
+-- to the user so a later window resize stops overriding their choice.
+do
+local grip = Instance.new("TextButton", mainFrame)
+grip.Name = "ResizeGrip"
+grip.AnchorPoint = Vector2.new(1, 1)
+-- Sits in the gutter reserved above, clear of the Run button. Like a real
+-- window's chrome this stays a fixed size rather than scaling with the
+-- display - a title bar does not get taller on a bigger monitor.
+grip.Position = UDim2.new(1, -2, 1, -2)
+grip.Size = UDim2.fromOffset(12, 12)
+grip.BackgroundTransparency = 1
+grip.Text = "◢"
+grip.TextColor3 = CONFIG.Colors.SecondaryAccent
+grip.TextTransparency = 0.35
+grip.TextSize = 14
+grip.Font = CONFIG.Font
+grip.ZIndex = 30
+grip.AutoButtonColor = false
+grip.Visible = false
+safeSetCursor(grip, "rbxasset://SystemCursor/SizeNWSE")
+
+local resizing = false
+local grabMouse, grabSize
+
+table.insert(
+	connections,
+	grip.InputBegan:Connect(function(input)
+		if
+			input.UserInputType ~= Enum.UserInputType.MouseButton1
+			and input.UserInputType ~= Enum.UserInputType.Touch
+		then
+			return
+		end
+		resizing = true
+		grabMouse = UserInputService:GetMouseLocation()
+		grabSize = mainFrame.AbsoluteSize
+		local changedConn
+		changedConn = input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				resizing = false
+				changedConn:Disconnect()
+			end
+		end)
+	end)
+)
+
+table.insert(
+	connections,
+	RunService.RenderStepped:Connect(function()
+		if not resizing then
+			return
+		end
+		if isMinimized then
+			resizing = false
+			return
+		end
+		local delta = UserInputService:GetMouseLocation() - grabMouse
+		-- The window is centre-anchored, so its corner travels at half the
+		-- rate the size grows; doubling the delta keeps the grip under the
+		-- pointer.
+		local size = desktop.clampSize(grabSize.X + delta.X * 2, grabSize.Y + delta.Y * 2)
+		desktop.UserSized = true
+		desktop.Size = UDim2.fromOffset(size.X, size.Y)
+		mainFrame.Size = desktop.Size
+	end)
+)
+
+-- Hidden as a bubble, and in the full-screen editor where the editing area
+-- owns the whole frame. Both transitions resize something, so the two size
+-- signals between them cover every case.
+local function syncGripVisibility()
+	grip.Visible = not isMinimized and not isInputMaximized
+end
+table.insert(connections, mainFrame:GetPropertyChangedSignal("Size"):Connect(syncGripVisibility))
+table.insert(connections, footer:GetPropertyChangedSignal("Size"):Connect(syncGripVisibility))
+
+table.insert(themedUpdaters, function()
+	grip.TextColor3 = CONFIG.Colors.SecondaryAccent
+end)
+end
 
 table.insert(
 	connections,
@@ -8624,28 +8846,117 @@ table.insert(
 	end)
 )
 
+-- Re-applies the window size after the Roblox window changes. The phone build
+-- recentres the console on every inset change; on desktop that would yank a
+-- window the user had deliberately dragged aside, so the position is kept and
+-- only pulled back if the new window size left it off-screen.
 local function onInsetsChanged()
-	local keyboardHeight = UserInputService.OnScreenKeyboardSize.Y
-	if not isMinimized then
-		local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-		local newSize, newPos, newAnchor
-		if keyboardHeight > 0 then
-			newSize = UDim2.new(1, 0, 1, -keyboardHeight)
-			newPos = UDim2.new(0.5, 0, 0, 0)
-			newAnchor = Vector2.new(0.5, 0)
-		else
-			newSize = UDim2.new(0.8, 0, 0.7, 0)
-			newPos = UDim2.new(0.5, 0, 0.5, 0)
-			newAnchor = Vector2.new(0.5, 0.5)
-		end
-		mainFrame.AnchorPoint = newAnchor
-		TweenService:Create(mainFrame, tweenInfo, { Size = newSize, Position = newPos }):Play()
-		blurFrame.AnchorPoint = newAnchor
-		TweenService:Create(blurFrame, tweenInfo, { Size = newSize, Position = newPos }):Play()
+	if isMinimized then
+		return
 	end
+	local keyboardHeight = UserInputService.OnScreenKeyboardSize.Y
+	local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	local newSize, newPos, newAnchor
+	if keyboardHeight > 0 then
+		-- Only a touchscreen laptop or a tablet in desktop mode reaches this;
+		-- a mouse-and-keyboard machine never reports an on-screen keyboard.
+		newSize = UDim2.new(1, 0, 1, -keyboardHeight)
+		newPos = UDim2.new(0.5, 0, 0, 0)
+		newAnchor = Vector2.new(0.5, 0)
+	else
+		newSize = desktop.Size
+		newAnchor = mainFrame.AnchorPoint
+		newPos = desktop.clampPosition(
+			mainFrame.Position,
+			Vector2.new(newSize.X.Offset, newSize.Y.Offset),
+			newAnchor
+		)
+	end
+	mainFrame.AnchorPoint = newAnchor
+	TweenService:Create(mainFrame, tweenInfo, { Size = newSize, Position = newPos }):Play()
+	blurFrame.AnchorPoint = newAnchor
+	TweenService:Create(blurFrame, tweenInfo, { Size = newSize, Position = newPos }):Play()
 end
 
 table.insert(connections, UserInputService:GetPropertyChangedSignal("OnScreenKeyboardSize"):Connect(onInsetsChanged))
+table.insert(desktop.OnLayout, onInsetsChanged)
+
+-- Resizing the Roblox window (or going full-screen) re-runs the layout pass.
+do
+local cameraConnection
+local function watchCamera()
+	if cameraConnection then
+		cameraConnection:Disconnect()
+	end
+	local camera = workspace.CurrentCamera
+	if not camera then
+		return
+	end
+	cameraConnection = camera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
+		desktop.refresh()
+	end)
+	table.insert(connections, cameraConnection)
+end
+watchCamera()
+table.insert(connections, workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(function()
+	watchCamera()
+	desktop.refresh()
+end))
+end
+
+-- === Keyboard shortcuts ===
+-- A phone has no keyboard, so the touch build puts every action behind a
+-- button. On desktop the common ones get accelerators. Ctrl chords are handled
+-- even when gameProcessed is set, because the editor holds focus while you use
+-- them; bare keys are ignored when the game consumed the keystroke so they
+-- never fight with in-game controls.
+do
+local function chordHeld()
+	return UserInputService:IsKeyDown(Enum.KeyCode.LeftControl)
+		or UserInputService:IsKeyDown(Enum.KeyCode.RightControl)
+		-- Command on macOS, where Ctrl is not the usual modifier.
+		or UserInputService:IsKeyDown(Enum.KeyCode.LeftMeta)
+		or UserInputService:IsKeyDown(Enum.KeyCode.RightMeta)
+end
+
+table.insert(
+	connections,
+	UserInputService.InputBegan:Connect(function(input, gameProcessed)
+		if input.UserInputType ~= Enum.UserInputType.Keyboard then
+			return
+		end
+		local key = input.KeyCode
+
+		-- Show/hide has to work from anywhere, including mid-game.
+		if key == Enum.KeyCode.F2 then
+			toggleMinimize()
+			return
+		end
+		if isMinimized then
+			return
+		end
+
+		if not chordHeld() then
+			if key == Enum.KeyCode.F5 and not gameProcessed then
+				refreshLogs()
+			end
+			return
+		end
+
+		if key == Enum.KeyCode.Return or key == Enum.KeyCode.KeypadEnter then
+			executeCommand()
+		elseif key == Enum.KeyCode.L then
+			clearLogs()
+		elseif key == Enum.KeyCode.T then
+			if addTab then
+				addTab()
+			end
+		elseif key == Enum.KeyCode.E then
+			toggleScriptView()
+		end
+	end)
+)
+end
 
 screenGui.Parent = playerGui
 blurGui.Parent = playerGui
