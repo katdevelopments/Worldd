@@ -4,12 +4,17 @@
 -- minimised bubble. The client is either on screen or it is not, and the
 -- Insert key crossfades between the two states.
 --
--- Everything the client draws is parented to one of two CanvasGroups - the
--- panel layer inside the main ScreenGui, and the blur layer behind it - so the
--- whole interface fades with a single GroupTransparency tween per layer
--- instead of walking hundreds of descendants and restoring their individual
--- transparencies. Only the boot intro sits outside those layers, because it
--- plays while the client itself is still hidden.
+-- Everything the client draws is parented to one of two layer frames - the
+-- panel layer inside the main ScreenGui, and the blur layer behind it - so one
+-- Visible flag per layer takes the whole client off screen, and the crossfade
+-- has a single subtree to walk. Only the boot intro sits outside those layers,
+-- because it plays while the client itself is still hidden.
+--
+-- Those layers are deliberately plain Frames and not CanvasGroups. A
+-- CanvasGroup would fade in one GroupTransparency tween, but it renders its
+-- children into an offscreen buffer whose resolution follows the graphics
+-- quality slider: at quality level 1 the entire interface comes back visibly
+-- soft. See the show/hide section for what the fade does instead.
 --
 -- Like the desktop build, the window is sized against the Roblox window rather
 -- than a phone screen, and it keeps the draggable title bar, the resize grip
@@ -1277,18 +1282,17 @@ screenGui.ResetOnSpawn = false
 screenGui.DisplayOrder = 2147483647
 screenGui.IgnoreGuiInset = true
 
--- Every panel the client draws lives under this CanvasGroup so showing and
--- hiding the client is one GroupTransparency tween rather than a walk over
--- every descendant. It is sized to the whole screen and sits at the origin, so
--- children keep the exact coordinates they would have had under the ScreenGui.
--- Visible is switched off once a fade-out finishes, which also stops the
--- layer's buttons from swallowing clicks while the client is away.
-local uiRoot = Instance.new("CanvasGroup", screenGui)
+-- Every panel the client draws lives under this frame, so showing and hiding
+-- the client is one Visible flag and the fade has one subtree to walk. It is
+-- sized to the whole screen and sits at the origin, so children keep the exact
+-- coordinates they would have had under the ScreenGui. Visible is switched off
+-- once a fade-out finishes, which also stops the layer's buttons from
+-- swallowing clicks while the client is away.
+local uiRoot = Instance.new("Frame", screenGui)
 uiRoot.Name = "UIRoot"
 uiRoot.Size = UDim2.new(1, 0, 1, 0)
 uiRoot.BackgroundTransparency = 1
 uiRoot.BorderSizePixel = 0
-uiRoot.GroupTransparency = 1
 uiRoot.Visible = false
 uiRoot.ZIndex = 0
 
@@ -1322,14 +1326,13 @@ mainFrame.ZIndex = 1
 
 Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 8)
 
--- The blur panel gets its own CanvasGroup for the same reason: its stroke is
--- driven by the glow animation, so fading it by hand would fight that tween.
-local blurLayer = Instance.new("CanvasGroup", blurGui)
+-- The blur panel lives behind the client in its own ScreenGui, so it gets a
+-- matching layer frame of its own to be shown, hidden and faded alongside.
+local blurLayer = Instance.new("Frame", blurGui)
 blurLayer.Name = "BlurLayer"
 blurLayer.Size = UDim2.new(1, 0, 1, 0)
 blurLayer.BackgroundTransparency = 1
 blurLayer.BorderSizePixel = 0
-blurLayer.GroupTransparency = 1
 blurLayer.Visible = false
 blurLayer.ZIndex = 0
 
@@ -8258,13 +8261,129 @@ table.insert(
 
 -- === Show / hide ===
 -- The desktop build minimised into a draggable bubble; this build has no
--- bubble at all. The client crossfades: both CanvasGroup layers tween their
--- GroupTransparency together, the player gets their controls back while the
--- client is away, and the layers stop drawing (and stop taking clicks) only
--- once the fade-out has finished.
+-- bubble at all. Insert crossfades the whole client in and out instead, and
+-- the player gets their controls back while it is away.
+--
+-- The obvious way to fade a tree this size is to wrap it in a CanvasGroup and
+-- tween GroupTransparency. That is one tween instead of the walk below, but a
+-- CanvasGroup renders its children into an offscreen buffer sized by the
+-- graphics quality level, so on quality 1 the whole client comes back soft and
+-- blurry. Driving each transparency property directly costs more per frame and
+-- always draws at native resolution, whatever the quality slider says.
+local setClientVisible, toggleClient
+do
+-- Parallel arrays rather than a table per entry: a fade can touch a couple of
+-- thousand properties and it rewrites all of them every frame.
+local fadeObjects, fadeProps, fadeBases = {}, {}, {}
+local fadeCount = 0
 local FADE_TIME = 0.28
 
-local function setClientVisible(visible, instant)
+local function addFadeTarget(obj, prop)
+	fadeCount += 1
+	fadeObjects[fadeCount] = obj
+	fadeProps[fadeCount] = prop
+	fadeBases[fadeCount] = obj[prop]
+end
+
+-- Only what is on screen is worth fading, so a Visible = false node prunes its
+-- whole subtree - which is most of the client, since every panel (settings,
+-- the script hub, the tour, each modal's backdrop) sits hidden until opened.
+local function collectFadeTargets(parent)
+	for _, child in ipairs(parent:GetChildren()) do
+		if child:IsA("GuiObject") then
+			if child.Visible then
+				addFadeTarget(child, "BackgroundTransparency")
+				if child:IsA("TextLabel") or child:IsA("TextButton") or child:IsA("TextBox") then
+					addFadeTarget(child, "TextTransparency")
+					addFadeTarget(child, "TextStrokeTransparency")
+				elseif child:IsA("ImageLabel") or child:IsA("ImageButton") then
+					addFadeTarget(child, "ImageTransparency")
+				end
+				if child:IsA("ScrollingFrame") then
+					addFadeTarget(child, "ScrollBarImageTransparency")
+				end
+				collectFadeTargets(child)
+			end
+		elseif child:IsA("UIStroke") then
+			addFadeTarget(child, "Transparency")
+		end
+	end
+end
+
+-- Measured at the start of every fade rather than cached once, so a theme
+-- change, a resized window and any log lines that arrived while the client was
+-- away are all picked up as they actually are.
+local function snapshotFade()
+	fadeCount = 0
+	table.clear(fadeObjects)
+	table.clear(fadeProps)
+	table.clear(fadeBases)
+	collectFadeTargets(uiRoot)
+	collectFadeTargets(blurLayer)
+end
+
+-- alpha 0 is the client exactly as it was measured; alpha 1 is every measured
+-- property taken the rest of the way to fully transparent.
+local function applyFade(alpha)
+	for i = 1, fadeCount do
+		local base = fadeBases[i]
+		fadeObjects[i][fadeProps[i]] = base + (1 - base) * alpha
+	end
+end
+
+local function restoreFade()
+	for i = 1, fadeCount do
+		fadeObjects[i][fadeProps[i]] = fadeBases[i]
+	end
+	fadeCount = 0
+	table.clear(fadeObjects)
+	table.clear(fadeProps)
+	table.clear(fadeBases)
+end
+
+local fading = false
+local fadeShowing = false
+local fadeFrom, fadeTo, fadeElapsed = 0, 0, 0
+-- The first-run tour opens itself the first time the client is shown, but it
+-- waits for the fade so the card does not pop in at full opacity over a client
+-- that is still coming up.
+local pendingTutorial = false
+
+local function openPendingTutorial()
+	if pendingTutorial and not tutorialShown and not tutorialCompleted then
+		pendingTutorial = false
+		showTutorial()
+	end
+end
+
+-- One connection for the life of the client rather than one per toggle; it
+-- costs a comparison per frame while nothing is fading.
+table.insert(
+	connections,
+	RunService.RenderStepped:Connect(function(dt)
+		if not fading then
+			return
+		end
+		fadeElapsed += dt
+		local t = math.clamp(fadeElapsed / FADE_TIME, 0, 1)
+		local eased = TweenService:GetValue(t, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+		applyFade(fadeFrom + (fadeTo - fadeFrom) * eased)
+		if t >= 1 then
+			fading = false
+			restoreFade()
+			uiRoot.Visible = fadeShowing
+			blurLayer.Visible = fadeShowing
+			if fadeShowing then
+				if uiSettings.glow then
+					startGlow()
+				end
+				openPendingTutorial()
+			end
+		end
+	end)
+)
+
+function setClientVisible(visible, instant)
 	isHidden = not visible
 
 	blur.Enabled = visible and uiSettings.blur == true
@@ -8282,53 +8401,54 @@ local function setClientVisible(visible, instant)
 	end
 	UserInputService.MouseBehavior = Enum.MouseBehavior.Default
 
-	for _, key in ipairs({ "fadePanel", "fadeBlur" }) do
-		if activeTweens[key] then
-			activeTweens[key]:Cancel()
-			activeTweens[key] = nil
-		end
-	end
-
-	if visible then
-		-- Turned on before the tween so the fade-in has something to draw.
-		uiRoot.Visible = true
-		blurLayer.Visible = true
-	end
-
-	local target = visible and 0 or 1
-
-	if instant then
-		uiRoot.GroupTransparency = target
-		blurLayer.GroupTransparency = target
-		uiRoot.Visible = visible
-		blurLayer.Visible = visible
-	else
-		local tweenInfo = TweenInfo.new(FADE_TIME, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-		activeTweens.fadePanel = TweenService:Create(uiRoot, tweenInfo, { GroupTransparency = target })
-		activeTweens.fadeBlur = TweenService:Create(blurLayer, tweenInfo, { GroupTransparency = target })
-		activeTweens.fadePanel:Play()
-		activeTweens.fadeBlur:Play()
-
-		if not visible then
-			activeTweens.fadePanel.Completed:Once(function(state)
-				-- A show that landed mid-fade already flipped isHidden back.
-				if state == Enum.PlaybackState.Completed and isHidden then
-					uiRoot.Visible = false
-					blurLayer.Visible = false
-				end
-			end)
-		end
-	end
+	-- Put back whatever a fade in flight had written before measuring anything,
+	-- so spamming the key never bakes half-faded values in as the new baseline.
+	fading = false
+	restoreFade()
 
 	if visible and not tutorialShown and not tutorialCompleted then
 		-- Auto-run the tour the first time the client is opened, but only until
 		-- it's been completed once (persisted across rejoins).
-		showTutorial()
+		pendingTutorial = true
+	end
+
+	if instant then
+		uiRoot.Visible = visible
+		blurLayer.Visible = visible
+		if visible then
+			openPendingTutorial()
+		end
+	else
+		-- The glow pulse animates the same stroke transparency the fade writes,
+		-- so it is parked at its rest values for the duration and restarted
+		-- once the client is back.
+		for _, key in ipairs({ "glowTransparency", "glowThickness", "strokeSpin" }) do
+			if activeTweens[key] then
+				activeTweens[key]:Cancel()
+				activeTweens[key] = nil
+			end
+		end
+		blurStroke.Transparency = 0.2
+		blurStroke.Thickness = 2
+
+		-- Shown before measuring, and the first frame is written before this
+		-- call returns, so a fade-in never flashes the client at full opacity.
+		uiRoot.Visible = true
+		blurLayer.Visible = true
+		snapshotFade()
+
+		fadeShowing = visible
+		fadeFrom = visible and 1 or 0
+		fadeTo = visible and 0 or 1
+		fadeElapsed = 0
+		fading = true
+		applyFade(fadeFrom)
 	end
 end
 
-local function toggleClient()
+function toggleClient()
 	setClientVisible(isHidden)
+end
 end
 
 local function clearLogs()
