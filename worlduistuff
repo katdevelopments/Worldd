@@ -598,6 +598,10 @@ local uiSettings = {
 	consoleWordWrap = true,
 	editorLineNumbers = false,
 	consoleLineNumbers = false,
+	-- Draggable seam between the console and the editor row. Off by default so
+	-- a fresh install looks like the touch build until it is asked for.
+	editorSplit = false,
+	editorHeight = 112,
 }
 
 -- Assigned by the log filter block; lets the settings panel drive auto-scroll.
@@ -975,6 +979,8 @@ function saveSettings()
 				consoleWordWrap = uiSettings.consoleWordWrap,
 				editorLineNumbers = uiSettings.editorLineNumbers,
 				consoleLineNumbers = uiSettings.consoleLineNumbers,
+				editorSplit = uiSettings.editorSplit,
+				editorHeight = uiSettings.editorHeight,
 				tutorialCompleted = tutorialCompleted,
 				scriptHubAccepted = scriptHub.Accepted,
 				scriptHubProviders = scriptHub.Providers,
@@ -1041,6 +1047,12 @@ local function loadSettings()
 	end
 	if type(data.consoleLineNumbers) == "boolean" then
 		uiSettings.consoleLineNumbers = data.consoleLineNumbers
+	end
+	if type(data.editorSplit) == "boolean" then
+		uiSettings.editorSplit = data.editorSplit
+	end
+	if type(data.editorHeight) == "number" then
+		uiSettings.editorHeight = data.editorHeight
 	end
 	if type(data.tutorialCompleted) == "boolean" then
 		tutorialCompleted = data.tutorialCompleted
@@ -1164,7 +1176,7 @@ local tutorialPages = {
 	{
 		Title = "Made for desktop",
 		Icon = "🖱️",
-		Text = "Drag the title bar to move the window and the corner grip to resize it - the console remembers the size you pick. It also scales itself to your Roblox window, so it stays readable from a laptop up to a 4K display.",
+		Text = "Drag the title bar to move the window and the corner grip to resize it - the console remembers the size you pick. Turn on Editor Split Grip in Settings to drag the seam between the console and the editor too. It all scales to your Roblox window, so it stays readable from a laptop up to a 4K display.",
 	},
 	{
 		Title = "Keyboard shortcuts",
@@ -1571,6 +1583,9 @@ local refreshButton = createIconButton(leftControls, "🔄", 28, "UtilButton")
 local minimizeButton = createIconButton(rightControls, "✖️", 28, "MinimizeButton")
 
 -- Footer holds the tab bar (top strip) and the editor row (input + buttons).
+-- Height of the editor row. The desktop build lets the split between the
+-- console and the editor be dragged, so this is a live value rather than a
+-- constant; editorSplit.apply below re-lays everything out when it changes.
 local FOOTER_H = 112
 local footer = Instance.new("Frame", mainFrame)
 footer.Name = "Footer"
@@ -1879,7 +1894,9 @@ table.insert(themedUpdaters, function(theme, fontData)
 end)
 
 local expandInputButton = createIconButton(footer, "↗️", 22, "UtilButton")
-expandInputButton.Position = UDim2.new(1, -143, 1, -6)
+-- Floats over the editor's top-right corner, so it tracks the same 12px
+-- gutter the Run and Clipboard buttons were shifted by.
+expandInputButton.Position = UDim2.new(1, -155, 1, -6)
 expandInputButton.AnchorPoint = Vector2.new(1, 1)
 expandInputButton.ZIndex = 4
 expandInputButton.Visible = false
@@ -1897,6 +1914,158 @@ inputContainer.ScrollingDirection = Enum.ScrollingDirection.XY
 inputContainer.AutomaticCanvasSize = uiSettings.editorWordWrap == true and Enum.AutomaticSize.Y or Enum.AutomaticSize.XY
 Instance.new("UICorner", inputContainer).CornerRadius = UDim.new(0, 6)
 safeSetCursor(inputContainer, "rbxasset://SystemCursor/Arrow")
+
+-- === Editor / console split ===
+-- A grip line on the seam between the console and the editor row: drag it up
+-- to trade console height for editor height, down to get it back. A phone has
+-- neither the room nor a pointer precise enough to grab a 7px handle, which is
+-- why this is desktop-only, and it is off until switched on in Settings so the
+-- default layout still matches the touch build.
+local editorSplit = {}
+do
+local DEFAULT_HEIGHT = FOOTER_H
+local MIN_HEIGHT = 96
+-- Console floor: the header and filter bar already own the top 72px, so this
+-- is what is left for log lines.
+local MIN_CONSOLE = 120
+local GRIP_H = 7
+
+-- Measured against the window size the layout pass intends, not the frame's
+-- current AbsoluteSize: while minimised or mid-tween that is the 58px bubble,
+-- which would squash the editor to its floor.
+local function maxHeight()
+	return math.max(MIN_HEIGHT, math.floor(desktop.Size.Y.Offset - 72 - MIN_CONSOLE))
+end
+
+-- Restore the height from the last session, but only while the split is on:
+-- with it off the editor row keeps its standard height.
+if uiSettings.editorSplit == true and type(uiSettings.editorHeight) == "number" then
+	FOOTER_H = math.max(MIN_HEIGHT, math.floor(uiSettings.editorHeight))
+end
+
+-- Parented to the editor row and hung 1px off its top edge, so it rides every
+-- move of the row for free and disappears with it when the client minimises.
+local grip = Instance.new("TextButton", footer)
+grip.Name = "EditorSplitter"
+grip.AnchorPoint = Vector2.new(0.5, 1)
+grip.Size = UDim2.new(1, -24, 0, GRIP_H)
+grip.Position = UDim2.new(0.5, 0, 0, -1)
+grip.BackgroundColor3 = CONFIG.Colors.UtilButton
+grip.BackgroundTransparency = 0.35
+grip.BorderSizePixel = 0
+grip.AutoButtonColor = false
+grip.Text = ""
+grip.ZIndex = 6
+grip.Visible = false
+Instance.new("UICorner", grip).CornerRadius = UDim.new(1, 0)
+safeSetCursor(grip, "rbxasset://SystemCursor/SizeNS")
+
+-- A short brighter bar in the middle so the seam reads as something to grab
+-- rather than a decorative divider.
+local gripLine = Instance.new("Frame", grip)
+gripLine.Name = "GripLine"
+gripLine.AnchorPoint = Vector2.new(0.5, 0.5)
+gripLine.Position = UDim2.new(0.5, 0, 0.5, 0)
+gripLine.Size = UDim2.new(0, 48, 0, 3)
+gripLine.BackgroundColor3 = CONFIG.Colors.SecondaryAccent
+gripLine.BorderSizePixel = 0
+gripLine.ZIndex = 7
+Instance.new("UICorner", gripLine).CornerRadius = UDim.new(1, 0)
+
+-- Re-lays the editor row and the console around the current FOOTER_H. These
+-- are the same assignments the full-screen editor uses on its way back, so the
+-- two paths cannot drift apart.
+function editorSplit.apply()
+	FOOTER_H = math.clamp(FOOTER_H, MIN_HEIGHT, maxHeight())
+	footer.Size = UDim2.new(1, 0, 0, FOOTER_H)
+	footer.Position = UDim2.new(0, 0, 1, -FOOTER_H)
+	logContainer.Size = UDim2.new(1, 0, 1, -72 - FOOTER_H)
+	runButton.Size = UDim2.new(0, 72, 0, FOOTER_H - EDITOR_ROW_Y - 6)
+	clipboardRunButton.Size = UDim2.new(0, 58, 0, FOOTER_H - EDITOR_ROW_Y - 6)
+	inputContainer.Size = UDim2.new(1, -160, 0, FOOTER_H - EDITOR_ROW_Y - 6)
+end
+
+-- In the full-screen editor the row owns the whole frame and there is no seam
+-- left to drag, so the grip stands down.
+function editorSplit.refresh()
+	grip.Visible = uiSettings.editorSplit == true and not isInputMaximized
+end
+
+function editorSplit.reset()
+	FOOTER_H = DEFAULT_HEIGHT
+	uiSettings.editorHeight = FOOTER_H
+	editorSplit.apply()
+	editorSplit.refresh()
+end
+
+editorSplit.apply()
+editorSplit.refresh()
+
+-- Entering and leaving the full-screen editor both resize the row.
+table.insert(connections, footer:GetPropertyChangedSignal("Size"):Connect(editorSplit.refresh))
+
+local dragging = false
+local grabY, grabHeight
+
+table.insert(
+	connections,
+	grip.InputBegan:Connect(function(input)
+		if
+			input.UserInputType ~= Enum.UserInputType.MouseButton1
+			and input.UserInputType ~= Enum.UserInputType.Touch
+		then
+			return
+		end
+		dragging = true
+		grabY = UserInputService:GetMouseLocation().Y
+		grabHeight = FOOTER_H
+		local changedConn
+		changedConn = input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+				changedConn:Disconnect()
+				-- Written once on release rather than every frame of the drag.
+				uiSettings.editorHeight = FOOTER_H
+				saveSettings()
+			end
+		end)
+	end)
+)
+
+table.insert(
+	connections,
+	RunService.RenderStepped:Connect(function()
+		if not dragging then
+			return
+		end
+		if isMinimized or isInputMaximized or uiSettings.editorSplit ~= true then
+			dragging = false
+			return
+		end
+		-- Dragging up grows the editor, so the delta runs the other way.
+		local delta = grabY - UserInputService:GetMouseLocation().Y
+		FOOTER_H = math.clamp(math.floor(grabHeight + delta), MIN_HEIGHT, maxHeight())
+		editorSplit.apply()
+	end)
+)
+
+-- A smaller window can leave the editor taller than the console floor allows.
+-- OnLayout covers the Roblox window changing; the frame's own Size signal
+-- covers the user dragging the corner resize grip, which does not go through
+-- the layout pass.
+local function reclamp()
+	if uiSettings.editorSplit == true and not isInputMaximized and FOOTER_H ~= math.clamp(FOOTER_H, MIN_HEIGHT, maxHeight()) then
+		editorSplit.apply()
+	end
+end
+table.insert(desktop.OnLayout, reclamp)
+table.insert(connections, mainFrame:GetPropertyChangedSignal("Size"):Connect(reclamp))
+
+table.insert(themedUpdaters, function(theme)
+	tintTween(grip, { BackgroundColor3 = theme.UtilButton })
+	tintTween(gripLine, { BackgroundColor3 = theme.SecondaryAccent })
+end)
+end
 
 -- Accent ring that lights up while the code box is focused
 
@@ -4457,6 +4626,17 @@ createToggleRow("Console Line Numbers", uiSettings.consoleLineNumbers == true, f
 			if entry then entry.Size = UDim2.new(1, on and -90 or -60, 0, 0) end
 		end
 	end
+	saveSettings()
+end)
+
+createToggleRow("Editor Split Grip", uiSettings.editorSplit == true, function(on)
+	uiSettings.editorSplit = on
+	if not on then
+		-- Switching it off puts the editor back to its standard height rather
+		-- than stranding the layout wherever it was last dragged.
+		editorSplit.reset()
+	end
+	editorSplit.refresh()
 	saveSettings()
 end)
 
@@ -8527,7 +8707,7 @@ local function toggleScriptView()
 		clipboardRunButton.Size = UDim2.new(0, 58, 0, FOOTER_H - EDITOR_ROW_Y - 6)
 
 		expandInputButton.AnchorPoint = Vector2.new(1, 1)
-		expandInputButton.Position = UDim2.new(1, -143, 1, -6)
+		expandInputButton.Position = UDim2.new(1, -155, 1, -6)
 
 		inputContainer.Size = UDim2.new(1, -160, 0, FOOTER_H - EDITOR_ROW_Y - 6)
 		inputContainer.Position = UDim2.new(0, 5, 1, -6)
