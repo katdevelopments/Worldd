@@ -26,15 +26,47 @@ local playerGui = player:WaitForChild("PlayerGui")
 -- are only needed while something is being set up therefore live inside a
 -- `do ... end` block: their registers are released at the block's `end`, so
 -- the chunk keeps headroom instead of hitting "Out of local registers".
+
+-- The default control scripts are only borrowed, never required: the client
+-- disables movement while the console has focus and hands it back afterwards.
+-- PlayerModule is not guaranteed to be there or to be intact, though. A game
+-- can strip it out, swap it for a stub that returns nothing (which makes
+-- `require` raise "Module code did not return exactly one value"), or simply
+-- replicate it late enough that a bare WaitForChild never comes back. Any of
+-- those used to kill the whole client on this line, before a single frame of
+-- UI existed. So the lookup is bounded and wrapped, and a no-op stand-in
+-- takes over when it fails - movement then just stays live while the console
+-- is up, which beats not booting at all.
 local controls
 do
-local playerScripts = player:WaitForChild("PlayerScripts")
-local playerModule = require(playerScripts:WaitForChild("PlayerModule"))
-controls = playerModule:GetControls()
+local ok, result = pcall(function()
+	local playerScripts = player:WaitForChild("PlayerScripts", 10)
+	if not playerScripts then
+		return nil
+	end
+	local playerModule = playerScripts:WaitForChild("PlayerModule", 10)
+	if not playerModule then
+		return nil
+	end
+	return require(playerModule):GetControls()
+end)
+
+if ok and type(result) == "table" and type(result.Enable) == "function" and type(result.Disable) == "function" then
+	controls = result
+else
+	warn("[World] PlayerModule controls unavailable; movement will not be disabled while the console is focused.")
+	controls = {
+		Enable = function() end,
+		Disable = function() end,
+	}
+end
 end
 
 if playerGui:FindFirstChild("WorldClientGui") then
-	return
+	-- Already running. Return a value rather than falling off the end of the
+	-- chunk: loaders that require this source as a module reject a chunk that
+	-- returns nothing.
+	return true
 end
 
 -- Resolve an execution backend. Prefer the environment's custom
@@ -9368,3 +9400,6 @@ task.delay(1, function()
 		runAutoExecScripts()
 	end
 end)
+
+-- Loaders that require this source as a module want exactly one value back.
+return true
