@@ -6,22 +6,7 @@ local RunService = game:GetService("RunService")
 local player = game:GetService("Players").LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- Luau gives every function - the main chunk included - room for at most 200
--- live locals, and this chunk builds the whole UI in one scope. Values that
--- are only needed while something is being set up therefore live inside a
--- `do ... end` block: their registers are released at the block's `end`, so
--- the chunk keeps headroom instead of hitting "Out of local registers".
 
--- The default control scripts are only borrowed, never required: the client
--- disables movement while the console has focus and hands it back afterwards.
--- PlayerModule is not guaranteed to be there or to be intact, though. A game
--- can strip it out, swap it for a stub that returns nothing (which makes
--- `require` raise "Module code did not return exactly one value"), or simply
--- replicate it late enough that a bare WaitForChild never comes back. Any of
--- those used to kill the whole client on this line, before a single frame of
--- UI existed. So the lookup is bounded and wrapped, and a no-op stand-in
--- takes over when it fails - movement then just stays live while the console
--- is up, which beats not booting at all.
 local controls
 do
 local ok, result = pcall(function()
@@ -48,15 +33,9 @@ end
 end
 
 if playerGui:FindFirstChild("WorldClientGui") then
-	-- Already running. Return a value rather than falling off the end of the
-	-- chunk: loaders that require this source as a module reject a chunk that
-	-- returns nothing.
 	return true
 end
 
--- Resolve an execution backend. Prefer the environment's custom
--- execute_script (if one was injected into getgenv), otherwise fall back to
--- the executor's normal execute path via loadstring.
 local executeScript = nil
 local executorType = nil
 
@@ -84,8 +63,6 @@ end
 
 local isExecuteScriptEnabled = executeScript ~= nil
 
--- The "Custom" theme's colors live in a mutable table so the in-app theme
--- editor and settings persistence can rewrite them in place.
 local customThemeColors = {
 	Background = Color3.fromRGB(20, 20, 28),
 	PrimaryAccent = Color3.fromRGB(37, 99, 235),
@@ -323,7 +300,6 @@ local textSizes = {
 }
 local currentTextSizeIndex = 2
 
--- Every language supported by the Google Translate gtx endpoint
 local languages = {
 	{ Name = "Afrikaans", Code = "af" },
 	{ Name = "Albanian", Code = "sq" },
@@ -493,14 +469,12 @@ local isMinimized = false
 local isDragging = false
 local isLoggingInternally = false
 local tutorialShown = false
--- Persisted across sessions (via settings) so first-timers see the tour once.
 local tutorialCompleted = false
 local isInputMaximized = false
 local queuedCanvasUpdate = false
 local dragStart, frameStartPos, targetPosition, targetSize, dragStartTime
 local lastMinimizedPosition = UDim2.new(0.5, 0, 0.05, 0)
 
--- User-toggleable effects (driven from the Settings panel)
 local uiSettings = {
 	particles = true,
 	glow = true,
@@ -515,19 +489,9 @@ local uiSettings = {
 	consoleLineNumbers = false,
 }
 
--- Assigned by the log filter block; lets the settings panel drive auto-scroll.
 local setAutoScroll
--- Assigned by the auto-execute block; opens its panel from a settings button.
 local openAutoExec
--- Assigned by the auto-execute block; runs enabled scripts at startup.
 local runAutoExecScripts
--- === Script Hub ===
--- Everything the hub needs to share with the rest of the script lives in this
--- one table (the main chunk is close to Luau's 200-local ceiling, so the hub
--- deliberately claims a single register). Accepted gates the panel behind its
--- disclaimer, Providers remembers which libraries belong in the feed, Button
--- is the 📚 header button and AddSaved is filled in by the saved scripts block
--- so downloaded scripts land in the same library the 📜 panel reads from.
 local scriptHub = {
 	Accepted = false,
 	Providers = {
@@ -538,32 +502,14 @@ local scriptHub = {
 	},
 	Button = nil,
 	AddSaved = nil,
-	-- How many result cards sit side by side in the hub grid.
 	Columns = 3,
 }
 
--- === HTTP ===
--- Works across executors: prefers the executor's request function, falls
--- back to game:HttpGet.
---
--- Executor request bridges are commonly built on a single shared coroutine, so
--- two requests in flight at once make the bridge resume a coroutine that is
--- already running and the executor throws "cannot resume non-suspended
--- coroutine" from its own injected script. The script hub fans out a dozen
--- lookups at a time (thumbnails, per-script detail) and the log translator
--- runs its own queue, which is exactly the pattern that trips it. Requests are
--- therefore serialised through a ticket queue: callers still spawn freely,
--- they simply take turns inside httpGet, so the bridge only ever sees one call
--- at a time.
 local httpGet
 do
 local ticketNext = 0
 local ticketServing = 0
--- If a request hangs, later callers give up waiting rather than deadlocking
--- the hub behind it.
 local QUEUE_TIMEOUT = 25
--- Once the executor's own request function has failed this way, it is not
--- going to recover; the rest of the session uses game:HttpGet.
 local requesterBroken = false
 
 local function executorRequest(url)
@@ -596,7 +542,6 @@ function httpGet(url)
 		task.wait()
 	end
 
-	-- pcall so a caller erroring mid-request can never strand the queue.
 	local ok, body = pcall(executorRequest, url)
 	if not ok then
 		body = nil
@@ -611,8 +556,6 @@ function httpGet(url)
 		end
 	end
 
-	-- Tickets are only ever handed out in order, so serving catches up to this
-	-- one even when an earlier caller timed out ahead of its turn.
 	if ticketServing < ticket then
 		ticketServing = ticket
 	end
@@ -624,12 +567,8 @@ local function escapeRichText(s)
 	return (s:gsub("&", "&amp;"):gsub("<", "&lt;"):gsub(">", "&gt;"))
 end
 
-local log -- assigned further down; forward-declared so translation code can warn
+local log
 
--- Primary endpoint with a fallback for when gtx is rate-limited (HTTP 429)
--- or blocked by the executor's HTTP allowlist.
--- The endpoint helpers and their caches are only used by each other, so the
--- whole translator is scoped and only queueTranslation escapes.
 local queueTranslation
 do
 local function requestGoogleTranslate(text, targetCode)
@@ -713,9 +652,6 @@ local function translateText(text, targetCode)
 	return result
 end
 
--- Batches translation requests: bursts of log lines are collected for a
--- moment and sent as one newline-joined request, which keeps heavy log
--- volume from hammering the endpoint into rate limits.
 local pendingTranslations = {}
 local translateQueueRunning = false
 
@@ -740,8 +676,6 @@ function queueTranslation(text, targetCode, callback)
 			local totalLen = 0
 			while #pendingTranslations > 0 do
 				local item = pendingTranslations[1]
-				-- Multi-line messages would corrupt the newline-joined batch,
-				-- so they always travel alone.
 				if item.code ~= code then
 					break
 				end
@@ -770,7 +704,6 @@ function queueTranslation(text, targetCode, callback)
 						pcall(item.callback, (lines[i]:gsub("^%s+", ""):gsub("%s+$", "")))
 					end
 				else
-					-- Line counts diverged (or the batch failed): retry individually
 					for _, item in ipairs(batch) do
 						pcall(item.callback, translateText(item.text, code))
 					end
@@ -783,10 +716,6 @@ function queueTranslation(text, targetCode, callback)
 end
 end
 
--- === UI localization ===
--- Static UI strings are translated once per language pick; tr() resolves a
--- base English string to its current translation. The backing tables never
--- leave this block; only the entry points below do.
 local registerLocalizedString, tr, refreshLocalizedTexts, registerLocalizedRefresher, localizeUI
 do
 local uiTranslations = {}
@@ -839,9 +768,6 @@ function localizeUI()
 end
 end
 
--- Animated restyling: tintTween eases a color change; widgets that must be
--- restyled on every theme/font change register a function in themedUpdaters
--- and applySettings (assigned later) runs them all.
 local tintTween
 do
 local themeTweenInfo = TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
@@ -854,9 +780,6 @@ end
 local themedUpdaters = {}
 local applySettings
 
--- === Settings persistence (survives rejoins on executors with file APIs) ===
--- saveSettings is called from all over the UI; the file name and the one-shot
--- loader are not needed once the block has run.
 local saveSettings
 do
 local SETTINGS_FILE = "WorldClient_Settings.json"
@@ -996,14 +919,8 @@ CONFIG.Font = fontsList[currentFontIndex].Font
 CONFIG.BoldFont = fontsList[currentFontIndex].Bold
 CONFIG.TextSize = textSizes[currentTextSizeIndex].Size
 
--- The tour is a centred modal, so the control a page talks about is hidden
--- behind the dimmer while you read about it. Each page therefore carries the
--- glyph of the real on-screen button (Icon) to give the reader something to
--- match up once the tour closes.
 local tutorialPages = {
 	{
-		-- Kind = "intro" swaps in the language picker / Discord panel built in
-		-- showTutorial; every other page is plain copy.
 		Title = "Choose your language",
 		Kind = "intro",
 		Icon = "🌍",
@@ -1114,16 +1031,10 @@ local function debounce(func, delay)
 	end
 end
 
--- On Android/iOS the on-screen keyboard covers the bottom half of the screen
--- (and OnScreenKeyboardSize is not reliably reported in every executor), so
--- centered panels slide to the top of the screen while one of their text
--- boxes is focused, then glide back on unfocus.
 local liftPanelWhileTyping
 do
 local liftTweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
 function liftPanelWhileTyping(panel, textBox)
-	-- Remember where the panel normally sits so it can glide back exactly,
-	-- regardless of its resting anchor/position (dialogs sit at different spots).
 	local restAnchor = panel.AnchorPoint
 	local restPosition = panel.Position
 	table.insert(
@@ -1132,7 +1043,6 @@ function liftPanelWhileTyping(panel, textBox)
 			if not UserInputService.TouchEnabled then
 				return
 			end
-			-- Capture the resting spot lazily in case it changed since setup.
 			if not panel:GetAttribute("LiftedForKeyboard") then
 				restAnchor = panel.AnchorPoint
 				restPosition = panel.Position
@@ -1211,7 +1121,6 @@ blurStroke.Color = CONFIG.Colors.PrimaryAccent
 blurStroke.Thickness = 2
 blurStroke.Transparency = 0.2
 
--- Slowly rotating two-tone gradient inside the border stroke
 local strokeGradient = Instance.new("UIGradient", blurStroke)
 strokeGradient.Color = ColorSequence.new({
 	ColorSequenceKeypoint.new(0, CONFIG.Colors.PrimaryAccent),
@@ -1219,7 +1128,6 @@ strokeGradient.Color = ColorSequence.new({
 	ColorSequenceKeypoint.new(1, CONFIG.Colors.PrimaryAccent),
 })
 
--- Subtle vertical shading on the panel background for depth
 do
 local bgDepthGradient = Instance.new("UIGradient", blurFrame)
 bgDepthGradient.Rotation = 90
@@ -1272,8 +1180,6 @@ do
 local iconScale = Instance.new("UIScale", icon)
 iconScale.Scale = 1
 
--- A gentle looping pulse + sway that only runs while the client is minimized,
--- so the bubble feels alive instead of static.
 function startIconIdle()
 	if activeTweens.iconIdleScale then
 		activeTweens.iconIdleScale:Cancel()
@@ -1316,7 +1222,6 @@ titleLabel.TextColor3 = CONFIG.Colors.Text
 titleLabel.TextSize = 18
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 
--- Recurring shine sweep across the title text
 local titleShimmer = Instance.new("UIGradient", titleLabel)
 titleShimmer.Color = ColorSequence.new({
 	ColorSequenceKeypoint.new(0, Color3.fromRGB(210, 210, 210)),
@@ -1330,8 +1235,6 @@ activeTweens.titleShimmer = TweenService:Create(
 	{ Offset = Vector2.new(1, 0) }
 )
 
--- Multiplies the background color white->grey top-to-bottom, giving every
--- button a soft 3D depth regardless of theme.
 local function addDepthGradient(obj)
 	local g = Instance.new("UIGradient", obj)
 	g.Rotation = 90
@@ -1376,8 +1279,6 @@ local function createIconButton(parent, emoji, size, colorType)
 	btn.Size = UDim2.new(0, size, 0, size)
 	btn.BackgroundColor3 = CONFIG.Colors[colorType]
 	btn:SetAttribute("ColorType", colorType)
-	-- Accent buttons used to hover to the neutral util colour and then snap back
-	-- to their accent on leave; give each colour its own hover partner.
 	btn:SetAttribute("HoverColorType", colorType == "SecondaryAccent" and "PrimaryAccent" or "UtilButtonHover")
 	btn.Font = Enum.Font.SourceSans
 	btn.Text = emoji
@@ -1474,7 +1375,6 @@ local clearButton = createIconButton(leftControls, "🗑️", 28, "UtilButton")
 local refreshButton = createIconButton(leftControls, "🔄", 28, "UtilButton")
 local minimizeButton = createIconButton(rightControls, "✖️", 28, "MinimizeButton")
 
--- Footer holds the tab bar (top strip) and the editor row (input + buttons).
 local FOOTER_H = 112
 local footer = Instance.new("Frame", mainFrame)
 footer.Name = "Footer"
@@ -1499,7 +1399,6 @@ uiListLayout.Padding = UDim.new(0, 5)
 uiListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 logContainer.AutomaticCanvasSize = uiSettings.consoleWordWrap == true and Enum.AutomaticSize.Y or Enum.AutomaticSize.XY
 
--- === Log filter bar: search, type chips, and an auto-scroll pin ===
 local filterBar
 local logMatchesFilter
 local scrollLogsToBottom
@@ -1609,8 +1508,6 @@ do
 	end
 	updateChipVisuals()
 
-	-- Auto-scroll is a master switch in Settings; scrolling up still
-	-- temporarily suspends the follow until you return to the bottom.
 	local followingBottom = uiSettings.autoScroll
 	local suppressScrollDetect = false
 
@@ -1641,7 +1538,6 @@ do
 		end
 	end
 
-	-- Scrolling up suspends auto-scroll; returning to the bottom re-arms it
 	table.insert(
 		connections,
 		logContainer:GetPropertyChangedSignal("CanvasPosition"):Connect(function()
@@ -1673,7 +1569,6 @@ do
 	end)
 end
 
--- Bottom editor row sits below the tab bar (top 34px of the footer).
 local EDITOR_ROW_Y = 36
 local runButton = Instance.new("TextButton", footer)
 runButton.Size = UDim2.new(0, 72, 0, FOOTER_H - EDITOR_ROW_Y - 6)
@@ -1740,7 +1635,6 @@ registerLocalizedRefresher(function()
 	runButton.Text = tr("Run")
 end)
 
--- Run whatever is on the clipboard (executor must expose a clipboard getter)
 local clipboardRunButton = Instance.new("TextButton", footer)
 clipboardRunButton.Size = UDim2.new(0, 58, 0, FOOTER_H - EDITOR_ROW_Y - 6)
 clipboardRunButton.TextWrapped = true
@@ -1801,7 +1695,6 @@ inputContainer.AutomaticCanvasSize = uiSettings.editorWordWrap == true and Enum.
 Instance.new("UICorner", inputContainer).CornerRadius = UDim.new(0, 6)
 safeSetCursor(inputContainer, "rbxasset://SystemCursor/Arrow")
 
--- Accent ring that lights up while the code box is focused
 
 local editorLineGutter = Instance.new("TextLabel", inputContainer)
 editorLineGutter.Name = "LineGutter"
@@ -1873,10 +1766,6 @@ table.insert(
 	end)
 )
 
--- === Luau syntax highlighting ===
--- A RichText layer over the input box shows colorized code whenever the box
--- is not focused; while typing, the plain text (and its caret) is shown, so
--- the native caret always works.
 local refreshInputHighlight
 
 do
@@ -2009,9 +1898,6 @@ do
 			end
 		end
 
-		-- Built by concatenation so this file's own source never contains a
-		-- long-bracket sequence: loaders that wrap the script inside a
-		-- long-bracket string would be terminated early by a raw one.
 		local LONG_OPEN = "[" .. "["
 		local LONG_CLOSE = "]" .. "]"
 
@@ -2202,13 +2088,6 @@ table.insert(connections, inputBox:GetPropertyChangedSignal("Text"):Connect(debo
 table.insert(connections, inputContainer:GetPropertyChangedSignal("AbsoluteSize"):Connect(debouncedUpdate))
 end
 
--- ============================================================================
--- Editor tabs: multiple named scripts, drag to reorder, pin, close, hold for
--- a context menu, and persistence to disk. The single inputBox shows the
--- active tab's content; switching tabs swaps the text in and out.
--- ============================================================================
--- Exposed to the auto-execute panel and startup; the rest of the tab system
--- is scoped inside the do-block below to keep the main chunk's local count low.
 local editorTabs, activeTabIndex, switchToTab, newTab
 
 do
@@ -2232,7 +2111,6 @@ do
 		return tab
 	end
 
-	-- Load persisted tabs (or start with one empty tab)
 	do
 		local ok, data = pcall(function()
 			return HttpService:JSONDecode(readfile(TABS_FILE))
@@ -2264,7 +2142,6 @@ do
 	end
 	local debouncedSaveTabs = debounce(saveTabs, 0.6)
 
-	-- Tab bar: horizontal scroller across the top strip of the footer
 	local tabBar = Instance.new("ScrollingFrame", footer)
 	tabBar.Name = "TabBar"
 	tabBar.Position = UDim2.new(0, 5, 0, 4)
@@ -2298,7 +2175,6 @@ do
 	addDepthGradient(addTabButton)
 	safeSetCursor(addTabButton, "rbxasset://SystemCursor/Arrow")
 
-	-- Long-press context menu (shared by all tabs)
 	local tabMenu = Instance.new("Frame", screenGui)
 	tabMenu.Name = "TabMenu"
 	tabMenu.Size = UDim2.new(0, 150, 0, 0)
@@ -2425,7 +2301,6 @@ do
 			end)
 		end
 
-		-- Position near the tab button, clamped to the screen
 		local btn = tabButtons[tab.id]
 		local vp = workspace.CurrentCamera.ViewportSize
 		local px = btn and btn.AbsolutePosition.X or vp.X * 0.5
@@ -2440,7 +2315,6 @@ do
 			:Play()
 	end
 
-	-- Rename dialog
 	local renameOverlay = Instance.new("TextButton", screenGui)
 	renameOverlay.Name = "RenameOverlay"
 	renameOverlay.Size = UDim2.new(1, 0, 1, 0)
@@ -2581,12 +2455,8 @@ do
 			end
 		end)
 	)
-	-- On touch devices the on-screen keyboard covers the lower half of the
-	-- screen, hiding this dialog's Save/Cancel buttons. Lift the whole panel to
-	-- the top while the name field is focused so both buttons stay reachable.
 	liftPanelWhileTyping(renameFrame, renameBox)
 
-	-- Drag-to-reorder state (one active drag at a time)
 	local activeDrag = nil
 
 	local function relayoutTabs()
@@ -2602,9 +2472,6 @@ do
 		if not editorTabs[index] then
 			return
 		end
-		-- Save whatever is on screen back into the outgoing tab. Skipped for
-		-- close operations (instant), where the outgoing text is being
-		-- discarded and must not overwrite the newly-shown tab.
 		if not instant and editorTabs[activeTabIndex] and not switchingTabs then
 			editorTabs[activeTabIndex].content = inputBox.Text
 		end
@@ -2663,18 +2530,15 @@ do
 				closeTab(tab)
 			end)
 
-			-- A UIScale used for the add-tab entrance pop and active bounce
 			local sc = Instance.new("UIScale", btn)
 			sc.Scale = 1
 			if isActive then
-				-- Small bounce on the tab that just became active
 				sc.Scale = 0.9
 				TweenService
 					:Create(sc, TweenInfo.new(0.22, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 })
 					:Play()
 			end
 
-			-- Tap = switch, drag = reorder, hold = context menu
 			btn.InputBegan:Connect(function(input)
 				if
 					input.UserInputType ~= Enum.UserInputType.MouseButton1
@@ -2731,7 +2595,6 @@ do
 		tabBar.CanvasSize = UDim2.new(0, 0, 0, 0)
 	end
 
-	-- Live reorder while dragging
 	table.insert(
 		connections,
 		RunService.RenderStepped:Connect(function()
@@ -2763,7 +2626,6 @@ do
 						if (dragIdx < i and pointerX > mid) or (dragIdx > i and pointerX < mid) then
 							table.remove(editorTabs, dragIdx)
 							table.insert(editorTabs, i, activeDrag.tab)
-							-- keep the active index pointing at the same tab object
 							activeTabIndex = table.find(editorTabs, activeTab) or activeTabIndex
 							relayoutTabs()
 							break
@@ -2843,7 +2705,6 @@ do
 		end)
 	)
 
-	-- Mirror typing into the active tab (debounced disk save)
 	table.insert(
 		connections,
 		inputBox:GetPropertyChangedSignal("Text"):Connect(function()
@@ -2872,16 +2733,12 @@ do
 		refreshTabBar()
 	end)
 
-	-- Load the active tab's content into the editor at startup
 	switchingTabs = true
 	inputBox.Text = editorTabs[activeTabIndex] and editorTabs[activeTabIndex].content or ""
 	switchingTabs = false
 	refreshTabBar()
 end
 
--- Holds the live tour so the theme and localisation systems can reach into it
--- without another top-level local (the main chunk is close to Luau's
--- 200-register limit). `restyle`/`refresh` are set while a tour is on screen.
 local tutorialState = { active = false, closing = false, restyle = nil, refresh = nil }
 
 table.insert(themedUpdaters, function(theme, fontData)
@@ -2904,20 +2761,13 @@ local function showTutorial()
 	tutorialState.closing = false
 	tutorialShown = true
 
-	-- Connections owned by this tour only. They are torn down on close so that
-	-- replaying the tour doesn't pile up handlers on the shared `connections`
-	-- table for buttons that no longer exist.
 	local tourConnections = {}
 	local function track(conn)
 		table.insert(tourConnections, conn)
 	end
 
-	-- Text sizes follow the user's chosen size (12/14/17) instead of being
-	-- hard-coded, so a "Large" reader gets a large tour.
 	local baseSize = CONFIG.TextSize
 
-	-- Full-screen dimmer. It is an Active TextButton so the rest of the UI stays
-	-- inert while the tour is open; nothing on screen is highlighted.
 	local dimOverlay = Instance.new("TextButton", screenGui)
 	dimOverlay.Name = "TutorialOverlay"
 	dimOverlay.Size = UDim2.new(1, 0, 1, 0)
@@ -2930,9 +2780,6 @@ local function showTutorial()
 	safeSetCursor(dimOverlay, "rbxasset://SystemCursor/Arrow")
 	TweenService:Create(dimOverlay, TweenInfo.new(0.4), { BackgroundTransparency = 0.62 }):Play()
 
-	-- === Centred tip card ===
-	-- The card grows to fit its text (AutomaticSize + list layout) rather than
-	-- sitting at a fixed height, so longer translations wrap instead of clipping.
 	local card = Instance.new("Frame", screenGui)
 	card.Name = "TutorialCard"
 	card.Size = UDim2.new(1, -24, 0, 0)
@@ -2964,7 +2811,6 @@ local function showTutorial()
 	cardLayout.SortOrder = Enum.SortOrder.LayoutOrder
 	cardLayout.Padding = UDim.new(0, 10)
 
-	-- Row 1: page icon, title, and Skip.
 	local headerRow = Instance.new("Frame", card)
 	headerRow.Name = "TutorialHeader"
 	headerRow.LayoutOrder = 1
@@ -2983,8 +2829,6 @@ local function showTutorial()
 	tutIcon.Text = ""
 	tutIcon.ZIndex = 46
 
-	-- Text-only (no ✕ glyph) and width-following-content, so translations such as
-	-- "Überspringen" aren't clipped by a fixed button width.
 	local skipButton = Instance.new("TextButton", headerRow)
 	skipButton.Name = "TutorialSkip"
 	skipButton.Size = UDim2.new(0, 0, 0, 24)
@@ -3012,15 +2856,12 @@ local function showTutorial()
 	tutTitle.TextTruncate = Enum.TextTruncate.AtEnd
 	tutTitle.ZIndex = 46
 
-	-- Skip auto-sizes to its translated text, so the title takes whatever width
-	-- is left over instead of a fixed slice that a long language would overrun.
 	local function syncTitleWidth()
 		local reserved = 32 + (skipButton.Visible and (skipButton.AbsoluteSize.X + 10) or 0)
 		tutTitle.Size = UDim2.new(1, -reserved, 1, 0)
 	end
 	track(skipButton:GetPropertyChangedSignal("AbsoluteSize"):Connect(syncTitleWidth))
 
-	-- Row 2: body copy. AutomaticSize.Y drives the card's height.
 	local tutBody = Instance.new("TextLabel", card)
 	tutBody.Name = "TutorialBody"
 	tutBody.LayoutOrder = 2
@@ -3036,9 +2877,6 @@ local function showTutorial()
 	tutBody.Text = ""
 	tutBody.ZIndex = 46
 
-	-- Row 3: the first-run panel - language picker plus a Discord invite. Only
-	-- the "intro" page shows it; UIListLayout skips it while it is hidden, so
-	-- the card shrinks back to plain-copy height on every other page.
 	local introPanel = Instance.new("Frame", card)
 	introPanel.Name = "TutorialIntroPanel"
 	introPanel.LayoutOrder = 3
@@ -3071,8 +2909,6 @@ local function showTutorial()
 	searchPad.PaddingLeft = UDim.new(0, 8)
 	searchPad.PaddingRight = UDim.new(0, 8)
 
-	-- Height follows the viewport so the card still fits on short screens
-	-- (landscape phones) without the picker being useless on tall ones.
 	local listHeight = math.clamp(math.floor(screenGui.AbsoluteSize.Y * 0.22), 68, 120)
 	local langScroll = Instance.new("ScrollingFrame", introPanel)
 	langScroll.Name = "TutorialLangList"
@@ -3107,10 +2943,7 @@ local function showTutorial()
 	addDepthGradient(discordButtonTour)
 	safeSetCursor(discordButtonTour, "rbxasset://SystemCursor/Arrow")
 
-	-- One row per language, built once and filtered by Visible on search.
 	local langRows = {}
-	-- Takes the theme it should paint with so the restyle hook and CONFIG can't
-	-- disagree; falls back to CONFIG for ordinary selection changes.
 	local function syncLangSelection(theme, fontData)
 		theme = theme or CONFIG.Colors
 		local bodyFont = fontData and fontData.Font or CONFIG.Font
@@ -3147,15 +2980,12 @@ local function showTutorial()
 			end
 			currentLanguageIndex = index
 			syncLangSelection()
-			-- Re-fetches every registered string; the tour's localisation
-			-- refresher re-renders this card as the translations land.
 			localizeUI()
 			saveSettings()
 		end))
 	end
 	syncLangSelection()
 
-	-- Open the list at the language already in use instead of at the top.
 	task.defer(function()
 		if langScroll.Parent then
 			langScroll.CanvasPosition =
@@ -3181,8 +3011,6 @@ local function showTutorial()
 		end)
 	end))
 
-	-- Row 4: a progress bar. A 13-dot string overflowed on narrow phones, so the
-	-- fill plus an "n / total" counter carries the same information at any width.
 	local progressTrack = Instance.new("Frame", card)
 	progressTrack.Name = "TutorialProgressTrack"
 	progressTrack.LayoutOrder = 4
@@ -3200,7 +3028,6 @@ local function showTutorial()
 	progressFill.ZIndex = 47
 	Instance.new("UICorner", progressFill).CornerRadius = UDim.new(1, 0)
 
-	-- Row 5: back / counter / next.
 	local footerRow = Instance.new("Frame", card)
 	footerRow.Name = "TutorialFooter"
 	footerRow.LayoutOrder = 5
@@ -3235,7 +3062,6 @@ local function showTutorial()
 	local currentPage = 1
 	local renderedPage = nil
 
-	-- Forward declarations so the handlers can reference each other.
 	local updatePage, closeTutorial, advance, back
 
 	function advance()
@@ -3280,8 +3106,6 @@ local function showTutorial()
 		end
 
 		counter.Text = currentPage .. " / " .. #pages
-		-- updatePage also runs on every localisation refresh, so only animate the
-		-- bar when the page actually moved; otherwise snap it.
 		local fillSize = UDim2.new(currentPage / #pages, 0, 1, 0)
 		if renderedPage == currentPage then
 			progressFill.Size = fillSize
@@ -3313,8 +3137,6 @@ local function showTutorial()
 		end
 		table.clear(tourConnections)
 
-		-- createIconButton registers every button it makes for theme updates;
-		-- drop the two this tour owns so the list doesn't grow on each replay.
 		for _, btn in ipairs({ prevButton, nextButton }) do
 			local at = table.find(utilButtons, btn)
 			if at then
@@ -3345,17 +3167,11 @@ local function showTutorial()
 		if card.Parent then
 			card:Destroy()
 		end
-		-- Cleared only once the card is really gone, so a `tutorial()` call
-		-- during the fade can't stack a second tour on top of this one.
 		tutorialState.active = false
 		tutorialState.closing = false
 	end
 
-	-- Swipe left/right anywhere on the tour to page through it, and tap the
-	-- dimmed backdrop to advance. Both were dead space before.
 	local function attachGestures(target, tapAdvances, blocked)
-		-- Track the exact InputObject that started the gesture so a second finger
-		-- (or the mouse) can't close a swipe that a different pointer opened.
 		local startX, startInput = nil, nil
 		track(target.InputBegan:Connect(function(input)
 			if blocked and blocked() then
@@ -3385,8 +3201,6 @@ local function showTutorial()
 		end))
 	end
 	attachGestures(dimOverlay, true)
-	-- Swiping the card is disabled on the intro page: a drag there belongs to the
-	-- language list, not to paging.
 	attachGestures(card, false, function()
 		return introPanel.Visible
 	end)
@@ -3417,8 +3231,6 @@ local function showTutorial()
 		closeTutorial(false)
 	end))
 
-	-- Re-render on a language switch and re-tint on a theme/font switch while
-	-- the card is on screen; both used to leave the tour stale.
 	tutorialState.refresh = function()
 		updatePage()
 	end
@@ -3470,11 +3282,6 @@ local function showTutorial()
 	updatePage()
 end
 
--- Settings and colour-picker UI construction lives in its own `do` scope so
--- that the many build-time-only locals declared here are released at the
--- matching `end`. Without this the main chunk stays above Luau's 200
--- local-register limit and fails to compile ("Out of local registers").
--- Only the handful still referenced afterwards are forward-declared above.
 local settingsFrame
 local consoleBtn
 local applyFpsBooster, applyAntiAfk
@@ -3543,7 +3350,6 @@ settingsListLayout.Padding = UDim.new(0, 8)
 settingsListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 end
 
--- === Shared option picker (the "dropdown" panel) ===
 local pickerFrame = Instance.new("Frame", settingsFrame)
 pickerFrame.Name = "PickerFrame"
 pickerFrame.Size = UDim2.new(1, -16, 1, -16)
@@ -3584,7 +3390,6 @@ pickerClose.ZIndex = 13
 Instance.new("UICorner", pickerClose).CornerRadius = UDim.new(0, 6)
 addDepthGradient(pickerClose)
 
--- Search bar, shown for long option lists (e.g. languages)
 local pickerSearch = Instance.new("TextBox", pickerFrame)
 pickerSearch.Name = "PickerSearch"
 pickerSearch.Size = UDim2.new(1, -20, 0, 30)
@@ -3666,9 +3471,6 @@ local function closePicker(instant)
 	end
 end
 
--- entries: array of {Name, Font?, SwatchA?, SwatchB?} — Font renders the
--- option in its own typeface (font picker), the swatches draw a theme
--- preview dot (theme picker).
 local function openPicker(title, entries, currentIndex, onPick, searchable)
 	pickerTitle.Text = title
 	for _, child in ipairs(pickerScroll:GetChildren()) do
@@ -3739,7 +3541,6 @@ table.insert(
 )
 table.insert(connections, pickerSearch:GetPropertyChangedSignal("Text"):Connect(applyPickerFilter))
 
--- === Settings row builders ===
 local rowOrder = 0
 local function nextOrder()
 	rowOrder += 1
@@ -3856,8 +3657,6 @@ local function createToggleRow(labelText, initial, onChanged)
 	return row
 end
 
--- === FPS booster & Anti-AFK ===
--- (applyFpsBooster / applyAntiAfk are forward-declared above the enclosing block)
 do
 	local Lighting = game:GetService("Lighting")
 	local fpsConnection
@@ -3956,7 +3755,6 @@ do
 	end
 end
 
--- === Rows ===
 createDropdownRow("Theme", function()
 	local entries = {}
 	for _, t in ipairs(themes) do
@@ -3971,7 +3769,6 @@ end, function(i)
 	saveSettings()
 end)
 
--- === Custom theme editor ===
 do
 	local editThemeBtn = Instance.new("TextButton", settingsScroll)
 	editThemeBtn.Name = "EditThemeBtn"
@@ -4098,7 +3895,6 @@ do
 		end
 		fields[def.Key] = { boxes = boxes, swatch = swatch }
 
-		-- Live-preview the swatch as channels are typed
 		local function previewSwatch()
 			local r = math.clamp(tonumber(boxes.r.Text) or 0, 0, 255)
 			local g = math.clamp(tonumber(boxes.g.Text) or 0, 0, 255)
@@ -4197,7 +3993,6 @@ do
 			local secondary = readField("SecondaryAccent")
 			local text = readField("Text")
 
-			-- The four picked colors drive the rest of the palette
 			customThemeColors.Background = bg
 			customThemeColors.PrimaryAccent = primary
 			customThemeColors.SecondaryAccent = secondary
@@ -4301,7 +4096,6 @@ createToggleRow("Background Blur", uiSettings.blur, function(on)
 	if not isMinimized then
 		blur.Enabled = on
 	end
-	-- Solidify the panel slightly when the world isn't blurred behind it
 	TweenService:Create(blurFrame, TweenInfo.new(0.3), { BackgroundTransparency = on and 0.3 or 0.1 }):Play()
 	saveSettings()
 end)
@@ -4432,8 +4226,6 @@ end)
 table.insert(
 	connections,
 	replayTutorialBtn.MouseButton1Click:Connect(function()
-		-- Close the settings panel immediately so the tour's dimmer isn't
-		-- stacked on top of it.
 		closePicker(true)
 		settingsScale.Scale = 0
 		settingsFrame.Visible = false
@@ -4502,8 +4294,6 @@ function applySettings()
 	CONFIG.Font = fontData.Font
 	CONFIG.BoldFont = fontData.Bold
 
-	-- Fonts can't be tweened, so apply those instantly; every color property
-	-- is eased so theme/font switches glide instead of snapping.
 	titleLabel.Font = fontData.Bold
 	runButton.Font = fontData.Bold
 	inputBox.Font = fontData.Font
@@ -4516,8 +4306,6 @@ function applySettings()
 	tintTween(inputContainer, { ScrollBarImageColor3 = theme.Text })
 	tintTween(inputBox, { TextColor3 = theme.Text })
 
-	-- The tutorial card restyles itself through themedUpdaters (see showTutorial);
-	-- it used to be patched here by class lookup, which only ever found the title.
 
 	for i = #utilButtons, 1, -1 do
 		local btn = utilButtons[i]
@@ -4601,7 +4389,6 @@ end
 table.insert(connections, settingsButton.MouseButton1Click:Connect(toggleSettings))
 table.insert(connections, closeSettingsBtn.MouseButton1Click:Connect(toggleSettings))
 
--- Tapping the dimmed backdrop closes the picker first, then the panel
 table.insert(
 	connections,
 	settingsOverlay.MouseButton1Click:Connect(function()
@@ -4614,7 +4401,6 @@ table.insert(
 )
 end
 
--- === Saved scripts library (📜) ===
 do
 	local SCRIPTS_FILE = "WorldClient_Scripts.json"
 	local savedScripts = {}
@@ -4858,8 +4644,6 @@ do
 		end
 	end
 
-	-- Shared with the Script Hub so a downloaded script lands in the same
-	-- library, under a name that never collides with an existing entry.
 	function scriptHub.AddSaved(name, source)
 		if type(source) ~= "string" or source:gsub("%s", "") == "" then
 			return nil
@@ -4950,8 +4734,6 @@ do
 	end)
 end
 
--- === Auto-Execute panel (⚡) ===
--- Scripts added here run automatically once the World UI has loaded.
 do
 	local AUTOEXEC_FILE = "WorldClient_AutoExec.json"
 	local autoExecScripts = {}
@@ -5144,7 +4926,6 @@ aeAddBtn.Visible = false
 			row.LayoutOrder = index
 			row.BackgroundTransparency = 1
 
-			-- Enable toggle
 			local toggle = Instance.new("TextButton", row)
 			toggle.Size = UDim2.new(0, 40, 0, 22)
 			toggle.Position = UDim2.new(0, 0, 0.5, 0)
@@ -5259,8 +5040,7 @@ aeAddBtn.Visible = false
 		if settingsFrame.Visible then
 			toggleSettings()
 		end
-		
-		-- Auto-detect open tabs and add to AE list if not present
+
 		local existing = {}
 		for _, v in ipairs(autoExecScripts) do
 			existing[v.Name] = v
@@ -5272,8 +5052,6 @@ aeAddBtn.Visible = false
 				existing[tab.name] = autoExecScripts[#autoExecScripts]
 				updated = true
 			elseif tab.name and tab.name ~= "" and existing[tab.name] then
-				-- Optionally update the source to latest editor content (maybe risky but makes sense for "detected tabs")
-				-- existing[tab.name].Source = tab.content
 			end
 		end
 		if updated then
@@ -5334,24 +5112,12 @@ aeAddBtn.Visible = false
 	end)
 end
 
--- === Script Hub (📚) ===
--- Browses the public script libraries from inside the client. Same shape as
--- the World Scripthub web app: one request per enabled provider, the results
--- interleaved into a single feed, then a detail page that can copy, load,
--- save or run the source.
---
--- Built inside a function rather than a `do` block: the main chunk sits at
--- Luau's 200-local ceiling, and a function body gets its own register budget
--- while still closing over everything declared above it.
 scriptHub.Build = function()
 	local HUB_PAGE_SIZE = 12
-	-- Roblox TextLabels choke on multi-megabyte sources, so the viewer shows a
-	-- prefix while every action still uses the full text.
 	local HUB_PREVIEW_LIMIT = 20000
 	local HUB_REQUEST_TIMEOUT = 20
 	local HUB_ENRICH_TIMEOUT = 8
 
-	-- Shown behind artwork that has not arrived (or cannot be decoded).
 	local HUB_FALLBACK_GLYPH = "🎮"
 
 	local function hubJson(url)
@@ -5382,10 +5148,6 @@ scriptHub.Build = function()
 		return tonumber(value) or 0
 	end
 
-	-- Takes every field a library might hide the place id in and returns the
-	-- first usable one. select() rather than ipairs: the candidates are read
-	-- straight off JSON tables, so a nil in the middle of the list is normal
-	-- and must not stop the search early.
 	local function placeIdOf(...)
 		for index = 1, select("#", ...) do
 			local id = math.floor(number((select(index, ...))))
@@ -5396,8 +5158,6 @@ scriptHub.Build = function()
 		return 0
 	end
 
-	-- Every library marks its "works in any game" entries differently; these
-	-- are the game names all of them use for it.
 	local universalNames = {
 		["universal script"] = true,
 		["universal script 📌"] = true,
@@ -5433,12 +5193,6 @@ scriptHub.Build = function()
 		return base .. (url:sub(1, 1) == "/" and url or "/" .. url)
 	end
 
-	-- === Web artwork ===
-	-- Every library hands back plain https image URLs, and an ImageLabel only
-	-- takes content ids, so the bytes have to be downloaded, written to disk and
-	-- passed through the executor's getcustomasset. Results are cached by URL,
-	-- so an image is fetched once per session however many cards use it, and the
-	-- files survive as a disk cache between sessions.
 	local IMAGE_FOLDER = "WorldClient_Images"
 	local IMAGE_MAX_BYTES = 2 * 1024 * 1024
 	local PNG_MAGIC = "\137PNG\13\10\26\10"
@@ -5447,10 +5201,6 @@ scriptHub.Build = function()
 	local getCustomAsset = getcustomasset or getsynasset or (syn and syn.getcustomasset)
 	local canLoadWebImages = type(getCustomAsset) == "function" and type(writefile) == "function"
 
-	-- rbxcdn serves the same asset in several formats and sizes. Roblox decodes
-	-- PNG and JPEG but not WebP, and the large variants run to hundreds of
-	-- kilobytes for artwork drawn at 56px, so both get rewritten before the
-	-- download. Only the sizes rbxcdn actually publishes are substituted.
 	local rbxcdnSizes = {
 		["/512/512/"] = "/150/150/",
 		["/420/420/"] = "/150/150/",
@@ -5468,8 +5218,6 @@ scriptHub.Build = function()
 			end
 			return url
 		end
-		-- Anything served from a library's own CDN has to already be in a format
-		-- Roblox can decode; most of them publish WebP, which it cannot.
 		local lowered = url:lower()
 		if lowered:find("%.webp") or lowered:find("%.gif") or lowered:find("%.svg") then
 			return nil
@@ -5477,8 +5225,6 @@ scriptHub.Build = function()
 		return url
 	end
 
-	-- FNV-1a over the URL: a stable file name, so the same artwork reuses the
-	-- same cache file instead of being downloaded again next session.
 	local function imagePathFor(url)
 		local hash = 2166136261
 		for index = 1, #url do
@@ -5488,9 +5234,6 @@ scriptHub.Build = function()
 		return ("%s/%08x.png"):format(IMAGE_FOLDER, hash)
 	end
 
-	-- Favicons are .ico containers, which Roblox cannot decode - but a modern
-	-- one usually just wraps a PNG, and that can be lifted out untouched. Older
-	-- BMP-encoded icons have no PNG inside and fall back to the glyph.
 	local function extractIcoPng(data)
 		if #data < 22 or data:sub(1, 4) ~= "\0\0\1\0" then
 			return nil
@@ -5509,8 +5252,8 @@ scriptHub.Build = function()
 		return ok and result or nil
 	end
 
-	local imageAssets = {} -- normalized url -> content id, or false once it has failed
-	local imageLoading = {} -- normalized url -> true while a thread is fetching it
+	local imageAssets = {}
+	local imageLoading = {}
 
 	local function resolveImageAsset(url)
 		local cached = imageAssets[url]
@@ -5521,8 +5264,6 @@ scriptHub.Build = function()
 			imageAssets[url] = false
 			return nil
 		end
-		-- A provider logo is shared by every card on the page, so wait on the
-		-- thread already fetching it rather than starting a dozen more.
 		if imageLoading[url] then
 			local deadline = os.clock() + 10
 			while imageLoading[url] and os.clock() < deadline do
@@ -5563,18 +5304,10 @@ scriptHub.Build = function()
 		return imageAssets[url] or nil
 	end
 
-	-- Provider logos: every library publishes only a .ico, and Roblox decodes
-	-- neither ICO nor the BMP most of them wrap. Google's favicon service
-	-- re-encodes the same icon as a PNG, which does decode, so it is the default
-	-- source. Set a provider's Icon to an uploaded decal id to skip the download
-	-- entirely; that always wins over this.
 	local function faviconUrl(domain)
 		return ("https://www.google.com/s2/favicons?domain=%s&sz=64"):format(domain)
 	end
 
-	-- Swaps artwork in once it has downloaded, provided the label is still on
-	-- screen - searching and paging destroy cards while their images are in
-	-- flight.
 	local function applyImageAsync(imageLabel, glyphLabel, url)
 		local normalized = normalizeImageUrl(url)
 		if not normalized then
@@ -5638,11 +5371,6 @@ scriptHub.Build = function()
 				end
 				return out
 			end,
-			-- ScriptBlox's trending feed ships a trimmed record: no owner and no
-			-- game id, so cards would read "Unknown" with no thumbnail. The
-			-- per-script endpoint has both, so the gaps are backfilled in
-			-- parallel before the page is rendered. Search results already carry
-			-- the full record and skip this entirely.
 			Enrich = function(entries)
 				local pending = {}
 				for _, entry in ipairs(entries) do
@@ -5688,8 +5416,6 @@ scriptHub.Build = function()
 					task.wait(0.1)
 				end
 			end,
-			-- The list endpoint omits the source on some entries; the per-script
-			-- endpoint always carries it.
 			DetailUrl = function(entry)
 				return "https://scriptblox.com/api/script/" .. entry.Id
 			end,
@@ -5734,8 +5460,6 @@ scriptHub.Build = function()
 							Game = universal and "Universal Script" or gameName,
 							PlaceId = universal and 0 or placeIdOf(gameData.gameId, gameData.placeId, s.placeId),
 							Views = number(s.views),
-							-- s.image is WebP on the Rscripts CDN; the rbxcdn copies
-							-- on the game record convert cleanly, so prefer those.
 							ImageUrl = normalizeImageUrl(gameData.imgurl)
 								or normalizeImageUrl(gameData.gameLogo)
 								or normalizeImageUrl(s.image),
@@ -5744,7 +5468,6 @@ scriptHub.Build = function()
 							KeySystem = s.keySystem == true,
 							Patched = s.patched == true,
 							Mobile = s.mobileReady == true,
-							-- Rscripts hands back a URL rather than the source.
 							RawUrl = type(s.rawScript) == "string" and s.rawScript or nil,
 						})
 					end
@@ -5800,8 +5523,6 @@ scriptHub.Build = function()
 							Patched = s.patched == true or flags.patched == true,
 							Mobile = s.mobile == true or s.mobileSupported == true or flags.mobileSupported == true,
 							Source = type(s.script) == "string" and s.script or nil,
-							-- The listing calls it rawScriptUrl; keep the other two
-							-- spellings as a fallback in case the field is renamed.
 							RawUrl = type(s.rawScriptUrl) == "string" and s.rawScriptUrl
 								or type(s.rawScript) == "string" and s.rawScript
 								or (type(s.links) == "table" and type(s.links.raw) == "string" and s.links.raw or nil),
@@ -5882,11 +5603,6 @@ scriptHub.Build = function()
 	local toggleHub
 	local applyFilters
 
-	-- === Filters ===
-	-- Same set the web hub offers. "all" is the reset switch: while it is on
-	-- every other toggle is ignored, and turning any other one on clears it.
-	-- The rest combine with AND, so picking Verified and Mobile shows only
-	-- scripts that are both.
 	local FILTER_DEFS = {
 		{ Key = "all", Label = "All", Icon = "🗂️" },
 		{ Key = "favorites", Label = "Favorites", Icon = "⭐" },
@@ -5902,13 +5618,8 @@ scriptHub.Build = function()
 		{ Key = "hidden", Label = "Hidden", Icon = "🙈" },
 	}
 	local activeFilters = { all = true }
-	-- Numeric filters, kept apart because they read from text boxes rather
-	-- than toggles and apply on top of whatever the toggles allow.
 	local rangeFilters = { placeId = "", minViews = "", maxViews = "", minPlayers = "", maxPlayers = "" }
 
-	-- Favourites and hidden scripts are remembered between sessions as sets of
-	-- "provider:id" keys; the feed itself is always re-fetched, so there is no
-	-- point storing whole records.
 	local HUB_MARKS_FILE = "WorldClient_HubMarks.json"
 	local favoriteKeys, hiddenKeys = {}, {}
 
@@ -5945,7 +5656,6 @@ scriptHub.Build = function()
 		return entry.Provider .. ":" .. entry.Id
 	end
 
-	-- === Disclaimer (shown once, then remembered) ===
 	local disclaimerOverlay = Instance.new("TextButton", screenGui)
 	disclaimerOverlay.Name = "ScriptHubDisclaimerOverlay"
 	disclaimerOverlay.Size = UDim2.new(1, 0, 1, 0)
@@ -6081,7 +5791,6 @@ scriptHub.Build = function()
 		end
 	end
 
-	-- === Hub panel ===
 	local hubOverlay = Instance.new("TextButton", screenGui)
 	hubOverlay.Name = "ScriptHubOverlay"
 	hubOverlay.Size = UDim2.new(1, 0, 1, 0)
@@ -6158,8 +5867,6 @@ scriptHub.Build = function()
 	end)
 	liftPanelWhileTyping(hubFrame, searchBox)
 
-	-- Fills the search box with the name of the experience the player is
-	-- currently in - the in-client version of the web app's "Find Game Scripts".
 	local thisGameBtn = createIconButton(hubFrame, "🎮", 30, "UtilButton")
 	thisGameBtn.Position = UDim2.new(1, -50, 0, 44)
 	thisGameBtn.AnchorPoint = Vector2.new(1, 0)
@@ -6203,8 +5910,6 @@ scriptHub.Build = function()
 	hubStatus.Text = ""
 	hubStatus.ZIndex = 18
 
-	-- Cycles how many cards sit side by side. Keycap emoji so the current
-	-- count reads at a glance without a separate label.
 	local COLUMN_GLYPHS = { "1️⃣", "2️⃣", "3️⃣", "4️⃣" }
 	local columnsBtn = createIconButton(hubFrame, COLUMN_GLYPHS[scriptHub.Columns], 26, "UtilButton")
 	columnsBtn.Position = UDim2.new(1, -44, 0, 10)
@@ -6234,7 +5939,6 @@ scriptHub.Build = function()
 		hubStatus.TextColor3 = isError and CONFIG.Colors.Error or CONFIG.Colors.InputEcho
 	end
 
-	-- === Detail page ===
 	local detailOverlay = Instance.new("TextButton", screenGui)
 	detailOverlay.Name = "ScriptHubDetailOverlay"
 	detailOverlay.Size = UDim2.new(1, 0, 1, 0)
@@ -6389,9 +6093,6 @@ scriptHub.Build = function()
 		runBtn.Text = "▶️ " .. tr("Run")
 	end)
 
-	-- rbxthumb resolves natively and instantly, so a known place id paints the
-	-- game's icon straight away; the library's own banner art is nicer but has
-	-- to be downloaded, so it is swapped in over the top once it lands.
 	local function thumbnailFor(entry)
 		if entry.PlaceId and entry.PlaceId > 0 then
 			return ("rbxthumb://type=GameIcon&id=%d&w=150&h=150"):format(entry.PlaceId)
@@ -6406,8 +6107,6 @@ scriptHub.Build = function()
 		applyImageAsync(imageLabel, glyphLabel, entry.ImageUrl)
 	end
 
-	-- Provider badge: an uploaded decal wins, then the site's own icon fetched
-	-- at runtime, and the glyph stands in until (or unless) one of those lands.
 	local function createProviderBadge(parent, provider, size, zIndex)
 		local badge = Instance.new("ImageLabel", parent)
 		badge.Size = UDim2.new(0, size, 0, size)
@@ -6429,10 +6128,6 @@ scriptHub.Build = function()
 			if badge.Image == "" then
 				applyImageAsync(badge, glyph, provider.IconUrl)
 			else
-				-- An uploaded asset that is still pending moderation, or was
-				-- rejected, never finishes loading and would leave an empty
-				-- square. Give it a moment, then fall back to the downloaded
-				-- favicon rather than showing nothing.
 				task.spawn(function()
 					local deadline = os.clock() + 5
 					while not badge.IsLoaded and os.clock() < deadline do
@@ -6449,8 +6144,6 @@ scriptHub.Build = function()
 		return badge
 	end
 
-	-- The view thresholds the web hub uses to label a script popular or
-	-- well/poorly reviewed, kept here so the tags and the filters agree.
 	local POPULAR_VIEWS = 500000
 	local GOOD_REVIEW_VIEWS = 100000
 
@@ -6458,8 +6151,6 @@ scriptHub.Build = function()
 		return not entry.Verified and not entry.Universal
 	end
 
-	-- Dark chips read as warnings, light chips as neutral facts - the same
-	-- split the web cards make.
 	local function tagsFor(entry)
 		local tags = {}
 		if entry.Views > POPULAR_VIEWS then
@@ -6491,9 +6182,6 @@ scriptHub.Build = function()
 		return tags
 	end
 
-	-- === Source resolution ===
-	-- Some libraries inline the source in the listing, some only give a raw
-	-- URL, and ScriptBlox occasionally needs a second call for it.
 	local function resolveSource(entry)
 		if type(entry.Source) == "string" and entry.Source ~= "" then
 			return entry.Source
@@ -6589,10 +6277,6 @@ scriptHub.Build = function()
 	registerLocalizedString("Failed to load this script's source.")
 	registerLocalizedString("Preview truncated - Copy, Editor, Save and Run still use the full script.")
 
-	-- === Actions ===
-	-- Copy / Editor / Save / Run behave identically on a result card and on the
-	-- detail page, so both routes go through here. The source may still be
-	-- downloading when the button is tapped, so it is resolved first either way.
 	local function performAction(entry, action, source)
 		if action == "copy" then
 			if pcall(setclipboard, source) then
@@ -6633,9 +6317,6 @@ scriptHub.Build = function()
 		end
 	end
 
-	-- The spinner replaces the button label while the download runs, so a
-	-- second tap has to be ignored or it would capture "⏳" as the label to
-	-- restore afterwards.
 	local busyButtons = {}
 	local function runEntryAction(entry, action, button)
 		if not entry or busyButtons[button] then
@@ -6672,13 +6353,8 @@ scriptHub.Build = function()
 	table.insert(connections, detailBackBtn.MouseButton1Click:Connect(closeDetail))
 	table.insert(connections, detailOverlay.MouseButton1Click:Connect(closeDetail))
 
-	-- === Result cards ===
-	-- Laid out like the web hub's cards: the game artwork fills the whole card,
-	-- a dark gradient scrim rises from the bottom so text stays legible over
-	-- any image, and the details and actions sit on top of it.
 	local CARD_HEIGHT = 140
 
-	-- Small rounded pill, the in-engine equivalent of the web hub's tag chips.
 	local function addTagChip(parent, label, dark)
 		local chip = Instance.new("TextLabel", parent)
 		chip.AutomaticSize = Enum.AutomaticSize.X
@@ -6746,7 +6422,6 @@ scriptHub.Build = function()
 		stroke.Thickness = 1
 		stroke.Transparency = 0.75
 
-		-- The artwork fills the card rather than sitting in a corner.
 		local art = Instance.new("ImageLabel", card)
 		art.Size = UDim2.new(1, 0, 1, 0)
 		art.BackgroundTransparency = 1
@@ -6763,8 +6438,6 @@ scriptHub.Build = function()
 		artGlyph.ZIndex = 18
 		paintThumbnail(art, artGlyph, entry)
 
-		-- Opaque along the bottom, clear at the top: the same top-to-transparent
-		-- scrim the web cards use to keep the copy readable on bright artwork.
 		local scrim = Instance.new("Frame", card)
 		scrim.Size = UDim2.new(1, 0, 1, 0)
 		scrim.BackgroundColor3 = Color3.new(0, 0, 0)
@@ -6794,7 +6467,6 @@ scriptHub.Build = function()
 		providerName.TextXAlignment = Enum.TextXAlignment.Left
 		providerName.ZIndex = 21
 
-		-- Everything below the artwork stacks upward from the bottom edge.
 		local content = Instance.new("Frame", card)
 		content.Name = "Content"
 		content.Size = UDim2.new(1, -20, 1, -40)
@@ -6858,8 +6530,6 @@ scriptHub.Build = function()
 		stats.TextTruncate = Enum.TextTruncate.AtEnd
 		stats.ZIndex = 21
 
-		-- Player counts and visits arrive later from the Roblox games API, so
-		-- the line is rebuilt in place whenever the numbers land.
 		local function refreshStats()
 			local parts = { "👁️ " .. formatCount(entry.Views) }
 			if entry.PlaceId and entry.PlaceId > 0 then
@@ -6888,10 +6558,6 @@ scriptHub.Build = function()
 		actionRowLayout.Padding = UDim.new(0, 5)
 
 		local key = entryKey(entry)
-		-- There is no emoji for an outlined star, and the dingbat ☆ renders as
-		-- a blank box here, so favouriting is shown by lighting the one star up
-		-- rather than by swapping the glyph. The hide button does swap, between
-		-- the two eye emoji, which both render.
 		local favBtn = createCardAction(actionRow, "⭐", 1, "Favorite")
 		local hideBtn = createCardAction(actionRow, hiddenKeys[key] and "👁️" or "🙈", 2, "Hide")
 
@@ -6962,8 +6628,6 @@ scriptHub.Build = function()
 		)
 	end
 
-	-- Sits below the grid rather than inside it: every child of a UIGridLayout
-	-- becomes a cell, and a full-width button is not a card.
 	local loadMoreBtn = Instance.new("TextButton", hubFrame)
 	loadMoreBtn.Name = "LoadMore"
 	loadMoreBtn.Size = UDim2.new(1, -24, 0, 32)
@@ -6993,24 +6657,13 @@ scriptHub.Build = function()
 
 	local function setLoadMoreVisible(visible)
 		loadMoreBtn.Visible = visible
-		-- The button lives below the grid, so the grid has to give up the room.
 		resultScroll.Size = visible and UDim2.new(1, -24, 1, -186) or UDim2.new(1, -24, 1, -150)
 	end
 
-	-- === Grid sizing ===
-	-- Cells are sized in pixels from the measured width of the scroll frame:
-	-- a scale-based cell cannot account for the gaps between columns, and the
-	-- panel is resizable, so the maths is redone whenever the width changes.
-	--
-	-- Card contents are dropped as the cells get narrower. Three across on a
-	-- phone leaves well under 100px per card, which fits a title and little
-	-- else, so the tag pills and the action row bow out and tapping the card
-	-- opens the detail page instead - where those actions live anyway.
 	local ACTIONS_MIN_WIDTH = 210
 	local TAGS_MIN_WIDTH = 150
 	local PROVIDER_NAME_MIN_WIDTH = 130
 	local META_MIN_WIDTH = 115
-	-- Row heights, mirroring the sizes createCard gives them.
 	local ROW_HEIGHTS = { Title = 19, Meta = 14, Tags = 16, Stats = 13, Actions = 26 }
 	local ROW_GAP, CONTENT_INSET = 3, 40
 
@@ -7027,9 +6680,6 @@ scriptHub.Build = function()
 		local showMeta = cellWidth >= META_MIN_WIDTH
 		local showProviderName = cellWidth >= PROVIDER_NAME_MIN_WIDTH
 
-		-- The card only has to be as tall as the rows it is actually showing,
-		-- so a narrow three-across card is a compact poster rather than a
-		-- tall strip padded out with empty space.
 		local stack, rows = ROW_HEIGHTS.Title + ROW_HEIGHTS.Stats, 2
 		if showMeta then
 			stack += ROW_HEIGHTS.Meta
@@ -7049,7 +6699,6 @@ scriptHub.Build = function()
 		if columns == 1 then
 			cellHeight = CARD_HEIGHT
 		else
-			-- Two across still reads as a banner; three or four are posters.
 			local ratio = columns == 2 and 0.75 or 1.1
 			cellHeight = math.clamp(math.floor(cellWidth * ratio), minHeight, 230)
 		end
@@ -7092,10 +6741,6 @@ scriptHub.Build = function()
 		end)
 	)
 
-	-- === Filtering ===
-	-- Runs over the entries already loaded and shows or hides their cards, so
-	-- changing a filter is instant and never refetches. Hidden scripts are
-	-- always excluded unless the Hidden filter is the one asking for them.
 	local function passesRangeFilters(entry)
 		local placeIdText = rangeFilters.placeId
 		if placeIdText ~= "" then
@@ -7114,8 +6759,6 @@ scriptHub.Build = function()
 		local minPlayers = tonumber(rangeFilters.minPlayers)
 		local maxPlayers = tonumber(rangeFilters.maxPlayers)
 		if minPlayers or maxPlayers then
-			-- Player counts arrive from the Roblox API after the page renders;
-			-- an entry with no number yet cannot satisfy a player filter.
 			local players = entry.ActivePlayers
 			if not players then
 				return false
@@ -7129,8 +6772,6 @@ scriptHub.Build = function()
 
 	local function passesFilters(entry)
 		local key = entryKey(entry)
-		-- Both sides have to be normalised to booleans: an unmarked script is
-		-- nil in the set, not false, and nil ~= false would reject everything.
 		if (hiddenKeys[key] == true) ~= (activeFilters.hidden == true) then
 			return false
 		end
@@ -7200,11 +6841,6 @@ scriptHub.Build = function()
 	registerLocalizedString("Nothing matches these filters - clear one or load more.")
 	registerLocalizedString("scripts shown")
 
-	-- === Live game data ===
-	-- Place ids alone give a thumbnail; the player count and visit total the
-	-- cards show come from Roblox, one universe lookup per place and then a
-	-- single batched games call. Runs after a page renders and updates the
-	-- cards in place.
 	local universeCache = {}
 	local function enrichGameStats(entries)
 		local places = {}
@@ -7249,8 +6885,6 @@ scriptHub.Build = function()
 		end
 
 		local stats = {}
-		-- The games endpoint caps a request at 100 ids; a page never comes
-		-- close, but chunking keeps it honest if the page size grows.
 		for start = 1, #universeIds, 50 do
 			local chunk = table.concat(universeIds, ",", start, math.min(start + 49, #universeIds))
 			local data = hubJson("https://games.roblox.com/v1/games?universeIds=" .. chunk)
@@ -7315,7 +6949,6 @@ scriptHub.Build = function()
 				return
 			end
 
-			-- One thread per provider so a slow library never holds up the rest.
 			local batches = {}
 			local remaining = #active
 			for index, provider in ipairs(active) do
@@ -7346,7 +6979,6 @@ scriptHub.Build = function()
 				return
 			end
 
-			-- Interleave the providers so no single library dominates the feed.
 			local longest = 0
 			for index = 1, #active do
 				longest = math.max(longest, #(batches[index] or {}))
@@ -7382,8 +7014,6 @@ scriptHub.Build = function()
 			end
 			setLoadMoreVisible(hubHasMore and #hubEntries > 0)
 
-			-- Player counts and visits are a nicety, so they are fetched after
-			-- the cards are already on screen rather than delaying them.
 			if #fresh > 0 then
 				task.spawn(function()
 					pcall(enrichGameStats, fresh)
@@ -7401,10 +7031,6 @@ scriptHub.Build = function()
 	registerLocalizedString("scripts loaded")
 	registerLocalizedString("Enable at least one provider to see scripts.")
 
-	-- === Filter panel ===
-	-- The web hub keeps its filters in a permanent sidebar; there is no room
-	-- for that on a phone, so the same controls live in a panel behind the
-	-- 🎛️ button. Everything in here filters what is already loaded.
 	local filterOverlay = Instance.new("TextButton", screenGui)
 	filterOverlay.Name = "ScriptHubFilterOverlay"
 	filterOverlay.Size = UDim2.new(1, 0, 1, 0)
@@ -7467,8 +7093,6 @@ scriptHub.Build = function()
 	filterScrollLayout.SortOrder = Enum.SortOrder.LayoutOrder
 	filterScrollLayout.Padding = UDim.new(0, 8)
 
-	-- Toggles are laid out as a wrapping grid so a dozen of them fit without
-	-- scrolling on a phone.
 	local toggleGrid = Instance.new("Frame", filterScroll)
 	toggleGrid.Size = UDim2.new(1, -6, 0, 0)
 	toggleGrid.AutomaticSize = Enum.AutomaticSize.Y
@@ -7521,7 +7145,6 @@ scriptHub.Build = function()
 			connections,
 			button.MouseButton1Click:Connect(function()
 				if def.Key == "all" then
-					-- "All" is the reset: turning it on drops every other toggle.
 					for _, other in ipairs(FILTER_DEFS) do
 						activeFilters[other.Key] = nil
 					end
@@ -7529,7 +7152,6 @@ scriptHub.Build = function()
 				else
 					activeFilters[def.Key] = (not activeFilters[def.Key]) or nil
 					activeFilters.all = nil
-					-- Nothing left selected means we are back to showing all.
 					local any = false
 					for _, other in ipairs(FILTER_DEFS) do
 						if other.Key ~= "all" and activeFilters[other.Key] then
@@ -7548,8 +7170,6 @@ scriptHub.Build = function()
 	end
 	repaintAllToggles()
 
-	-- Numeric filters. Each row is a label plus one or two boxes; they read on
-	-- every keystroke so the feed narrows as you type.
 	local function addRangeRow(order, label, fields)
 		local row = Instance.new("Frame", filterScroll)
 		row.Size = UDim2.new(1, -6, 0, 46)
@@ -7689,7 +7309,6 @@ scriptHub.Build = function()
 		setFilterPanelVisible(false)
 	end))
 
-	-- === Provider chips ===
 	local chipRefreshers = {}
 	for order, provider in ipairs(hubProviders) do
 		local chip = Instance.new("TextButton", chipRow)
@@ -7750,7 +7369,6 @@ scriptHub.Build = function()
 		)
 	end
 
-	-- === Open / close ===
 	function toggleHub()
 		isHubOpen = not isHubOpen
 		if isHubOpen and settingsFrame.Visible then
@@ -8039,8 +7657,6 @@ local function toggleMinimize()
 		rightControls.Visible = true
 		minimizeButton.Text = "✖️"
 
-		-- Auto-run the tour the first time the client is opened, but only until
-		-- it's been completed once (persisted across rejoins).
 		if not tutorialShown and not tutorialCompleted then
 			showTutorial()
 		end
@@ -8089,9 +7705,6 @@ function log(message, messageType, bulkLoad)
 		logEntry.Text = messageStr
 	end
 
-	-- Asynchronously swap in a Google-translated version (🌐 marks translated
-	-- lines; tapping a translated line toggles back to the original text).
-	-- Skips code echoes and bulk history loads.
 	local originalLogText = logEntry.Text
 	local translatedLogText = nil
 	local showingTranslation = false
@@ -8123,7 +7736,6 @@ function log(message, messageType, bulkLoad)
 			then
 				return
 			end
-			-- Only toggle on a genuine tap, not a scroll drag
 			local startPos = input.Position
 			local changedConn
 			changedConn = input.Changed:Connect(function()
@@ -8263,8 +7875,6 @@ local function executeCommand()
 		return
 	end
 
-	-- Run on a separate thread so a long-running or yielding script never
-	-- freezes the console's input handler.
 	task.spawn(function()
 		local success, err = pcall(executeScript, command)
 		if not success then
@@ -8273,11 +7883,6 @@ local function executeCommand()
 	end)
 end
 
--- === Mobile typing mode ===
--- While the code editor is focused on a touch device, the whole input row
--- moves to the top of the window (right under the header) where the
--- on-screen keyboard can never cover it; logs re-flow underneath. In the
--- full-screen editor, the editing area shrinks into the top half instead.
 local isTypingMode = false
 
 local function enterTypingMode()
@@ -8287,13 +7892,11 @@ local function enterTypingMode()
 	isTypingMode = true
 	local tweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
 	if isInputMaximized then
-		-- Shrink the editing area into the upper half so the keyboard clears it
 		TweenService:Create(inputContainer, tweenInfo, {
 			Position = UDim2.new(0.5, 0, 0, 72),
 			Size = UDim2.new(1, -10, 0.5, -40),
 		}):Play()
 	else
-		-- Slide the whole footer (tabs + editor) to just below the header
 		filterBar.Visible = false
 		TweenService:Create(footer, tweenInfo, { Position = UDim2.new(0, 0, 0, 42) }):Play()
 		TweenService:Create(logContainer, tweenInfo, {
@@ -8371,7 +7974,6 @@ local function toggleScriptView()
 			{ Size = UDim2.new(1, 0, 1, 0), Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5) }
 		):Play()
 
-		-- Action row sits below the tab bar (which keeps its top strip)
 		local newCollapseButton = createIconButton(footer, "↙️", 26, "UtilButton")
 		newCollapseButton.Name = "CollapseButton"
 		newCollapseButton.AnchorPoint = Vector2.new(0, 0)
@@ -8534,7 +8136,6 @@ table.insert(
 
 table.insert(connections, runButton.MouseButton1Click:Connect(executeCommand))
 
--- Clipboard reading is executor-specific; try the known getter names.
 local function readClipboard()
 	local getter = (type(getclipboard) == "function" and getclipboard)
 		or (type(get_clipboard) == "function" and get_clipboard)
@@ -8568,8 +8169,6 @@ table.insert(
 			log("Clipboard is empty.", "Warning")
 			return
 		end
-		-- Load into the editor (visible + highlighted) and run through the
-		-- normal path so it lands in command history too.
 		inputBox.Text = content
 		log("Running script from clipboard (" .. #content .. " chars)...", "Info")
 		executeCommand()
@@ -8682,10 +8281,6 @@ table.insert(connections, UserInputService:GetPropertyChangedSignal("OnScreenKey
 screenGui.Parent = playerGui
 blurGui.Parent = playerGui
 
--- === Startup intro ===
--- The globe pops in center-screen inside an orbital ring, real boot status
--- types out beneath it, then it arcs up into the minimized bubble with a
--- ripple + pop landing. Tap anywhere to skip.
 local function playIntro()
 	task.spawn(function()
 		local finished = false
@@ -8793,7 +8388,6 @@ local function playIntro()
 			end)
 		)
 
-		-- Phase 1: reveal - globe pops in, ring blooms, gradient orbits
 		TweenService:Create(overlay, TweenInfo.new(0.4), { BackgroundTransparency = 0.35 }):Play()
 		TweenService
 			:Create(introScale, TweenInfo.new(0.55, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 })
@@ -8818,7 +8412,6 @@ local function playIntro()
 
 		task.wait(0.55)
 
-		-- Phase 2: hold on the globe for a beat (interruptible by a tap to skip).
 		local hold = 0
 		while hold < 1.1 and not skipped do
 			hold += task.wait()
@@ -8831,7 +8424,6 @@ local function playIntro()
 			return
 		end
 
-		-- Phase 3: arc flight to the dock
 		sway:Cancel()
 		TweenService:Create(introIcon, TweenInfo.new(0.3), { Rotation = 0 }):Play()
 		TweenService:Create(ringStroke, TweenInfo.new(0.3), { Transparency = 1 }):Play()
@@ -8893,7 +8485,6 @@ if languages[currentLanguageIndex].Code ~= "en" then
 	localizeUI()
 end
 
--- Apply persisted power settings
 if uiSettings.fpsBooster then
 	applyFpsBooster(true)
 end
@@ -8903,12 +8494,10 @@ end
 
 playIntro()
 
--- Run auto-execute scripts a moment after load so the UI is fully ready
 task.delay(1, function()
 	if runAutoExecScripts then
 		runAutoExecScripts()
 	end
 end)
 
--- Loaders that require this source as a module want exactly one value back.
 return true
