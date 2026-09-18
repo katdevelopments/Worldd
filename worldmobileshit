@@ -679,7 +679,7 @@ local uiSettings = {
 	consoleWordWrap = true,
 	editorLineNumbers = false,
 	consoleLineNumbers = false,
-	iconStyle = "vector",
+	iconStyle = "emoji",
 }
 
 local setAutoScroll
@@ -1825,7 +1825,7 @@ end
 
 Icons = {
 	Styles = iconStyles,
-	StyleIndex = 2,
+	StyleIndex = 1,
 	Registry = registry,
 }
 
@@ -6392,6 +6392,8 @@ scriptHub.Build = function()
 
 	local IMAGE_FOLDER = "WorldClient_Images"
 	local IMAGE_MAX_BYTES = 2 * 1024 * 1024
+	local IMAGE_RETRY_AFTER = 30
+	local IMAGE_LOAD_TIMEOUT = 5
 	local PNG_MAGIC = "\137PNG\13\10\26\10"
 	local JPEG_MAGIC = "\255\216\255"
 
@@ -6450,26 +6452,9 @@ scriptHub.Build = function()
 	end
 
 	local imageAssets = {}
-	local imageLoading = {}
+	local imageFailedAt = {}
 
-	local function resolveImageAsset(url)
-		local cached = imageAssets[url]
-		if cached ~= nil then
-			return cached or nil
-		end
-		if not canLoadWebImages then
-			imageAssets[url] = false
-			return nil
-		end
-		if imageLoading[url] then
-			local deadline = os.clock() + 10
-			while imageLoading[url] and os.clock() < deadline do
-				task.wait(0.05)
-			end
-			return imageAssets[url] or nil
-		end
-
-		imageLoading[url] = true
+	local function downloadImageAsset(url)
 		local body = httpGet(url)
 
 		if type(body) == "string" and #body > 0 and #body <= IMAGE_MAX_BYTES then
@@ -6480,44 +6465,128 @@ scriptHub.Build = function()
 			body = nil
 		end
 
-		local asset
-		if body then
-			pcall(function()
-				if
-					type(isfolder) == "function"
-					and type(makefolder) == "function"
-					and not isfolder(IMAGE_FOLDER)
-				then
-					makefolder(IMAGE_FOLDER)
-				end
-				local path = imagePathFor(url)
-				writefile(path, body)
-				asset = getCustomAsset(path)
-			end)
+		if not body then
+			return nil
 		end
 
-		imageAssets[url] = (type(asset) == "string" and asset ~= "" and asset) or false
-		imageLoading[url] = nil
-		return imageAssets[url] or nil
+		local asset
+		pcall(function()
+			if
+				type(isfolder) == "function"
+				and type(makefolder) == "function"
+				and not isfolder(IMAGE_FOLDER)
+			then
+				makefolder(IMAGE_FOLDER)
+			end
+			local path = imagePathFor(url)
+			writefile(path, body)
+			asset = getCustomAsset(path)
+		end)
+
+		return (type(asset) == "string" and asset ~= "" and asset) or nil
+	end
+
+	local function resolveImageAsset(url)
+		local cached = imageAssets[url]
+		if cached then
+			return cached
+		end
+		if not canLoadWebImages then
+			return nil
+		end
+		local failedAt = imageFailedAt[url]
+		if failedAt and os.clock() - failedAt < IMAGE_RETRY_AFTER then
+			return nil
+		end
+
+		local ok, asset = pcall(downloadImageAsset, url)
+		if ok and asset then
+			imageAssets[url] = asset
+			imageFailedAt[url] = nil
+			return asset
+		end
+
+		imageFailedAt[url] = os.clock()
+		return nil
+	end
+
+	local imageQueue = {}
+	local imageWorkerRunning = false
+
+	local function deliverImageAsset(target, apply, asset)
+		task.spawn(function()
+			if target.Parent then
+				pcall(apply, asset)
+			end
+		end)
+	end
+
+	local function pumpImageQueue()
+		if imageWorkerRunning then
+			return
+		end
+		imageWorkerRunning = true
+		task.spawn(function()
+			while #imageQueue > 0 do
+				local job = table.remove(imageQueue, 1)
+				if job.Target.Parent then
+					local asset = resolveImageAsset(job.Url)
+					if asset then
+						deliverImageAsset(job.Target, job.Apply, asset)
+					end
+				end
+			end
+			imageWorkerRunning = false
+		end)
+	end
+
+	local function queueImageAsset(target, url, apply)
+		local normalized = normalizeImageUrl(url)
+		if not normalized or not canLoadWebImages then
+			return
+		end
+		local cached = imageAssets[normalized]
+		if cached then
+			deliverImageAsset(target, apply, cached)
+			return
+		end
+		for _, job in ipairs(imageQueue) do
+			if job.Target == target then
+				job.Url = normalized
+				job.Apply = apply
+				return
+			end
+		end
+		table.insert(imageQueue, { Target = target, Url = normalized, Apply = apply })
+		pumpImageQueue()
 	end
 
 	local function faviconUrl(domain)
 		return ("https://www.google.com/s2/favicons?domain=%s&sz=64"):format(domain)
 	end
 
-	local function applyImageAsync(imageLabel, glyphLabel, url)
-		local normalized = normalizeImageUrl(url)
-		if not normalized then
-			return
+	local function revealWhenLoaded(imageLabel, glyphLabel, image)
+		imageLabel.Image = image
+		local deadline = os.clock() + IMAGE_LOAD_TIMEOUT
+		while not imageLabel.IsLoaded and imageLabel.Parent and os.clock() < deadline do
+			task.wait(0.1)
 		end
-		task.spawn(function()
-			local asset = resolveImageAsset(normalized)
-			if asset and imageLabel.Parent then
-				imageLabel.Image = asset
-				if glyphLabel then
-					glyphLabel.Visible = false
-				end
+		if not imageLabel.Parent then
+			return false
+		end
+		if imageLabel.IsLoaded then
+			if glyphLabel then
+				glyphLabel.Visible = false
 			end
+			return true
+		end
+		imageLabel.Image = ""
+		return false
+	end
+
+	local function applyImageAsync(imageLabel, glyphLabel, url)
+		queueImageAsset(imageLabel, url, function(asset)
+			revealWhenLoaded(imageLabel, glyphLabel, asset)
 		end)
 	end
 
@@ -7298,16 +7367,26 @@ scriptHub.Build = function()
 
 	local function paintThumbnail(imageLabel, glyphLabel, entry)
 		local instant = thumbnailFor(entry)
-		imageLabel.Image = instant
-		glyphLabel.Visible = instant == ""
-		applyImageAsync(imageLabel, glyphLabel, entry.ImageUrl)
+		imageLabel.Image = ""
+		glyphLabel.Visible = true
+		if instant == "" then
+			applyImageAsync(imageLabel, glyphLabel, entry.ImageUrl)
+			return
+		end
+		task.spawn(function()
+			if revealWhenLoaded(imageLabel, glyphLabel, instant) then
+				return
+			end
+			if imageLabel.Parent then
+				applyImageAsync(imageLabel, glyphLabel, entry.ImageUrl)
+			end
+		end)
 	end
 
 	local function createProviderBadge(parent, provider, size, zIndex)
 		local badge = Instance.new("ImageLabel", parent)
 		badge.Size = UDim2.new(0, size, 0, size)
 		badge.BackgroundTransparency = 1
-		badge.Image = provider and provider.Icon or ""
 		badge.ZIndex = zIndex
 
 		local glyph = Instance.new("TextLabel", badge)
@@ -7316,22 +7395,19 @@ scriptHub.Build = function()
 		glyph.Font = Enum.Font.SourceSans
 		glyph.TextColor3 = CONFIG.Colors.Text
 		glyph.TextSize = size
-		Icons.bind(glyph, provider and provider.Glyph or "help", { Mode = "icon", Px = math.floor(size * 0.9) })
-		glyph.Visible = badge.Image == ""
 		glyph.ZIndex = zIndex
+		Icons.bind(glyph, provider and provider.Glyph or "help", { Mode = "icon", Px = math.floor(size * 0.9) })
 
 		if provider then
-			if badge.Image == "" then
+			local assetId = provider.Icon
+			if type(assetId) ~= "string" or assetId == "" then
 				applyImageAsync(badge, glyph, provider.IconUrl)
 			else
 				task.spawn(function()
-					local deadline = os.clock() + 5
-					while not badge.IsLoaded and os.clock() < deadline do
-						task.wait(0.25)
+					if revealWhenLoaded(badge, glyph, assetId) then
+						return
 					end
-					if not badge.IsLoaded and badge.Parent then
-						badge.Image = ""
-						glyph.Visible = true
+					if badge.Parent then
 						applyImageAsync(badge, glyph, provider.IconUrl)
 					end
 				end)
