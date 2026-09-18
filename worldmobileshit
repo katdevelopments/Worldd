@@ -680,7 +680,27 @@ local uiSettings = {
 	editorLineNumbers = false,
 	consoleLineNumbers = false,
 	iconStyle = "emoji",
+	mobileMode = false,
+	reduceMotion = false,
+	hubImages = true,
+	maxLogs = 150,
 }
+
+do
+local realTweenService = TweenService
+local instantInfo = TweenInfo.new(0, Enum.EasingStyle.Linear)
+TweenService = {
+	Create = function(_, object, info, properties)
+		if uiSettings.reduceMotion then
+			info = instantInfo
+		end
+		return realTweenService:Create(object, info, properties)
+	end,
+	GetValue = function(_, alpha, easingStyle, easingDirection)
+		return realTweenService:GetValue(alpha, easingStyle, easingDirection)
+	end,
+}
+end
 
 local setAutoScroll
 local openAutoExec
@@ -1962,6 +1982,10 @@ function saveSettings()
 				editorLineNumbers = uiSettings.editorLineNumbers,
 				consoleLineNumbers = uiSettings.consoleLineNumbers,
 				iconStyle = uiSettings.iconStyle,
+				mobileMode = uiSettings.mobileMode,
+				reduceMotion = uiSettings.reduceMotion,
+				hubImages = uiSettings.hubImages,
+				maxLogs = uiSettings.maxLogs,
 				tutorialCompleted = tutorialCompleted,
 				scriptHubAccepted = scriptHub.Accepted,
 				scriptHubProviders = scriptHub.Providers,
@@ -2045,6 +2069,18 @@ local function loadSettings()
 	if type(data.iconStyle) == "string" then
 		uiSettings.iconStyle = data.iconStyle
 	end
+	if type(data.mobileMode) == "boolean" then
+		uiSettings.mobileMode = data.mobileMode
+	end
+	if type(data.reduceMotion) == "boolean" then
+		uiSettings.reduceMotion = data.reduceMotion
+	end
+	if type(data.hubImages) == "boolean" then
+		uiSettings.hubImages = data.hubImages
+	end
+	if type(data.maxLogs) == "number" then
+		uiSettings.maxLogs = math.clamp(math.floor(data.maxLogs), 25, 500)
+	end
 	if type(data.tutorialCompleted) == "boolean" then
 		tutorialCompleted = data.tutorialCompleted
 	end
@@ -2081,6 +2117,7 @@ loadSettings()
 end
 
 CONFIG.Colors = themes[currentThemeIndex].Colors
+CONFIG.MaxLogs = uiSettings.maxLogs
 CONFIG.Font = fontsList[currentFontIndex].Font
 CONFIG.BoldFont = fontsList[currentFontIndex].Bold
 CONFIG.TextSize = textSizes[currentTextSizeIndex].Size
@@ -2874,19 +2911,60 @@ editorLineGutter.TextSize = CONFIG.TextSize
 editorLineGutter.TextColor3 = Color3.fromRGB(120, 120, 120)
 editorLineGutter.TextXAlignment = Enum.TextXAlignment.Right
 editorLineGutter.TextYAlignment = Enum.TextYAlignment.Top
-editorLineGutter.Size = UDim2.new(0, 24, 1, 0)
+editorLineGutter.AutomaticSize = Enum.AutomaticSize.Y
+editorLineGutter.Size = UDim2.new(0, 24, 0, 0)
 editorLineGutter.Position = UDim2.new(0, 0, 0, 5)
 editorLineGutter.Visible = uiSettings.editorLineNumbers == true
 editorLineGutter.Text = "1"
-local function updateEditorLines()
-	if not inputBox then return end
-	local text = inputBox.Text
+
+local inputBox
+local editorGutterPad
+
+local updateEditorLines
+local syncEditorGutter
+do
+local lastLineCount = -1
+local lastGutterWidth = -1
+
+function updateEditorLines()
+	if not inputBox then
+		return
+	end
 	local lines = 1
-	for _ in string.gmatch(text, "\n") do lines = lines + 1 end
-	local t = {}
-	for i = 1, lines do table.insert(t, tostring(i)) end
-	editorLineGutter.Text = table.concat(t, "\n")
-	editorLineGutter.Size = UDim2.new(0, 24, 0, lines * (CONFIG.TextSize + 4))
+	for _ in string.gmatch(inputBox.Text, "\n") do
+		lines += 1
+	end
+	local width = math.max(24, 10 + #tostring(lines) * math.ceil(CONFIG.TextSize * 0.6))
+	if lines == lastLineCount and width == lastGutterWidth then
+		return
+	end
+	lastLineCount = lines
+	local numbers = table.create(lines)
+	for i = 1, lines do
+		numbers[i] = tostring(i)
+	end
+	editorLineGutter.Text = table.concat(numbers, "\n")
+	if width ~= lastGutterWidth then
+		lastGutterWidth = width
+		editorLineGutter.Size = UDim2.new(0, width, 0, 0)
+		if editorGutterPad and uiSettings.editorLineNumbers == true then
+			editorGutterPad(width + 8)
+		end
+	end
+end
+
+function syncEditorGutter()
+	if not editorGutterPad then
+		return
+	end
+	if uiSettings.editorLineNumbers == true then
+		lastGutterWidth = -1
+		updateEditorLines()
+		editorGutterPad(editorLineGutter.Size.X.Offset + 8)
+	else
+		editorGutterPad(10)
+	end
+end
 end
 
 local inputFocusStroke = Instance.new("UIStroke", inputContainer)
@@ -2894,7 +2972,7 @@ inputFocusStroke.Color = CONFIG.Colors.PrimaryAccent
 inputFocusStroke.Thickness = 1.5
 inputFocusStroke.Transparency = 1
 
-local inputBox = Instance.new("TextBox", inputContainer)
+inputBox = Instance.new("TextBox", inputContainer)
 inputBox.BackgroundTransparency = 1
 inputBox.ClearTextOnFocus = false
 inputBox.Font = CONFIG.Font
@@ -3033,6 +3111,14 @@ do
 	hlPad.PaddingRight = UDim.new(0, 10)
 	hlPad.PaddingTop = UDim.new(0, 5)
 	hlPad.PaddingBottom = UDim.new(0, 5)
+
+	editorGutterPad = function(left)
+		local ibp = inputBox:FindFirstChildOfClass("UIPadding")
+		if ibp then
+			ibp.PaddingLeft = UDim.new(0, left)
+		end
+		hlPad.PaddingLeft = UDim.new(0, left)
+	end
 
 	table.insert(
 		connections,
@@ -3204,6 +3290,43 @@ templateEntry.TextXAlignment = Enum.TextXAlignment.Left
 templateEntry.Size = UDim2.new(1, uiSettings.consoleLineNumbers == true and -90 or -60, 0, 0)
 templateEntry.AutomaticSize = Enum.AutomaticSize.Y
 templateEntry.RichText = true
+
+local consoleGutterWidth = 26
+local syncConsoleGutter
+do
+local widestDigits = 0
+
+local function entryInset()
+	if uiSettings.consoleLineNumbers == true then
+		return -(60 + consoleGutterWidth + 4)
+	end
+	return -60
+end
+
+function syncConsoleGutter(numberText)
+	local digits = #numberText
+	if digits <= widestDigits then
+		return
+	end
+	widestDigits = digits
+	consoleGutterWidth = math.max(26, 6 + digits * math.ceil(CONFIG.TextSize * 0.6))
+	templateLineNumber.Size = UDim2.new(0, consoleGutterWidth, 0, 0)
+	templateEntry.Size = UDim2.new(1, entryInset(), 0, 0)
+	for _, child in ipairs(logContainer:GetChildren()) do
+		if child:IsA("Frame") and child.Name == "LogFrame" then
+			local ln = child:FindFirstChild("LineNumber")
+			local entry = child:FindFirstChild("LogEntry")
+			if ln then
+				ln.Size = UDim2.new(0, consoleGutterWidth, 0, 0)
+			end
+			if entry then
+				entry.Size = UDim2.new(1, entryInset(), 0, 0)
+			end
+		end
+	end
+end
+end
+
 do
 local templateActions = Instance.new("Frame", templateLog)
 templateActions.Name = "Actions"
@@ -4513,8 +4636,8 @@ end)
 
 local settingsScroll = Instance.new("ScrollingFrame", settingsFrame)
 settingsScroll.Name = "SettingsScroll"
-settingsScroll.Position = UDim2.new(0, 12, 0, 48)
-settingsScroll.Size = UDim2.new(1, -24, 1, -60)
+settingsScroll.Position = UDim2.new(0, 12, 0, 116)
+settingsScroll.Size = UDim2.new(1, -24, 1, -128)
 settingsScroll.BackgroundTransparency = 1
 settingsScroll.BorderSizePixel = 0
 settingsScroll.ScrollBarThickness = 4
@@ -4526,6 +4649,215 @@ do
 local settingsListLayout = Instance.new("UIListLayout", settingsScroll)
 settingsListLayout.Padding = UDim.new(0, 8)
 settingsListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+end
+
+local settingsCategory = "General"
+local settingsFilter
+local settingsToggles = {}
+local settingsSection
+local SETTINGS_RANK = {
+	Theme = 1,
+	Language = 2,
+	Editor = 3,
+	Console = 4,
+	Mobile = 5,
+	General = 6,
+}
+
+do
+local SETTINGS_CATEGORIES = {
+	{ Key = "all", Label = "All", Icon = "folder" },
+	{ Key = "Theme", Label = "Theme", Icon = "palette" },
+	{ Key = "Language", Label = "Language", Icon = "globe" },
+	{ Key = "Editor", Label = "Editor", Icon = "pencil" },
+	{ Key = "Console", Label = "Console", Icon = "monitor" },
+	{ Key = "Mobile", Label = "Mobile", Icon = "phone" },
+	{ Key = "General", Label = "General", Icon = "settings" },
+}
+
+local activeCategory = "all"
+local searchQuery = ""
+local chipButtons = {}
+
+local settingsSearch = Instance.new("TextBox", settingsFrame)
+settingsSearch.Name = "SettingsSearch"
+settingsSearch.Position = UDim2.new(0, 12, 0, 48)
+settingsSearch.Size = UDim2.new(1, -24, 0, 28)
+settingsSearch.BackgroundColor3 = CONFIG.Colors.UtilButton
+settingsSearch.BackgroundTransparency = 0.25
+settingsSearch.Font = CONFIG.Font
+settingsSearch.PlaceholderColor3 = CONFIG.Colors.InputEcho
+settingsSearch.Text = ""
+settingsSearch.TextColor3 = CONFIG.Colors.Text
+settingsSearch.TextSize = 14
+settingsSearch.ClearTextOnFocus = false
+settingsSearch.TextXAlignment = Enum.TextXAlignment.Left
+settingsSearch.ZIndex = 11
+Instance.new("UICorner", settingsSearch).CornerRadius = UDim.new(0, 6)
+do
+local searchPad = Instance.new("UIPadding", settingsSearch)
+searchPad.PaddingLeft = UDim.new(0, 8)
+searchPad.PaddingRight = UDim.new(0, 8)
+end
+safeSetCursor(settingsSearch, "rbxasset://SystemCursor/Arrow")
+Icons.bind(settingsSearch, "search", { Mode = "placeholder", Text = tr("Search settings..."), Px = 12 })
+registerLocalizedString("Search settings...")
+registerLocalizedRefresher(function()
+	Icons.setText(settingsSearch, tr("Search settings..."))
+end)
+
+local chipRow = Instance.new("ScrollingFrame", settingsFrame)
+chipRow.Name = "SettingsCategories"
+chipRow.Position = UDim2.new(0, 12, 0, 82)
+chipRow.Size = UDim2.new(1, -24, 0, 28)
+chipRow.BackgroundTransparency = 1
+chipRow.BorderSizePixel = 0
+chipRow.ScrollBarThickness = 0
+chipRow.CanvasSize = UDim2.new(0, 0, 0, 0)
+chipRow.AutomaticCanvasSize = Enum.AutomaticSize.X
+chipRow.ScrollingDirection = Enum.ScrollingDirection.X
+chipRow.ZIndex = 11
+do
+local chipLayout = Instance.new("UIListLayout", chipRow)
+chipLayout.FillDirection = Enum.FillDirection.Horizontal
+chipLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+chipLayout.SortOrder = Enum.SortOrder.LayoutOrder
+chipLayout.Padding = UDim.new(0, 6)
+end
+
+local sectionHeaders = {}
+
+function settingsSection(category)
+	if sectionHeaders[category] then
+		return
+	end
+	local header = Instance.new("TextLabel", settingsScroll)
+	header.Name = "Section_" .. category
+	header.Size = UDim2.new(1, -6, 0, 20)
+	header.LayoutOrder = (SETTINGS_RANK[category] or 9) * 1000
+	header.BackgroundTransparency = 1
+	header.Font = CONFIG.BoldFont
+	header.Text = tr(category)
+	header.TextColor3 = CONFIG.Colors.SecondaryAccent
+	header.TextSize = 13
+	header.TextXAlignment = Enum.TextXAlignment.Left
+	header.ZIndex = 11
+	header:SetAttribute("Category", category)
+	header:SetAttribute("IsHeader", true)
+	sectionHeaders[category] = header
+	registerLocalizedString(category)
+	registerLocalizedRefresher(function()
+		header.Text = tr(category)
+	end)
+	table.insert(themedUpdaters, function(theme, fontData)
+		tintTween(header, { TextColor3 = theme.SecondaryAccent })
+		header.Font = fontData.Bold
+	end)
+end
+
+local function rowHaystack(row)
+	local parts = row:GetAttribute("SearchKey") or ""
+	if row:IsA("TextButton") or row:IsA("TextLabel") then
+		parts = parts .. " " .. row.Text
+	else
+		local label = row:FindFirstChildWhichIsA("TextLabel")
+		if label then
+			parts = parts .. " " .. label.Text
+		end
+	end
+	return parts:lower()
+end
+
+function settingsFilter()
+	local anyVisible = false
+	for _, row in ipairs(settingsScroll:GetChildren()) do
+		if row:IsA("GuiObject") then
+			local category = row:GetAttribute("Category")
+			if category == nil then
+				row.Visible = true
+			elseif row:GetAttribute("IsHeader") then
+				row.Visible = searchQuery == ""
+					and (activeCategory == "all" or category == activeCategory)
+			else
+				local matchesCategory = (activeCategory == "all") or (category == activeCategory)
+				local matchesSearch = searchQuery == ""
+					or rowHaystack(row):find(searchQuery, 1, true) ~= nil
+				row.Visible = matchesCategory and matchesSearch
+				if row.Visible then
+					anyVisible = true
+				end
+			end
+		end
+	end
+	settingsScroll.CanvasPosition = Vector2.new(0, 0)
+	return anyVisible
+end
+
+local function paintChips()
+	for key, chip in pairs(chipButtons) do
+		local selected = key == activeCategory
+		chip:SetAttribute("ColorType", selected and "SecondaryAccent" or "UtilButton")
+		TweenService:Create(chip, TweenInfo.new(0.15), {
+			BackgroundColor3 = selected and CONFIG.Colors.SecondaryAccent or CONFIG.Colors.UtilButton,
+		}):Play()
+	end
+end
+
+for order, def in ipairs(SETTINGS_CATEGORIES) do
+	local chip = Instance.new("TextButton", chipRow)
+	chip.Name = "Category_" .. def.Key
+	chip.LayoutOrder = order
+	chip.AutomaticSize = Enum.AutomaticSize.X
+	chip.Size = UDim2.new(0, 0, 1, 0)
+	chip.BackgroundColor3 = CONFIG.Colors.UtilButton
+	chip:SetAttribute("ColorType", "UtilButton")
+	chip.Font = CONFIG.Font
+	chip.TextColor3 = Color3.new(1, 1, 1)
+	chip.TextSize = 12
+	chip.ZIndex = 12
+	Instance.new("UICorner", chip).CornerRadius = UDim.new(1, 0)
+	do
+	local chipPad = Instance.new("UIPadding", chip)
+	chipPad.PaddingLeft = UDim.new(0, 10)
+	chipPad.PaddingRight = UDim.new(0, 10)
+	end
+	safeSetCursor(chip, "rbxasset://SystemCursor/Arrow")
+	Icons.bind(chip, def.Icon, { Mode = "label", Text = tr(def.Label), Px = 12 })
+	registerLocalizedString(def.Label)
+	registerLocalizedRefresher(function()
+		Icons.setText(chip, tr(def.Label))
+	end)
+	chipButtons[def.Key] = chip
+	table.insert(
+		connections,
+		chip.MouseButton1Click:Connect(function()
+			activeCategory = def.Key
+			paintChips()
+			settingsFilter()
+		end)
+	)
+end
+paintChips()
+
+table.insert(
+	connections,
+	settingsSearch:GetPropertyChangedSignal("Text"):Connect(function()
+		searchQuery = settingsSearch.Text:lower()
+		settingsFilter()
+	end)
+)
+
+table.insert(themedUpdaters, function(theme, fontData)
+	tintTween(settingsSearch, { BackgroundColor3 = theme.UtilButton, TextColor3 = theme.Text })
+	settingsSearch.PlaceholderColor3 = theme.InputEcho
+	settingsSearch.Font = fontData.Font
+	for key, chip in pairs(chipButtons) do
+		tintTween(chip, {
+			BackgroundColor3 = key == activeCategory and theme.SecondaryAccent or theme.UtilButton,
+		})
+		chip.Font = fontData.Font
+	end
+end)
 end
 
 local pickerFrame = Instance.new("Frame", settingsFrame)
@@ -4729,6 +5061,10 @@ local function createDropdownRow(labelText, buildEntries, getIndex, onSelect, se
 	local btn = Instance.new("TextButton", settingsScroll)
 	btn.Size = UDim2.new(1, -6, 0, 36)
 	btn.LayoutOrder = nextOrder()
+	btn:SetAttribute("Category", settingsCategory)
+	btn:SetAttribute("SearchKey", labelText:lower())
+	btn.LayoutOrder = (SETTINGS_RANK[settingsCategory] or 9) * 1000 + btn.LayoutOrder
+	settingsSection(settingsCategory)
 	btn.BackgroundColor3 = CONFIG.Colors.UtilButton
 	btn.Font = CONFIG.Font
 	btn.TextColor3 = CONFIG.Colors.Text
@@ -4769,6 +5105,10 @@ local function createToggleRow(labelText, initial, onChanged)
 	row.Size = UDim2.new(1, -6, 0, 36)
 	row.LayoutOrder = nextOrder()
 	row.BackgroundTransparency = 1
+	row:SetAttribute("Category", settingsCategory)
+	row:SetAttribute("SearchKey", labelText:lower())
+	row.LayoutOrder = (SETTINGS_RANK[settingsCategory] or 9) * 1000 + row.LayoutOrder
+	settingsSection(settingsCategory)
 
 	local label = Instance.new("TextLabel", row)
 	label.Size = UDim2.new(1, -60, 1, 0)
@@ -4834,6 +5174,16 @@ local function createToggleRow(labelText, initial, onChanged)
 			onChanged(state)
 		end)
 	)
+
+	settingsToggles[labelText] = function(value)
+		if state == value then
+			return
+		end
+		state = value
+		render(true)
+		onChanged(state)
+	end
+
 	return row
 end
 
@@ -4935,6 +5285,7 @@ do
 	end
 end
 
+settingsCategory = "Theme"
 createDropdownRow("Theme", function()
 	local entries = {}
 	for _, t in ipairs(themes) do
@@ -4953,7 +5304,9 @@ do
 	local editThemeBtn = Instance.new("TextButton", settingsScroll)
 	editThemeBtn.Name = "EditThemeBtn"
 	editThemeBtn.Size = UDim2.new(1, -6, 0, 36)
-	editThemeBtn.LayoutOrder = nextOrder()
+	editThemeBtn.LayoutOrder = SETTINGS_RANK.Theme * 1000 + nextOrder()
+	editThemeBtn:SetAttribute("Category", "Theme")
+	editThemeBtn:SetAttribute("SearchKey", "edit custom theme colors")
 	editThemeBtn.BackgroundColor3 = CONFIG.Colors.UtilButton
 	editThemeBtn.Font = CONFIG.Font
 	editThemeBtn.TextColor3 = CONFIG.Colors.Text
@@ -5256,6 +5609,7 @@ end, function(i)
 	saveSettings()
 end)
 
+settingsCategory = "Language"
 createDropdownRow("Language", function()
 	return languages
 end, function()
@@ -5271,6 +5625,7 @@ createToggleRow("Auto-Translate Logs", uiSettings.autoTranslate, function(on)
 	saveSettings()
 end)
 
+settingsCategory = "Theme"
 createToggleRow("Click Particles", uiSettings.particles, function(on)
 	uiSettings.particles = on
 	saveSettings()
@@ -5296,6 +5651,7 @@ createToggleRow("Background Blur", uiSettings.blur, function(on)
 end)
 
 
+settingsCategory = "Editor"
 createToggleRow("Editor Word Wrap", uiSettings.editorWordWrap == true, function(on)
 	uiSettings.editorWordWrap = on
 	inputBox.TextWrapped = on
@@ -5305,6 +5661,7 @@ createToggleRow("Editor Word Wrap", uiSettings.editorWordWrap == true, function(
 	saveSettings()
 end)
 
+settingsCategory = "Console"
 createToggleRow("Console Word Wrap", uiSettings.consoleWordWrap == true, function(on)
 	uiSettings.consoleWordWrap = on
 	templateEntry.TextWrapped = on
@@ -5318,36 +5675,32 @@ createToggleRow("Console Word Wrap", uiSettings.consoleWordWrap == true, functio
 	saveSettings()
 end)
 
+settingsCategory = "Editor"
 createToggleRow("Editor Line Numbers", uiSettings.editorLineNumbers == true, function(on)
 	uiSettings.editorLineNumbers = on
-	local eg = inputContainer:FindFirstChild("LineGutter")
-	if eg then eg.Visible = on end
-	local pad = on and 32 or 10
-	local ibp = inputBox:FindFirstChildOfClass("UIPadding")
-	if ibp then ibp.PaddingLeft = UDim.new(0, pad) end
-	local hl = inputContainer:FindFirstChild("HighlightLayer")
-	if hl then
-		local hlp = hl:FindFirstChildOfClass("UIPadding")
-		if hlp then hlp.PaddingLeft = UDim.new(0, pad) end
-	end
+	editorLineGutter.Visible = on
+	syncEditorGutter()
 	saveSettings()
 end)
 
+settingsCategory = "Console"
 createToggleRow("Console Line Numbers", uiSettings.consoleLineNumbers == true, function(on)
 	uiSettings.consoleLineNumbers = on
+	local inset = on and -(60 + consoleGutterWidth + 4) or -60
 	templateLineNumber.Visible = on
-	templateEntry.Size = UDim2.new(1, on and -90 or -60, 0, 0)
+	templateEntry.Size = UDim2.new(1, inset, 0, 0)
 	for _, child in ipairs(logContainer:GetChildren()) do
 		if child:IsA("Frame") and child.Name == "LogFrame" then
 			local ln = child:FindFirstChild("LineNumber")
 			local entry = child:FindFirstChild("LogEntry")
 			if ln then ln.Visible = on end
-			if entry then entry.Size = UDim2.new(1, on and -90 or -60, 0, 0) end
+			if entry then entry.Size = UDim2.new(1, inset, 0, 0) end
 		end
 	end
 	saveSettings()
 end)
 
+settingsCategory = "Console"
 createToggleRow("Auto-Scroll Logs", uiSettings.autoScroll, function(on)
 	if setAutoScroll then
 		setAutoScroll(on)
@@ -5355,12 +5708,83 @@ createToggleRow("Auto-Scroll Logs", uiSettings.autoScroll, function(on)
 	saveSettings()
 end)
 
+settingsCategory = "Mobile"
 createToggleRow("FPS Booster", uiSettings.fpsBooster, function(on)
 	uiSettings.fpsBooster = on
 	applyFpsBooster(on)
 	saveSettings()
 end)
 
+do
+local LOG_LIMITS = { 50, 100, 150, 250, 400 }
+
+local function setToggle(name, value)
+	local apply = settingsToggles[name]
+	if apply then
+		apply(value)
+	end
+end
+
+settingsCategory = "Mobile"
+
+createToggleRow("Mobile Mode", uiSettings.mobileMode == true, function(on)
+	uiSettings.mobileMode = on
+	if on then
+		setToggle("Click Particles", false)
+		setToggle("Border Glow", false)
+		setToggle("Background Blur", false)
+		setToggle("Reduce Animations", true)
+		setToggle("Load Hub Images", false)
+		setToggle("FPS Booster", true)
+	end
+	saveSettings()
+end)
+
+createToggleRow("Reduce Animations", uiSettings.reduceMotion == true, function(on)
+	uiSettings.reduceMotion = on
+	if not on then
+		uiSettings.mobileMode = false
+		setToggle("Mobile Mode", false)
+	end
+	saveSettings()
+end)
+
+createToggleRow("Load Hub Images", uiSettings.hubImages ~= false, function(on)
+	uiSettings.hubImages = on
+	if on then
+		uiSettings.mobileMode = false
+		setToggle("Mobile Mode", false)
+	end
+	saveSettings()
+end)
+
+createDropdownRow("Max Console Logs", function()
+	local entries = {}
+	for _, limit in ipairs(LOG_LIMITS) do
+		table.insert(entries, { Name = tostring(limit) })
+	end
+	return entries
+end, function()
+	for index, limit in ipairs(LOG_LIMITS) do
+		if limit == CONFIG.MaxLogs then
+			return index
+		end
+	end
+	return 3
+end, function(index)
+	CONFIG.MaxLogs = LOG_LIMITS[index]
+	uiSettings.maxLogs = LOG_LIMITS[index]
+	while #activeLogFrames > CONFIG.MaxLogs do
+		local oldest = table.remove(activeLogFrames, 1)
+		if oldest and oldest.Parent then
+			oldest:Destroy()
+		end
+	end
+	saveSettings()
+end)
+end
+
+settingsCategory = "General"
 createToggleRow("Anti-AFK", uiSettings.antiAfk, function(on)
 	uiSettings.antiAfk = on
 	applyAntiAfk(on)
@@ -5370,7 +5794,9 @@ end)
 local autoExecBtn = Instance.new("TextButton", settingsScroll)
 autoExecBtn.Name = "AutoExecBtn"
 autoExecBtn.Size = UDim2.new(1, -6, 0, 36)
-autoExecBtn.LayoutOrder = nextOrder()
+autoExecBtn.LayoutOrder = SETTINGS_RANK.General * 1000 + nextOrder()
+autoExecBtn:SetAttribute("Category", "General")
+autoExecBtn:SetAttribute("SearchKey", "auto execute scripts on join")
 autoExecBtn.BackgroundColor3 = CONFIG.Colors.UtilButton
 autoExecBtn.Font = CONFIG.Font
 autoExecBtn.TextColor3 = CONFIG.Colors.Text
@@ -5400,7 +5826,9 @@ table.insert(
 local replayTutorialBtn = Instance.new("TextButton", settingsScroll)
 replayTutorialBtn.Name = "ReplayTutorialBtn"
 replayTutorialBtn.Size = UDim2.new(1, -6, 0, 36)
-replayTutorialBtn.LayoutOrder = nextOrder()
+replayTutorialBtn.LayoutOrder = SETTINGS_RANK.General * 1000 + nextOrder()
+replayTutorialBtn:SetAttribute("Category", "General")
+replayTutorialBtn:SetAttribute("SearchKey", "replay tutorial")
 replayTutorialBtn.BackgroundColor3 = CONFIG.Colors.UtilButton
 replayTutorialBtn.Font = CONFIG.Font
 replayTutorialBtn.TextColor3 = CONFIG.Colors.Text
@@ -5432,7 +5860,9 @@ table.insert(
 consoleBtn = Instance.new("TextButton", settingsScroll)
 consoleBtn.Name = "ConsoleBtn"
 consoleBtn.Size = UDim2.new(1, -6, 0, 36)
-consoleBtn.LayoutOrder = nextOrder()
+consoleBtn.LayoutOrder = SETTINGS_RANK.General * 1000 + nextOrder()
+consoleBtn:SetAttribute("Category", "General")
+consoleBtn:SetAttribute("SearchKey", "open dev console")
 consoleBtn.BackgroundColor3 = CONFIG.Colors.SecondaryAccent
 consoleBtn.Font = CONFIG.BoldFont
 consoleBtn.TextColor3 = Color3.new(1, 1, 1)
@@ -5446,7 +5876,7 @@ safeSetCursor(consoleBtn, "rbxasset://SystemCursor/Arrow")
 local closeSettingsBtn = Instance.new("TextButton", settingsScroll)
 closeSettingsBtn.Name = "CloseBtn"
 closeSettingsBtn.Size = UDim2.new(1, -6, 0, 36)
-closeSettingsBtn.LayoutOrder = nextOrder()
+closeSettingsBtn.LayoutOrder = 999999
 closeSettingsBtn.BackgroundColor3 = CONFIG.Colors.UtilButton
 closeSettingsBtn.Font = CONFIG.BoldFont
 closeSettingsBtn.TextColor3 = CONFIG.Colors.Text
@@ -5480,6 +5910,8 @@ table.insert(themedUpdaters, function(theme, fontData)
 	tintTween(pickerScroll, { ScrollBarImageColor3 = theme.PrimaryAccent })
 	tintTween(inputFocusStroke, { Color = theme.PrimaryAccent })
 end)
+
+settingsFilter()
 
 function applySettings()
 	local theme = themes[currentThemeIndex].Colors
@@ -5555,6 +5987,11 @@ function applySettings()
 	inputBox.TextSize = CONFIG.TextSize
 	templateEntry.TextSize = CONFIG.TextSize
 	templateEntry.Font = fontData.Font
+	editorLineGutter.Font = fontData.Font
+	editorLineGutter.TextSize = CONFIG.TextSize
+	templateLineNumber.Font = fontData.Font
+	templateLineNumber.TextSize = CONFIG.TextSize
+	syncEditorGutter()
 	refreshInputHighlight()
 end
 
@@ -6541,6 +6978,9 @@ scriptHub.Build = function()
 	end
 
 	local function queueImageAsset(target, url, apply)
+		if uiSettings.hubImages == false then
+			return
+		end
 		local normalized = normalizeImageUrl(url)
 		if not normalized or not canLoadWebImages then
 			return
@@ -8954,7 +9394,11 @@ function log(message, messageType, bulkLoad)
 	logFrame.LayoutOrder = logCounter
 	local logEntry = logFrame.LogEntry
 	local logLine = logFrame:FindFirstChild("LineNumber")
-	if logLine then logLine.Text = tostring(logCounter) end
+	if logLine then
+		logLine.Text = tostring(logCounter)
+		syncConsoleGutter(logLine.Text)
+		logLine.Size = UDim2.new(0, consoleGutterWidth, 0, 0)
+	end
 	local messageStr = tostring(message)
 
 	logEntry:SetAttribute("LogType", messageType)
