@@ -766,6 +766,8 @@ local uiSettings = {
 	reduceMotion = false,
 	hubImages = true,
 	maxLogs = 150,
+	logTimestamps = false,
+	syntaxHighlight = true,
 	editorSplit = false,
 	editorHeight = 112,
 }
@@ -2032,6 +2034,7 @@ end
 end
 
 local saveSettings
+local resetSettings
 do
 local SETTINGS_FILE = "WorldClient_Settings.json"
 local LEGACY_CUSTOM_THEME_INDEX = 13
@@ -2070,6 +2073,8 @@ function saveSettings()
 				reduceMotion = uiSettings.reduceMotion,
 				hubImages = uiSettings.hubImages,
 				maxLogs = uiSettings.maxLogs,
+				logTimestamps = uiSettings.logTimestamps,
+				syntaxHighlight = uiSettings.syntaxHighlight,
 				editorSplit = uiSettings.editorSplit,
 				editorHeight = uiSettings.editorHeight,
 				tutorialCompleted = tutorialCompleted,
@@ -2079,6 +2084,16 @@ function saveSettings()
 				customTheme = customTheme,
 			})
 		)
+	end)
+end
+
+function resetSettings()
+	pcall(function()
+		if type(delfile) == "function" and type(isfile) == "function" and isfile(SETTINGS_FILE) then
+			delfile(SETTINGS_FILE)
+		else
+			writefile(SETTINGS_FILE, "{}")
+		end
 	end)
 end
 
@@ -2166,6 +2181,12 @@ local function loadSettings()
 	end
 	if type(data.maxLogs) == "number" then
 		uiSettings.maxLogs = math.clamp(math.floor(data.maxLogs), 25, 500)
+	end
+	if type(data.logTimestamps) == "boolean" then
+		uiSettings.logTimestamps = data.logTimestamps
+	end
+	if type(data.syntaxHighlight) == "boolean" then
+		uiSettings.syntaxHighlight = data.syntaxHighlight
 	end
 	if type(data.editorSplit) == "boolean" then
 		uiSettings.editorSplit = data.editorSplit
@@ -3139,7 +3160,7 @@ editorLineGutter.TextYAlignment = Enum.TextYAlignment.Top
 editorLineGutter.AutomaticSize = Enum.AutomaticSize.Y
 editorLineGutter.Size = UDim2.new(0, 24, 0, 0)
 editorLineGutter.Position = UDim2.new(0, 0, 0, 5)
-editorLineGutter.Visible = uiSettings.editorLineNumbers == true
+editorLineGutter.Visible = false
 editorLineGutter.Text = "1"
 
 local inputBox
@@ -3148,13 +3169,29 @@ local editorGutterPad
 local updateEditorLines
 local syncEditorGutter
 do
+local EDITOR_IDLE = 0.5
 local lastLineCount = -1
 local lastGutterWidth = -1
+local typingUntil = 0
+
+local function applyGutterVisibility()
+	editorLineGutter.Visible = uiSettings.editorLineNumbers == true
+		and inputBox ~= nil
+		and inputBox.Text ~= ""
+		and os.clock() >= typingUntil
+end
+
+local function noteTyping()
+	typingUntil = os.clock() + EDITOR_IDLE
+	editorLineGutter.Visible = false
+	task.delay(EDITOR_IDLE, applyGutterVisibility)
+end
 
 function updateEditorLines()
 	if not inputBox then
 		return
 	end
+	noteTyping()
 	local lines = 1
 	for _ in string.gmatch(inputBox.Text, "\n") do
 		lines += 1
@@ -3189,6 +3226,8 @@ function syncEditorGutter()
 	else
 		editorGutterPad(10)
 	end
+	typingUntil = 0
+	applyGutterVisibility()
 end
 end
 
@@ -3456,7 +3495,7 @@ do
 	end
 
 	function refreshInputHighlight()
-		if inputBox:IsFocused() or inputBox.Text == "" then
+		if uiSettings.syntaxHighlight == false or inputBox:IsFocused() or inputBox.Text == "" then
 			highlightLabel.Visible = false
 			inputBox.TextTransparency = 0
 		else
@@ -3504,9 +3543,22 @@ templateLineNumber.Size = UDim2.new(0, 26, 0, 0)
 templateLineNumber.AutomaticSize = Enum.AutomaticSize.Y
 templateLineNumber.Visible = uiSettings.consoleLineNumbers == true
 templateLineNumber.LayoutOrder = 1
+local templateStamp = Instance.new("TextLabel", templateLog)
+templateStamp.Name = "Timestamp"
+templateStamp.BackgroundTransparency = 1
+templateStamp.Font = CONFIG.Font
+templateStamp.TextSize = CONFIG.TextSize
+templateStamp.TextColor3 = Color3.fromRGB(120, 120, 120)
+templateStamp.TextXAlignment = Enum.TextXAlignment.Right
+templateStamp.TextYAlignment = Enum.TextYAlignment.Top
+templateStamp.Size = UDim2.new(0, 52, 0, 0)
+templateStamp.AutomaticSize = Enum.AutomaticSize.Y
+templateStamp.Visible = uiSettings.logTimestamps == true
+templateStamp.LayoutOrder = 2
+
 local templateEntry = Instance.new("TextLabel", templateLog)
 templateEntry.Name = "LogEntry"
-templateEntry.LayoutOrder = 2
+templateEntry.LayoutOrder = 3
 templateEntry.BackgroundTransparency = 1
 templateEntry.Font = CONFIG.Font
 templateEntry.TextSize = CONFIG.TextSize
@@ -3517,15 +3569,50 @@ templateEntry.AutomaticSize = Enum.AutomaticSize.Y
 templateEntry.RichText = true
 
 local consoleGutterWidth = 26
+local consoleStampWidth = 52
 local syncConsoleGutter
+local refreshConsoleColumns
 do
 local widestDigits = 0
 
 local function entryInset()
+	local inset = 60
 	if uiSettings.consoleLineNumbers == true then
-		return -(60 + consoleGutterWidth + 4)
+		inset += consoleGutterWidth + 4
 	end
-	return -60
+	if uiSettings.logTimestamps == true then
+		inset += consoleStampWidth + 4
+	end
+	return -inset
+end
+
+function refreshConsoleColumns()
+	local showLines = uiSettings.consoleLineNumbers == true
+	local showStamps = uiSettings.logTimestamps == true
+	consoleStampWidth = math.ceil(CONFIG.TextSize * 3.7)
+	templateLineNumber.Visible = showLines
+	templateLineNumber.Size = UDim2.new(0, consoleGutterWidth, 0, 0)
+	templateStamp.Visible = showStamps
+	templateStamp.Size = UDim2.new(0, consoleStampWidth, 0, 0)
+	templateEntry.Size = UDim2.new(1, entryInset(), 0, 0)
+	for _, child in ipairs(logContainer:GetChildren()) do
+		if child:IsA("Frame") and child.Name == "LogFrame" then
+			local ln = child:FindFirstChild("LineNumber")
+			local stamp = child:FindFirstChild("Timestamp")
+			local entry = child:FindFirstChild("LogEntry")
+			if ln then
+				ln.Visible = showLines
+				ln.Size = UDim2.new(0, consoleGutterWidth, 0, 0)
+			end
+			if stamp then
+				stamp.Visible = showStamps
+				stamp.Size = UDim2.new(0, consoleStampWidth, 0, 0)
+			end
+			if entry then
+				entry.Size = UDim2.new(1, entryInset(), 0, 0)
+			end
+		end
+	end
 end
 
 function syncConsoleGutter(numberText)
@@ -3535,27 +3622,16 @@ function syncConsoleGutter(numberText)
 	end
 	widestDigits = digits
 	consoleGutterWidth = math.max(26, 6 + digits * math.ceil(CONFIG.TextSize * 0.6))
-	templateLineNumber.Size = UDim2.new(0, consoleGutterWidth, 0, 0)
-	templateEntry.Size = UDim2.new(1, entryInset(), 0, 0)
-	for _, child in ipairs(logContainer:GetChildren()) do
-		if child:IsA("Frame") and child.Name == "LogFrame" then
-			local ln = child:FindFirstChild("LineNumber")
-			local entry = child:FindFirstChild("LogEntry")
-			if ln then
-				ln.Size = UDim2.new(0, consoleGutterWidth, 0, 0)
-			end
-			if entry then
-				entry.Size = UDim2.new(1, entryInset(), 0, 0)
-			end
-		end
-	end
+	refreshConsoleColumns()
 end
 end
+
+refreshConsoleColumns()
 
 do
 local templateActions = Instance.new("Frame", templateLog)
 templateActions.Name = "Actions"
-templateActions.LayoutOrder = 3
+templateActions.LayoutOrder = 4
 templateActions.Size = UDim2.new(0, 60, 1, 0)
 templateActions.BackgroundTransparency = 1
 templateActions.Visible = false
@@ -4890,7 +4966,8 @@ local SETTINGS_RANK = {
 	Editor = 3,
 	Console = 4,
 	Mobile = 5,
-	General = 6,
+	Hub = 6,
+	General = 7,
 }
 
 do
@@ -4901,6 +4978,7 @@ local SETTINGS_CATEGORIES = {
 	{ Key = "Editor", Label = "Editor", Icon = "pencil" },
 	{ Key = "Console", Label = "Console", Icon = "monitor" },
 	{ Key = "Mobile", Label = "Mobile", Icon = "phone" },
+	{ Key = "Hub", Label = "Hub", Icon = "library" },
 	{ Key = "General", Label = "General", Icon = "settings" },
 }
 
@@ -5907,7 +5985,6 @@ end)
 settingsCategory = "Editor"
 createToggleRow("Editor Line Numbers", uiSettings.editorLineNumbers == true, function(on)
 	uiSettings.editorLineNumbers = on
-	editorLineGutter.Visible = on
 	syncEditorGutter()
 	saveSettings()
 end)
@@ -5915,17 +5992,13 @@ end)
 settingsCategory = "Console"
 createToggleRow("Console Line Numbers", uiSettings.consoleLineNumbers == true, function(on)
 	uiSettings.consoleLineNumbers = on
-	local inset = on and -(60 + consoleGutterWidth + 4) or -60
-	templateLineNumber.Visible = on
-	templateEntry.Size = UDim2.new(1, inset, 0, 0)
-	for _, child in ipairs(logContainer:GetChildren()) do
-		if child:IsA("Frame") and child.Name == "LogFrame" then
-			local ln = child:FindFirstChild("LineNumber")
-			local entry = child:FindFirstChild("LogEntry")
-			if ln then ln.Visible = on end
-			if entry then entry.Size = UDim2.new(1, inset, 0, 0) end
-		end
-	end
+	refreshConsoleColumns()
+	saveSettings()
+end)
+
+createToggleRow("Log Timestamps", uiSettings.logTimestamps == true, function(on)
+	uiSettings.logTimestamps = on
+	refreshConsoleColumns()
 	saveSettings()
 end)
 
@@ -6023,6 +6096,30 @@ end, function(index)
 end)
 end
 
+settingsCategory = "Editor"
+createToggleRow("Syntax Highlighting", uiSettings.syntaxHighlight ~= false, function(on)
+	uiSettings.syntaxHighlight = on
+	refreshInputHighlight()
+	saveSettings()
+end)
+
+settingsCategory = "Hub"
+createDropdownRow("Script Previews Per Row", function()
+	local entries = {}
+	for count = 1, 4 do
+		table.insert(entries, { Name = tostring(count) })
+	end
+	return entries
+end, function()
+	return math.clamp(scriptHub.Columns or 4, 1, 4)
+end, function(index)
+	scriptHub.Columns = index
+	if scriptHub.SetColumns then
+		scriptHub.SetColumns(index)
+	end
+	saveSettings()
+end)
+
 settingsCategory = "General"
 createToggleRow("Anti-AFK", uiSettings.antiAfk, function(on)
 	uiSettings.antiAfk = on
@@ -6095,6 +6192,55 @@ table.insert(
 		showTutorial()
 	end)
 )
+
+local resetSettingsBtn = Instance.new("TextButton", settingsScroll)
+resetSettingsBtn.Name = "ResetSettingsBtn"
+resetSettingsBtn.Size = UDim2.new(1, -6, 0, 36)
+resetSettingsBtn.LayoutOrder = SETTINGS_RANK.General * 1000 + nextOrder()
+resetSettingsBtn:SetAttribute("Category", "General")
+resetSettingsBtn:SetAttribute("SearchKey", "reset all settings defaults")
+resetSettingsBtn.BackgroundColor3 = CONFIG.Colors.UtilButton
+resetSettingsBtn.Font = CONFIG.Font
+resetSettingsBtn.TextColor3 = CONFIG.Colors.Error
+resetSettingsBtn.TextSize = 15
+Icons.bind(resetSettingsBtn, "refresh", { Mode = "label", Align = "center", Text = tr("Reset All Settings"), Px = 14 })
+resetSettingsBtn.ZIndex = 11
+Instance.new("UICorner", resetSettingsBtn).CornerRadius = UDim.new(0, 6)
+addDepthGradient(resetSettingsBtn)
+safeSetCursor(resetSettingsBtn, "rbxasset://SystemCursor/Arrow")
+registerLocalizedString("Reset All Settings")
+registerLocalizedString("Settings reset. Re-execute World Client to load the defaults.")
+registerLocalizedRefresher(function()
+	Icons.setText(resetSettingsBtn, tr("Reset All Settings"))
+end)
+table.insert(themedUpdaters, function(theme, fontData)
+	tintTween(resetSettingsBtn, { BackgroundColor3 = theme.UtilButton, TextColor3 = theme.Error })
+	resetSettingsBtn.Font = fontData.Font
+end)
+do
+local armed = false
+table.insert(
+	connections,
+	resetSettingsBtn.MouseButton1Click:Connect(function()
+		if not armed then
+			armed = true
+			Icons.setText(resetSettingsBtn, tr("Tap again to confirm"))
+			task.delay(4, function()
+				if armed and resetSettingsBtn.Parent then
+					armed = false
+					Icons.setText(resetSettingsBtn, tr("Reset All Settings"))
+				end
+			end)
+			return
+		end
+		armed = false
+		Icons.setText(resetSettingsBtn, tr("Reset All Settings"))
+		resetSettings()
+		log(tr("Settings reset. Re-execute World Client to load the defaults."), "Warning")
+	end)
+)
+end
+registerLocalizedString("Tap again to confirm")
 
 consoleBtn = Instance.new("TextButton", settingsScroll)
 consoleBtn.Name = "ConsoleBtn"
@@ -6230,6 +6376,9 @@ function applySettings()
 	editorLineGutter.TextSize = CONFIG.TextSize
 	templateLineNumber.Font = fontData.Font
 	templateLineNumber.TextSize = CONFIG.TextSize
+	templateStamp.Font = fontData.Font
+	templateStamp.TextSize = CONFIG.TextSize
+	refreshConsoleColumns()
 	syncEditorGutter()
 	refreshInputHighlight()
 end
@@ -8364,16 +8513,18 @@ scriptHub.Build = function()
 		card.Text = ""
 		card.ClipsDescendants = true
 		card.ZIndex = 18
-		Instance.new("UICorner", card).CornerRadius = UDim.new(0, 8)
+		Instance.new("UICorner", card).CornerRadius = UDim.new(0, 10)
 		safeSetCursor(card, "rbxasset://SystemCursor/Arrow")
 		entry.Card = card
 
 		local stroke = Instance.new("UIStroke", card)
-		stroke.Color = CONFIG.Colors.PrimaryAccent
+		stroke.Color = CONFIG.Colors.SecondaryAccent
 		stroke.Thickness = 1
-		stroke.Transparency = 0.75
+		stroke.Transparency = 0.78
 
 		local art = Instance.new("ImageLabel", card)
+		art.AnchorPoint = Vector2.new(0.5, 0.5)
+		art.Position = UDim2.new(0.5, 0, 0.5, 0)
 		art.Size = UDim2.new(1, 0, 1, 0)
 		art.BackgroundTransparency = 1
 		art.ScaleType = Enum.ScaleType.Crop
@@ -8397,9 +8548,10 @@ scriptHub.Build = function()
 		local scrimGradient = Instance.new("UIGradient", scrim)
 		scrimGradient.Rotation = 90
 		scrimGradient.Transparency = NumberSequence.new({
-			NumberSequenceKeypoint.new(0, 0.95),
-			NumberSequenceKeypoint.new(0.35, 0.6),
-			NumberSequenceKeypoint.new(1, 0.05),
+			NumberSequenceKeypoint.new(0, 1),
+			NumberSequenceKeypoint.new(0.3, 0.72),
+			NumberSequenceKeypoint.new(0.68, 0.28),
+			NumberSequenceKeypoint.new(1, 0),
 		})
 
 		local badge = createProviderBadge(card, hubProviderByKey[entry.Provider], 18, 21)
@@ -8563,13 +8715,19 @@ scriptHub.Build = function()
 		table.insert(
 			connections,
 			card.MouseEnter:Connect(function()
-				TweenService:Create(stroke, TweenInfo.new(0.15), { Transparency = 0.15 }):Play()
+				TweenService:Create(stroke, TweenInfo.new(0.15), { Transparency = 0.05, Thickness = 1.5 }):Play()
+				TweenService:Create(art, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {
+					Size = UDim2.new(1, 18, 1, 18),
+				}):Play()
 			end)
 		)
 		table.insert(
 			connections,
 			card.MouseLeave:Connect(function()
-				TweenService:Create(stroke, TweenInfo.new(0.15), { Transparency = 0.75 }):Play()
+				TweenService:Create(stroke, TweenInfo.new(0.15), { Transparency = 0.78, Thickness = 1 }):Play()
+				TweenService:Create(art, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {
+					Size = UDim2.new(1, 0, 1, 0),
+				}):Play()
 			end)
 		)
 		table.insert(
@@ -8620,7 +8778,7 @@ scriptHub.Build = function()
 	local ROW_GAP, CONTENT_INSET = 3, 40
 
 	local function updateGrid()
-		local columns = math.clamp(scriptHub.Columns or 3, 1, 4)
+		local columns = math.clamp(scriptHub.Columns or 4, 1, 4)
 		local available = resultScroll.AbsoluteSize.X - resultScroll.ScrollBarThickness - 2
 		if available <= 0 then
 			return
@@ -8682,10 +8840,16 @@ scriptHub.Build = function()
 
 	table.insert(connections, resultScroll:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateGrid))
 
+	scriptHub.SetColumns = function(count)
+		scriptHub.Columns = math.clamp(count, 1, 4)
+		Icons.setName(columnsBtn, "columns" .. scriptHub.Columns)
+		updateGrid()
+	end
+
 	table.insert(
 		connections,
 		columnsBtn.MouseButton1Click:Connect(function()
-			scriptHub.Columns = (math.clamp(scriptHub.Columns or 3, 1, 4) % 4) + 1
+			scriptHub.Columns = (math.clamp(scriptHub.Columns or 4, 1, 4) % 4) + 1
 			Icons.setName(columnsBtn, "columns" .. scriptHub.Columns)
 			createClickParticles(columnsBtn)
 			updateGrid()
@@ -9641,6 +9805,11 @@ function log(message, messageType, bulkLoad)
 		logLine.Text = tostring(logCounter)
 		syncConsoleGutter(logLine.Text)
 		logLine.Size = UDim2.new(0, consoleGutterWidth, 0, 0)
+	end
+	local logStamp = logFrame:FindFirstChild("Timestamp")
+	if logStamp then
+		logStamp.Text = os.date("%H:%M:%S")
+		logStamp.Size = UDim2.new(0, consoleStampWidth, 0, 0)
 	end
 	local messageStr = tostring(message)
 
