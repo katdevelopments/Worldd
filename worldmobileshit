@@ -271,6 +271,198 @@ local themes = {
 		},
 	},
 	{
+		Name = "Catppuccin",
+		Colors = {
+			Background = Color3.fromRGB(30, 30, 46),
+			PrimaryAccent = Color3.fromRGB(203, 166, 247),
+			SecondaryAccent = Color3.fromRGB(245, 194, 231),
+			Text = Color3.fromRGB(205, 214, 244),
+			Error = Color3.fromRGB(243, 139, 168),
+			Warning = Color3.fromRGB(249, 226, 175),
+			Info = Color3.fromRGB(116, 199, 236),
+			InputEcho = Color3.fromRGB(108, 112, 134),
+			MinimizeButton = Color3.fromRGB(69, 71, 90),
+			UtilButton = Color3.fromRGB(69, 71, 90),
+			UtilButtonHover = Color3.fromRGB(88, 91, 112),
+		},
+	},
+	{
+		Name = "Latte",
+		Colors = {
+			Background = Color3.fromRGB(239, 241, 245),
+			PrimaryAccent = Color3.fromRGB(30, 102, 245),
+			SecondaryAccent = Color3.fromRGB(136, 57, 239),
+			Text = Color3.fromRGB(76, 79, 105),
+			Error = Color3.fromRGB(210, 15, 57),
+			Warning = Color3.fromRGB(223, 142, 29),
+			Info = Color3.fromRGB(32, 159, 181),
+			InputEcho = Color3.fromRGB(124, 127, 147),
+			MinimizeButton = Color3.fromRGB(204, 208, 218),
+			UtilButton = Color3.fromRGB(204, 208, 218),
+			UtilButtonHover = Color3.fromRGB(188, 192, 204),
+		},
+	},
+	{
+		Name = "Gruvbox",
+		Colors = {
+			Background = Color3.fromRGB(40, 40, 40),
+			PrimaryAccent = Color3.fromRGB(254, 128, 25),
+			SecondaryAccent = Color3.fromRGB(142, 192, 124),
+			Text = Color3.fromRGB(235, 219, 178),
+			Error = Color3.fromRGB(251, 73, 52),
+			Warning = Color3.fromRGB(250, 189, 47),
+			Info = Color3.fromRGB(131, 165, 152),
+			InputEcho = Color3.fromRGB(146, 131, 116),
+			MinimizeButton = Color3.fromRGB(60, 56, 54),
+			UtilButton = Color3.fromRGB(60, 56, 54),
+			UtilButtonHover = Color3.fromRGB(80, 73, 69),
+		},
+	},
+	{
+		Name = "Tokyo Night",
+		Colors = {
+			Background = Color3.fromRGB(26, 27, 38),
+			PrimaryAccent = Color3.fromRGB(122, 162, 247),
+			SecondaryAccent = Color3.fromRGB(187, 154, 247),
+			Text = Color3.fromRGB(192, 202, 245),
+			Error = Color3.fromRGB(247, 118, 142),
+			Warning = Color3.fromRGB(224, 175, 104),
+			Info = Color3.fromRGB(125, 207, 255),
+			InputEcho = Color3.fromRGB(86, 95, 137),
+			MinimizeButton = Color3.fromRGB(41, 46, 66),
+			UtilButton = Color3.fromRGB(41, 46, 66),
+			UtilButtonHover = Color3.fromRGB(59, 66, 97),
+		},
+	},
+	{
+		Name = "One Dark",
+		Colors = {
+			Background = Color3.fromRGB(40, 44, 52),
+			PrimaryAccent = Color3.fromRGB(97, 175, 239),
+			SecondaryAccent = Color3.fromRGB(198, 120, 221),
+			Text = Color3.fromRGB(171, 178, 191),
+			Error = Color3.fromRGB(224, 108, 117),
+			Warning = Color3.fromRGB(229, 192, 123),
+			Info = Color3.fromRGB(86, 182, 194),
+			InputEcho = Color3.fromRGB(92, 99, 112),
+			MinimizeButton = Color3.fromRGB(62, 68, 81),
+			UtilButton = Color3.fromRGB(62, 68, 81),
+			UtilButtonHover = Color3.fromRGB(75, 82, 99),
+		},
+	},
+	{
+		Name = "Monokai",
+		Colors = {
+			Background = Color3.fromRGB(39, 40, 34),
+			PrimaryAccent = Color3.fromRGB(249, 38, 114),
+			SecondaryAccent = Color3.fromRGB(166, 226, 46),
+			Text = Color3.fromRGB(248, 248, 242),
+			Error = Color3.fromRGB(255, 85, 85),
+			Warning = Color3.fromRGB(230, 219, 116),
+			Info = Color3.fromRGB(102, 217, 239),
+			InputEcho = Color3.fromRGB(117, 113, 94),
+			MinimizeButton = Color3.fromRGB(62, 61, 50),
+			UtilButton = Color3.fromRGB(62, 61, 50),
+			UtilButtonHover = Color3.fromRGB(73, 72, 62),
+		},
+	},
+	{
+		Name = "Everforest",
+		Colors = {
+			Background = Color3.fromRGB(45, 53, 59),
+			PrimaryAccent = Color3.fromRGB(167, 192, 128),
+			SecondaryAccent = Color3.fromRGB(131, 192, 146),
+			Text = Color3.fromRGB(211, 198, 170),
+			Error = Color3.fromRGB(230, 126, 128),
+			Warning = Color3.fromRGB(219, 188, 127),
+			Info = Color3.fromRGB(127, 187, 179),
+			InputEcho = Color3.fromRGB(133, 146, 137),
+			MinimizeButton = Color3.fromRGB(52, 63, 68),
+			UtilButton = Color3.fromRGB(52, 63, 68),
+			UtilButtonHover = Color3.fromRGB(61, 72, 77),
+		},
+	},
+	{
+		Name = "Cyberpunk",
+		Colors = {
+			Background = Color3.fromRGB(10, 6, 20),
+			PrimaryAccent = Color3.fromRGB(252, 238, 10),
+			SecondaryAccent = Color3.fromRGB(0, 240, 255),
+			Text = Color3.fromRGB(240, 246, 252),
+			Error = Color3.fromRGB(255, 42, 109),
+			Warning = Color3.fromRGB(255, 176, 0),
+			Info = Color3.fromRGB(5, 217, 232),
+			InputEcho = Color3.fromRGB(138, 109, 196),
+			MinimizeButton = Color3.fromRGB(45, 17, 82),
+			UtilButton = Color3.fromRGB(45, 17, 82),
+			UtilButtonHover = Color3.fromRGB(74, 28, 130),
+		},
+	},
+	{
+		Name = "Amethyst",
+		Colors = {
+			Background = Color3.fromRGB(24, 16, 37),
+			PrimaryAccent = Color3.fromRGB(168, 85, 247),
+			SecondaryAccent = Color3.fromRGB(192, 132, 252),
+			Text = Color3.fromRGB(243, 232, 255),
+			Error = Color3.fromRGB(244, 63, 94),
+			Warning = Color3.fromRGB(250, 204, 21),
+			Info = Color3.fromRGB(216, 180, 254),
+			InputEcho = Color3.fromRGB(148, 120, 180),
+			MinimizeButton = Color3.fromRGB(76, 29, 149),
+			UtilButton = Color3.fromRGB(76, 29, 149),
+			UtilButtonHover = Color3.fromRGB(107, 33, 168),
+		},
+	},
+	{
+		Name = "Matcha",
+		Colors = {
+			Background = Color3.fromRGB(18, 26, 20),
+			PrimaryAccent = Color3.fromRGB(124, 179, 66),
+			SecondaryAccent = Color3.fromRGB(156, 204, 101),
+			Text = Color3.fromRGB(223, 237, 216),
+			Error = Color3.fromRGB(229, 115, 115),
+			Warning = Color3.fromRGB(255, 193, 7),
+			Info = Color3.fromRGB(174, 213, 129),
+			InputEcho = Color3.fromRGB(124, 145, 120),
+			MinimizeButton = Color3.fromRGB(30, 52, 34),
+			UtilButton = Color3.fromRGB(30, 52, 34),
+			UtilButtonHover = Color3.fromRGB(45, 74, 50),
+		},
+	},
+	{
+		Name = "Sakura",
+		Colors = {
+			Background = Color3.fromRGB(255, 245, 247),
+			PrimaryAccent = Color3.fromRGB(216, 99, 140),
+			SecondaryAccent = Color3.fromRGB(240, 138, 170),
+			Text = Color3.fromRGB(80, 42, 54),
+			Error = Color3.fromRGB(200, 40, 60),
+			Warning = Color3.fromRGB(185, 115, 20),
+			Info = Color3.fromRGB(170, 110, 200),
+			InputEcho = Color3.fromRGB(150, 110, 125),
+			MinimizeButton = Color3.fromRGB(250, 215, 225),
+			UtilButton = Color3.fromRGB(250, 220, 230),
+			UtilButtonHover = Color3.fromRGB(244, 196, 212),
+		},
+	},
+	{
+		Name = "Slate",
+		Colors = {
+			Background = Color3.fromRGB(15, 23, 42),
+			PrimaryAccent = Color3.fromRGB(100, 116, 139),
+			SecondaryAccent = Color3.fromRGB(148, 163, 184),
+			Text = Color3.fromRGB(226, 232, 240),
+			Error = Color3.fromRGB(248, 113, 113),
+			Warning = Color3.fromRGB(251, 191, 36),
+			Info = Color3.fromRGB(203, 213, 225),
+			InputEcho = Color3.fromRGB(128, 140, 160),
+			MinimizeButton = Color3.fromRGB(30, 41, 59),
+			UtilButton = Color3.fromRGB(30, 41, 59),
+			UtilButtonHover = Color3.fromRGB(51, 65, 85),
+		},
+	},
+	{
 		Name = "Custom",
 		Colors = customThemeColors,
 	},
@@ -487,7 +679,30 @@ local uiSettings = {
 	consoleWordWrap = true,
 	editorLineNumbers = false,
 	consoleLineNumbers = false,
+	iconStyle = "emoji",
+	mobileMode = false,
+	reduceMotion = false,
+	hubImages = true,
+	maxLogs = 150,
+	logTimestamps = false,
+	syntaxHighlight = true,
 }
+
+do
+local realTweenService = TweenService
+local instantInfo = TweenInfo.new(0, Enum.EasingStyle.Linear)
+TweenService = {
+	Create = function(_, object, info, properties)
+		if uiSettings.reduceMotion then
+			info = instantInfo
+		end
+		return realTweenService:Create(object, info, properties)
+	end,
+	GetValue = function(_, alpha, easingStyle, easingDirection)
+		return realTweenService:GetValue(alpha, easingStyle, easingDirection)
+	end,
+}
+end
 
 local setAutoScroll
 local openAutoExec
@@ -502,7 +717,7 @@ local scriptHub = {
 	},
 	Button = nil,
 	AddSaved = nil,
-	Columns = 3,
+	Columns = 4,
 }
 
 local httpGet
@@ -780,9 +995,965 @@ end
 local themedUpdaters = {}
 local applySettings
 
+local Icons
+do
+local ICON_GAP = 4
+local ICON_STYLE_VECTOR = 2
+
+local function ln(x1, y1, x2, y2, w)
+	return { "l", x1, y1, x2, y2, w or 0.09 }
+end
+local function bx(x, y, w, h, t, r)
+	return { "b", x, y, w, h, t or 0.09, r or 0.1 }
+end
+local function rg(x, y, d, t)
+	return { "o", x, y, d, t or 0.09 }
+end
+local function dt(x, y, d)
+	return { "c", x, y, d }
+end
+local function tg(x, y, w, h, dir)
+	return { "t", x, y, w, h, dir }
+end
+local function ac(x, y, r, a0, a1, w)
+	return { "a", x, y, r, a0, a1, w or 0.09 }
+end
+
+local function join(...)
+	local out = {}
+	for _, list in ipairs({ ... }) do
+		for _, item in ipairs(list) do
+			table.insert(out, item)
+		end
+	end
+	return out
+end
+
+local function poly(pts, w, close)
+	local out = {}
+	for i = 1, #pts - 1 do
+		table.insert(out, ln(pts[i][1], pts[i][2], pts[i + 1][1], pts[i + 1][2], w))
+	end
+	if close and #pts > 2 then
+		table.insert(out, ln(pts[#pts][1], pts[#pts][2], pts[1][1], pts[1][2], w))
+	end
+	return out
+end
+
+local function starPoly(cx, cy, outer, inner, count, w)
+	local pts = {}
+	for i = 0, count * 2 - 1 do
+		local ang = math.rad(-90 + i * (180 / count))
+		local rad = (i % 2 == 0) and outer or inner
+		table.insert(pts, { cx + math.cos(ang) * rad, cy + math.sin(ang) * rad })
+	end
+	return poly(pts, w, true)
+end
+
+local registry = {
+	globe = {
+		Emoji = "🌐",
+		Shapes = {
+			rg(0.5, 0.5, 0.84),
+			ln(0.08, 0.5, 0.92, 0.5, 0.075),
+			bx(0.5, 0.5, 0.34, 0.84, 0.075, 1),
+		},
+	},
+	world = {
+		Emoji = "🌍",
+		Shapes = {
+			rg(0.5, 0.5, 0.84),
+			ln(0.08, 0.5, 0.92, 0.5, 0.075),
+			bx(0.5, 0.5, 0.34, 0.84, 0.075, 1),
+		},
+	},
+	search = {
+		Emoji = "🔎",
+		Shapes = {
+			rg(0.42, 0.42, 0.56, 0.1),
+			ln(0.66, 0.66, 0.9, 0.9, 0.11),
+		},
+	},
+	searchAlt = {
+		Emoji = "🔍",
+		Shapes = {
+			rg(0.42, 0.42, 0.56, 0.1),
+			ln(0.66, 0.66, 0.9, 0.9, 0.11),
+		},
+	},
+	play = {
+		Emoji = "▶️",
+		Shapes = { tg(0.54, 0.5, 0.6, 0.68, "right") },
+	},
+	chevronsUp = {
+		Emoji = "⏫",
+		Shapes = {
+			ln(0.2, 0.48, 0.5, 0.2, 0.1),
+			ln(0.5, 0.2, 0.8, 0.48, 0.1),
+			ln(0.2, 0.8, 0.5, 0.52, 0.1),
+			ln(0.5, 0.52, 0.8, 0.8, 0.1),
+		},
+	},
+	chevronDown = {
+		Emoji = "▼",
+		Shapes = {
+			ln(0.2, 0.36, 0.5, 0.66, 0.11),
+			ln(0.5, 0.66, 0.8, 0.36, 0.11),
+		},
+	},
+	close = {
+		Emoji = "✖️",
+		Shapes = {
+			ln(0.24, 0.24, 0.76, 0.76, 0.11),
+			ln(0.76, 0.24, 0.24, 0.76, 0.11),
+		},
+	},
+	closeAll = {
+		Emoji = "❌",
+		Shapes = {
+			ln(0.24, 0.24, 0.76, 0.76, 0.13),
+			ln(0.76, 0.24, 0.24, 0.76, 0.13),
+		},
+	},
+	check = {
+		Emoji = "✓",
+		Shapes = { ln(0.18, 0.54, 0.42, 0.78, 0.12), ln(0.42, 0.78, 0.84, 0.24, 0.12) },
+	},
+	checkCircle = {
+		Emoji = "✅",
+		Shapes = {
+			rg(0.5, 0.5, 0.86, 0.085),
+			ln(0.29, 0.52, 0.44, 0.68, 0.1),
+			ln(0.44, 0.68, 0.72, 0.34, 0.1),
+		},
+	},
+	arrowLeft = {
+		Emoji = "⬅️",
+		Shapes = {
+			ln(0.14, 0.5, 0.86, 0.5, 0.1),
+			ln(0.14, 0.5, 0.42, 0.24, 0.1),
+			ln(0.14, 0.5, 0.42, 0.76, 0.1),
+		},
+	},
+	arrowRight = {
+		Emoji = "➡️",
+		Shapes = {
+			ln(0.14, 0.5, 0.86, 0.5, 0.1),
+			ln(0.86, 0.5, 0.58, 0.24, 0.1),
+			ln(0.86, 0.5, 0.58, 0.76, 0.1),
+		},
+	},
+	expand = {
+		Emoji = "↗️",
+		Shapes = {
+			ln(0.24, 0.76, 0.76, 0.24, 0.1),
+			ln(0.46, 0.24, 0.78, 0.24, 0.1),
+			ln(0.76, 0.22, 0.76, 0.54, 0.1),
+		},
+	},
+	collapse = {
+		Emoji = "↙️",
+		Shapes = {
+			ln(0.76, 0.24, 0.24, 0.76, 0.1),
+			ln(0.22, 0.46, 0.22, 0.78, 0.1),
+			ln(0.24, 0.76, 0.54, 0.76, 0.1),
+		},
+	},
+	settings = {
+		Emoji = "⚙️",
+		Shapes = join({
+			rg(0.5, 0.5, 0.34, 0.1),
+		}, (function()
+			local spokes = {}
+			for i = 0, 7 do
+				local a = math.rad(i * 45)
+				local c, s = math.cos(a), math.sin(a)
+				table.insert(spokes, ln(0.5 + c * 0.24, 0.5 + s * 0.24, 0.5 + c * 0.45, 0.5 + s * 0.45, 0.13))
+			end
+			return spokes
+		end)()),
+	},
+	script = {
+		Emoji = "📜",
+		Shapes = {
+			bx(0.5, 0.5, 0.62, 0.82, 0.085, 0.12),
+			ln(0.32, 0.32, 0.68, 0.32, 0.075),
+			ln(0.32, 0.5, 0.68, 0.5, 0.075),
+			ln(0.32, 0.68, 0.56, 0.68, 0.075),
+		},
+	},
+	library = {
+		Emoji = "📚",
+		Shapes = {
+			bx(0.5, 0.56, 0.82, 0.56, 0.085, 0.08),
+			ln(0.5, 0.3, 0.5, 0.82, 0.075),
+			ln(0.18, 0.22, 0.82, 0.22, 0.085),
+		},
+	},
+	book = {
+		Emoji = "📘",
+		Shapes = {
+			bx(0.5, 0.5, 0.66, 0.78, 0.085, 0.08),
+			ln(0.34, 0.22, 0.34, 0.88, 0.075),
+			ln(0.5, 0.38, 0.68, 0.38, 0.07),
+			ln(0.5, 0.54, 0.68, 0.54, 0.07),
+		},
+	},
+	clipboard = {
+		Emoji = "📋",
+		Shapes = {
+			bx(0.5, 0.56, 0.62, 0.7, 0.085, 0.12),
+			bx(0.5, 0.19, 0.32, 0.18, 0.085, 0.3),
+			ln(0.34, 0.52, 0.66, 0.52, 0.07),
+			ln(0.34, 0.68, 0.6, 0.68, 0.07),
+		},
+	},
+	trash = {
+		Emoji = "🗑️",
+		Shapes = {
+			ln(0.14, 0.26, 0.86, 0.26, 0.1),
+			ln(0.38, 0.26, 0.4, 0.14, 0.09),
+			ln(0.62, 0.26, 0.6, 0.14, 0.09),
+			ln(0.22, 0.3, 0.27, 0.9, 0.095),
+			ln(0.78, 0.3, 0.73, 0.9, 0.095),
+			ln(0.27, 0.9, 0.73, 0.9, 0.095),
+			ln(0.43, 0.42, 0.44, 0.76, 0.07),
+			ln(0.57, 0.42, 0.56, 0.76, 0.07),
+		},
+	},
+	refresh = {
+		Emoji = "🔄",
+		Shapes = {
+			ac(0.5, 0.5, 0.36, -60, 200, 0.1),
+			tg(0.72, 0.26, 0.26, 0.26, "up"),
+		},
+	},
+	warning = {
+		Emoji = "⚠️",
+		Shapes = {
+			ln(0.5, 0.12, 0.94, 0.86, 0.095),
+			ln(0.94, 0.86, 0.06, 0.86, 0.095),
+			ln(0.06, 0.86, 0.5, 0.12, 0.095),
+			ln(0.5, 0.42, 0.5, 0.64, 0.09),
+			dt(0.5, 0.76, 0.1),
+		},
+	},
+	blocked = {
+		Emoji = "⛔",
+		Shapes = {
+			rg(0.5, 0.5, 0.84, 0.1),
+			ln(0.24, 0.24, 0.76, 0.76, 0.1),
+		},
+	},
+	pin = {
+		Emoji = "📌",
+		Shapes = {
+			rg(0.5, 0.34, 0.44, 0.1),
+			ln(0.5, 0.56, 0.5, 0.92, 0.095),
+		},
+	},
+	pencil = {
+		Emoji = "✏️",
+		Shapes = {
+			ln(0.3, 0.7, 0.76, 0.24, 0.13),
+			ln(0.66, 0.14, 0.86, 0.34, 0.13),
+			tg(0.22, 0.78, 0.22, 0.22, "left"),
+		},
+	},
+	broom = {
+		Emoji = "🧹",
+		Shapes = {
+			ln(0.76, 0.16, 0.44, 0.48, 0.1),
+			ln(0.22, 0.56, 0.52, 0.86, 0.1),
+			ln(0.34, 0.44, 0.64, 0.74, 0.1),
+			ln(0.16, 0.9, 0.34, 0.72, 0.09),
+		},
+	},
+	zap = {
+		Emoji = "⚡",
+		Shapes = poly({
+			{ 0.62, 0.08 },
+			{ 0.26, 0.54 },
+			{ 0.48, 0.54 },
+			{ 0.38, 0.92 },
+			{ 0.74, 0.46 },
+			{ 0.52, 0.46 },
+		}, 0.09, true),
+	},
+	save = {
+		Emoji = "💾",
+		Shapes = {
+			bx(0.5, 0.5, 0.78, 0.78, 0.09, 0.1),
+			bx(0.5, 0.3, 0.38, 0.24, 0.085, 0.1),
+			bx(0.5, 0.74, 0.44, 0.26, 0.085, 0.1),
+		},
+	},
+	download = {
+		Emoji = "📥",
+		Shapes = {
+			ln(0.5, 0.12, 0.5, 0.6, 0.1),
+			ln(0.28, 0.4, 0.5, 0.62, 0.1),
+			ln(0.72, 0.4, 0.5, 0.62, 0.1),
+			ln(0.14, 0.76, 0.14, 0.88, 0.095),
+			ln(0.14, 0.88, 0.86, 0.88, 0.095),
+			ln(0.86, 0.88, 0.86, 0.76, 0.095),
+		},
+	},
+	message = {
+		Emoji = "💬",
+		Shapes = {
+			bx(0.5, 0.44, 0.84, 0.62, 0.09, 0.22),
+			ln(0.3, 0.74, 0.26, 0.94, 0.09),
+			ln(0.26, 0.94, 0.46, 0.75, 0.09),
+		},
+	},
+	folder = {
+		Emoji = "🗂️",
+		Shapes = {
+			ln(0.1, 0.28, 0.42, 0.28, 0.095),
+			ln(0.42, 0.28, 0.5, 0.4, 0.095),
+			bx(0.5, 0.58, 0.82, 0.52, 0.095, 0.12),
+		},
+	},
+	toolbox = {
+		Emoji = "🧰",
+		Shapes = {
+			bx(0.5, 0.62, 0.86, 0.46, 0.09, 0.12),
+			ac(0.5, 0.4, 0.2, 180, 360, 0.09),
+			ln(0.1, 0.62, 0.9, 0.62, 0.08),
+		},
+	},
+	monitor = {
+		Emoji = "🖥️",
+		Shapes = {
+			bx(0.5, 0.42, 0.86, 0.6, 0.09, 0.1),
+			ln(0.5, 0.72, 0.5, 0.86, 0.09),
+			ln(0.3, 0.88, 0.7, 0.88, 0.095),
+		},
+	},
+	mouse = {
+		Emoji = "🖱️",
+		Shapes = {
+			bx(0.5, 0.5, 0.5, 0.86, 0.09, 0.5),
+			ln(0.5, 0.16, 0.5, 0.4, 0.085),
+		},
+	},
+	keyboard = {
+		Emoji = "⌨️",
+		Shapes = {
+			bx(0.5, 0.5, 0.94, 0.58, 0.085, 0.14),
+			dt(0.28, 0.42, 0.08),
+			dt(0.44, 0.42, 0.08),
+			dt(0.6, 0.42, 0.08),
+			dt(0.72, 0.42, 0.08),
+			ln(0.32, 0.62, 0.68, 0.62, 0.075),
+		},
+	},
+	hand = {
+		Emoji = "👋",
+		Shapes = {
+			bx(0.5, 0.66, 0.56, 0.44, 0.09, 0.3),
+			ln(0.32, 0.46, 0.32, 0.24, 0.095),
+			ln(0.46, 0.44, 0.46, 0.16, 0.095),
+			ln(0.6, 0.44, 0.6, 0.2, 0.095),
+			ln(0.73, 0.5, 0.79, 0.32, 0.095),
+		},
+	},
+	palette = {
+		Emoji = "🎨",
+		Shapes = {
+			rg(0.5, 0.5, 0.86, 0.09),
+			dt(0.36, 0.34, 0.13),
+			dt(0.64, 0.36, 0.13),
+			dt(0.34, 0.62, 0.13),
+			dt(0.62, 0.66, 0.13),
+		},
+	},
+	graduation = {
+		Emoji = "🎓",
+		Shapes = {
+			ln(0.5, 0.18, 0.94, 0.39, 0.095),
+			ln(0.94, 0.39, 0.5, 0.6, 0.095),
+			ln(0.5, 0.6, 0.06, 0.39, 0.095),
+			ln(0.06, 0.39, 0.5, 0.18, 0.095),
+			ln(0.2, 0.47, 0.2, 0.8, 0.09),
+			ac(0.5, 0.58, 0.26, 20, 160, 0.09),
+		},
+	},
+	gamepad = {
+		Emoji = "🎮",
+		Shapes = {
+			bx(0.5, 0.56, 0.9, 0.44, 0.09, 0.5),
+			ln(0.24, 0.56, 0.4, 0.56, 0.085),
+			ln(0.32, 0.46, 0.32, 0.66, 0.085),
+			dt(0.66, 0.48, 0.12),
+			dt(0.78, 0.62, 0.12),
+		},
+	},
+	flame = {
+		Emoji = "🔥",
+		Shapes = {
+			ln(0.5, 0.06, 0.22, 0.52, 0.095),
+			ln(0.5, 0.06, 0.78, 0.52, 0.095),
+			ac(0.5, 0.52, 0.28, 0, 180, 0.095),
+			ln(0.5, 0.42, 0.36, 0.66, 0.085),
+			ln(0.5, 0.42, 0.64, 0.66, 0.085),
+			ac(0.5, 0.66, 0.14, 0, 180, 0.085),
+		},
+	},
+	thumbsUp = {
+		Emoji = "👍",
+		Shapes = {
+			bx(0.62, 0.62, 0.5, 0.5, 0.09, 0.16),
+			bx(0.2, 0.68, 0.22, 0.38, 0.09, 0.2),
+			ln(0.52, 0.38, 0.52, 0.16, 0.095),
+			ln(0.52, 0.16, 0.72, 0.3, 0.095),
+		},
+	},
+	thumbsDown = {
+		Emoji = "👎",
+		Shapes = {
+			bx(0.62, 0.38, 0.5, 0.5, 0.09, 0.16),
+			bx(0.2, 0.32, 0.22, 0.38, 0.09, 0.2),
+			ln(0.52, 0.62, 0.52, 0.84, 0.095),
+			ln(0.52, 0.84, 0.72, 0.7, 0.095),
+		},
+	},
+	shield = {
+		Emoji = "🛡️",
+		Shapes = {
+			ln(0.5, 0.1, 0.14, 0.28, 0.095),
+			ln(0.14, 0.28, 0.16, 0.56, 0.095),
+			ln(0.16, 0.56, 0.5, 0.92, 0.095),
+			ln(0.5, 0.92, 0.84, 0.56, 0.095),
+			ln(0.84, 0.56, 0.86, 0.28, 0.095),
+			ln(0.86, 0.28, 0.5, 0.1, 0.095),
+		},
+	},
+	help = {
+		Emoji = "❔",
+		Shapes = {
+			rg(0.5, 0.5, 0.86, 0.09),
+			ac(0.5, 0.38, 0.15, 150, 360, 0.095),
+			ln(0.5, 0.53, 0.5, 0.64, 0.095),
+			dt(0.5, 0.76, 0.1),
+		},
+	},
+	phone = {
+		Emoji = "📱",
+		Shapes = {
+			bx(0.5, 0.5, 0.54, 0.88, 0.09, 0.16),
+			ln(0.4, 0.8, 0.6, 0.8, 0.085),
+		},
+	},
+	key = {
+		Emoji = "🔑",
+		Shapes = {
+			rg(0.32, 0.38, 0.44, 0.1),
+			ln(0.44, 0.5, 0.84, 0.9, 0.1),
+			ln(0.62, 0.68, 0.74, 0.56, 0.095),
+			ln(0.72, 0.78, 0.84, 0.66, 0.095),
+		},
+	},
+	eye = {
+		Emoji = "👁️",
+		Shapes = {
+			ac(0.5, 0.742, 0.502, 209, 331, 0.09),
+			ac(0.5, 0.258, 0.502, 29, 151, 0.09),
+			rg(0.5, 0.5, 0.3, 0.09),
+		},
+	},
+	eyeOff = {
+		Emoji = "🙈",
+		Shapes = {
+			ac(0.5, 0.742, 0.502, 209, 331, 0.09),
+			ac(0.5, 0.258, 0.502, 29, 151, 0.09),
+			rg(0.5, 0.5, 0.3, 0.09),
+			ln(0.14, 0.88, 0.86, 0.12, 0.1),
+		},
+	},
+	star = {
+		Emoji = "⭐",
+		Shapes = starPoly(0.5, 0.52, 0.44, 0.18, 5, 0.09),
+	},
+	sliders = {
+		Emoji = "🎛️",
+		Shapes = {
+			ln(0.1, 0.26, 0.9, 0.26, 0.085),
+			ln(0.1, 0.5, 0.9, 0.5, 0.085),
+			ln(0.1, 0.74, 0.9, 0.74, 0.085),
+			dt(0.7, 0.26, 0.2),
+			dt(0.36, 0.5, 0.2),
+			dt(0.6, 0.74, 0.2),
+		},
+	},
+	user = {
+		Emoji = "👤",
+		Shapes = {
+			rg(0.5, 0.3, 0.42, 0.095),
+			ac(0.5, 1.06, 0.42, 205, 335, 0.095),
+		},
+	},
+	users = {
+		Emoji = "👥",
+		Shapes = {
+			rg(0.36, 0.32, 0.36, 0.09),
+			ac(0.36, 1.02, 0.34, 205, 335, 0.09),
+			rg(0.74, 0.26, 0.26, 0.085),
+			ac(0.76, 0.98, 0.3, 250, 335, 0.09),
+		},
+	},
+	trending = {
+		Emoji = "📈",
+		Shapes = {
+			ln(0.1, 0.74, 0.38, 0.46, 0.095),
+			ln(0.38, 0.46, 0.56, 0.62, 0.095),
+			ln(0.56, 0.62, 0.9, 0.26, 0.095),
+			ln(0.64, 0.26, 0.92, 0.26, 0.095),
+			ln(0.9, 0.24, 0.9, 0.52, 0.095),
+		},
+	},
+	hourglass = {
+		Emoji = "⏳",
+		Shapes = {
+			ln(0.18, 0.12, 0.82, 0.12, 0.095),
+			ln(0.18, 0.88, 0.82, 0.88, 0.095),
+			ln(0.24, 0.14, 0.5, 0.5, 0.09),
+			ln(0.76, 0.14, 0.5, 0.5, 0.09),
+			ln(0.24, 0.86, 0.5, 0.5, 0.09),
+			ln(0.76, 0.86, 0.5, 0.5, 0.09),
+		},
+	},
+	dot = {
+		Emoji = "🟡",
+		Shapes = { dt(0.5, 0.5, 0.62) },
+	},
+	bullet = {
+		Emoji = "•",
+		Shapes = { dt(0.5, 0.5, 0.3) },
+	},
+	grip = {
+		Emoji = "◢",
+		Shapes = {
+			ln(0.86, 0.34, 0.34, 0.86, 0.085),
+			ln(0.86, 0.58, 0.58, 0.86, 0.085),
+			ln(0.86, 0.82, 0.82, 0.86, 0.085),
+		},
+	},
+	info = {
+		Emoji = "ℹ️",
+		Shapes = {
+			rg(0.5, 0.5, 0.86, 0.09),
+			dt(0.5, 0.28, 0.11),
+			ln(0.5, 0.44, 0.5, 0.74, 0.095),
+		},
+	},
+	plus = {
+		Emoji = "＋",
+		Shapes = {
+			ln(0.5, 0.16, 0.5, 0.84, 0.11),
+			ln(0.16, 0.5, 0.84, 0.5, 0.11),
+		},
+	},
+	columns1 = {
+		Emoji = "1️⃣",
+		Shapes = { bx(0.5, 0.5, 0.8, 0.7, 0.09, 0.14) },
+	},
+	columns2 = {
+		Emoji = "2️⃣",
+		Shapes = {
+			bx(0.5, 0.5, 0.8, 0.7, 0.09, 0.14),
+			ln(0.5, 0.15, 0.5, 0.85, 0.075),
+		},
+	},
+	columns3 = {
+		Emoji = "3️⃣",
+		Shapes = {
+			bx(0.5, 0.5, 0.8, 0.7, 0.09, 0.14),
+			ln(0.367, 0.15, 0.367, 0.85, 0.075),
+			ln(0.633, 0.15, 0.633, 0.85, 0.075),
+		},
+	},
+	columns4 = {
+		Emoji = "4️⃣",
+		Shapes = {
+			bx(0.5, 0.5, 0.8, 0.7, 0.09, 0.14),
+			ln(0.3, 0.15, 0.3, 0.85, 0.075),
+			ln(0.5, 0.15, 0.5, 0.85, 0.075),
+			ln(0.7, 0.15, 0.7, 0.85, 0.075),
+		},
+	},
+}
+
+local iconStyles = {
+	{ Name = "Emoji", Key = "emoji" },
+	{ Name = "Vector Icons", Key = "vector" },
+}
+
+local function addPart(holder, color)
+	local part = Instance.new("Frame")
+	part.BorderSizePixel = 0
+	part.BackgroundColor3 = color
+	part.ZIndex = holder.ZIndex
+	part.Parent = holder
+	return part
+end
+
+local function strokePart(holder, color, thickness)
+	local part = Instance.new("Frame")
+	part.BorderSizePixel = 0
+	part.BackgroundTransparency = 1
+	part.ZIndex = holder.ZIndex
+	local stroke = Instance.new("UIStroke", part)
+	stroke.Color = color
+	stroke.Thickness = thickness
+	part.Parent = holder
+	return part
+end
+
+local function renderShape(holder, shape, px, color)
+	local kind = shape[1]
+	if kind == "l" then
+		local x1, y1, x2, y2, w = shape[2], shape[3], shape[4], shape[5], shape[6]
+		local dx, dy = (x2 - x1) * px, (y2 - y1) * px
+		local part = addPart(holder, color)
+		part.AnchorPoint = Vector2.new(0.5, 0.5)
+		part.Position = UDim2.new(0, (x1 + x2) * 0.5 * px, 0, (y1 + y2) * 0.5 * px)
+		local thick = math.max(1, w * px)
+		part.Size = UDim2.new(0, math.max(math.sqrt(dx * dx + dy * dy), thick), 0, thick)
+		part.Rotation = math.deg(math.atan2(dy, dx))
+		Instance.new("UICorner", part).CornerRadius = UDim.new(1, 0)
+	elseif kind == "c" then
+		local part = addPart(holder, color)
+		part.AnchorPoint = Vector2.new(0.5, 0.5)
+		part.Position = UDim2.new(0, shape[2] * px, 0, shape[3] * px)
+		part.Size = UDim2.new(0, math.max(1, shape[4] * px), 0, math.max(1, shape[4] * px))
+		Instance.new("UICorner", part).CornerRadius = UDim.new(1, 0)
+	elseif kind == "o" then
+		local part = strokePart(holder, color, math.max(1, shape[5] * px))
+		part.AnchorPoint = Vector2.new(0.5, 0.5)
+		part.Position = UDim2.new(0, shape[2] * px, 0, shape[3] * px)
+		part.Size = UDim2.new(0, shape[4] * px, 0, shape[4] * px)
+		Instance.new("UICorner", part).CornerRadius = UDim.new(1, 0)
+	elseif kind == "b" then
+		local x, y, w, h, t, r = shape[2], shape[3], shape[4], shape[5], shape[6], shape[7]
+		local part = strokePart(holder, color, math.max(1, t * px))
+		part.AnchorPoint = Vector2.new(0.5, 0.5)
+		part.Position = UDim2.new(0, x * px, 0, y * px)
+		part.Size = UDim2.new(0, w * px, 0, h * px)
+		Instance.new("UICorner", part).CornerRadius = UDim.new(0, math.min(w, h) * px * 0.5 * r)
+	elseif kind == "t" then
+		local x, y, w, h, dir = shape[2], shape[3], shape[4], shape[5], shape[6] or "right"
+		local slices = 14
+		local bleed = 0.7 / math.max(px, 1)
+		for i = 0, slices - 1 do
+			local f = (i + 0.5) / slices
+			local part = addPart(holder, color)
+			part.AnchorPoint = Vector2.new(0.5, 0.5)
+			local sw, sh, cx, cy
+			if dir == "right" then
+				sw, sh = w / slices + bleed, h * (1 - f)
+				cx, cy = x - w * 0.5 + f * w, y
+			elseif dir == "left" then
+				sw, sh = w / slices + bleed, h * (1 - f)
+				cx, cy = x + w * 0.5 - f * w, y
+			elseif dir == "up" then
+				sw, sh = w * (1 - f), h / slices + bleed
+				cx, cy = x, y + h * 0.5 - f * h
+			else
+				sw, sh = w * (1 - f), h / slices + bleed
+				cx, cy = x, y - h * 0.5 + f * h
+			end
+			part.Position = UDim2.new(0, cx * px, 0, cy * px)
+			part.Size = UDim2.new(0, math.max(1, sw * px), 0, math.max(1, sh * px))
+		end
+	elseif kind == "a" then
+		local x, y, r, a0, a1, w = shape[2], shape[3], shape[4], shape[5], shape[6], shape[7]
+		local steps = math.max(6, math.ceil(math.abs(a1 - a0) / 9))
+		local d = math.max(1, w * px)
+		for i = 0, steps do
+			local ang = math.rad(a0 + (a1 - a0) * (i / steps))
+			local part = addPart(holder, color)
+			part.AnchorPoint = Vector2.new(0.5, 0.5)
+			part.Position = UDim2.new(0, (x + math.cos(ang) * r) * px, 0, (y + math.sin(ang) * r) * px)
+			part.Size = UDim2.new(0, d, 0, d)
+			Instance.new("UICorner", part).CornerRadius = UDim.new(1, 0)
+		end
+	end
+end
+
+local bound = {}
+local restyle
+
+local function holderFor(obj)
+	local holder = obj:FindFirstChild("WorldIconHolder")
+	if not holder then
+		holder = Instance.new("Frame")
+		holder.Name = "WorldIconHolder"
+		holder.BackgroundTransparency = 1
+		holder.BorderSizePixel = 0
+		holder.Parent = obj
+	end
+	holder.ZIndex = obj.ZIndex + 1
+	return holder
+end
+
+local function setPad(obj, extraLeft, extraRight)
+	local pad = obj:FindFirstChildOfClass("UIPadding")
+	if not pad then
+		if extraLeft <= 0 and extraRight <= 0 then
+			return
+		end
+		pad = Instance.new("UIPadding", obj)
+		obj:SetAttribute("WorldIconBasePadLeft", 0)
+		obj:SetAttribute("WorldIconBasePadRight", 0)
+	end
+	local baseLeft = obj:GetAttribute("WorldIconBasePadLeft")
+	if baseLeft == nil then
+		baseLeft = pad.PaddingLeft.Offset
+		obj:SetAttribute("WorldIconBasePadLeft", baseLeft)
+	end
+	local baseRight = obj:GetAttribute("WorldIconBasePadRight")
+	if baseRight == nil then
+		baseRight = pad.PaddingRight.Offset
+		obj:SetAttribute("WorldIconBasePadRight", baseRight)
+	end
+	pad.PaddingLeft = UDim.new(0, baseLeft + extraLeft)
+	pad.PaddingRight = UDim.new(0, baseRight + extraRight)
+end
+
+local function centerHolder(rec)
+	local holder = rec.Object:FindFirstChild("WorldIconHolder")
+	if not holder or not holder.Visible then
+		return
+	end
+	local px = rec.RenderPx or holder.AbsoluteSize.X
+	holder.Position =
+		UDim2.new(0.5, -(rec.Object.TextBounds.X * 0.5 + ICON_GAP + px * 0.5), 0.5, 0)
+end
+
+local function redraw(rec)
+	local obj = rec.Object
+	if not obj.Parent then
+		return
+	end
+	local def = rec.Name and (registry[rec.Name] or registry.help) or nil
+	local label = rec.Text or ""
+
+	if def == nil or Icons.StyleIndex ~= ICON_STYLE_VECTOR then
+		local existing = obj:FindFirstChild("WorldIconHolder")
+		if existing then
+			existing.Visible = false
+		end
+		setPad(obj, 0, 0)
+		local emoji = def and def.Emoji or ""
+		local text
+		if rec.Mode == "icon" or label == "" then
+			text = emoji
+		elseif emoji == "" then
+			text = label
+		elseif rec.Mode == "placeholder" then
+			text = emoji .. " " .. label
+		elseif rec.Align == "right" then
+			text = label .. "  " .. emoji
+		else
+			text = emoji .. "  " .. label
+		end
+		if rec.Mode == "placeholder" then
+			obj.PlaceholderText = text
+		else
+			obj.Text = text
+		end
+		return
+	end
+
+	local holder = holderFor(obj)
+	holder:ClearAllChildren()
+	holder.Visible = true
+
+	local px = rec.Px or math.max(10, math.floor((obj.TextSize or 14) * 1.15))
+	rec.RenderPx = px
+	holder.Size = UDim2.new(0, px, 0, px)
+
+	if rec.Mode == "icon" then
+		obj.Text = ""
+		setPad(obj, 0, 0)
+		holder.AnchorPoint = Vector2.new(0.5, 0.5)
+		holder.Position = UDim2.new(0.5, 0, 0.5, 0)
+	else
+		local extra = px + ICON_GAP
+		if rec.Mode == "placeholder" then
+			obj.PlaceholderText = label
+		else
+			obj.Text = label
+		end
+		if rec.Align == "center" then
+			setPad(obj, extra, 0)
+			holder.AnchorPoint = Vector2.new(0.5, 0.5)
+			centerHolder(rec)
+		elseif rec.Align == "right" then
+			setPad(obj, 0, extra)
+			holder.AnchorPoint = Vector2.new(1, 0.5)
+			holder.Position = UDim2.new(1, extra, 0.5, 0)
+		else
+			setPad(obj, extra, 0)
+			holder.AnchorPoint = Vector2.new(0, 0.5)
+			holder.Position = UDim2.new(0, -extra, 0.5, 0)
+		end
+	end
+
+	local color = rec.Color or obj.TextColor3
+	if def.Image then
+		local img = Instance.new("ImageLabel")
+		img.BackgroundTransparency = 1
+		img.Size = UDim2.fromScale(1, 1)
+		img.Image = def.Image
+		img.ImageColor3 = color
+		img.ZIndex = holder.ZIndex
+		img.Parent = holder
+	else
+		for _, shape in ipairs(def.Shapes) do
+			renderShape(holder, shape, px, color)
+		end
+	end
+	if obj.TextTransparency > 0 then
+		restyle(rec)
+	end
+end
+
+function restyle(rec)
+	local holder = rec.Object:FindFirstChild("WorldIconHolder")
+	if not holder or not holder.Visible then
+		return
+	end
+	local color = rec.Color or rec.Object.TextColor3
+	local alpha = rec.Object.TextTransparency
+	for _, part in ipairs(holder:GetChildren()) do
+		if part:IsA("ImageLabel") then
+			part.ImageColor3 = color
+			part.ImageTransparency = alpha
+		elseif part:IsA("Frame") then
+			local stroke = part:FindFirstChildOfClass("UIStroke")
+			if stroke then
+				stroke.Color = color
+				stroke.Transparency = alpha
+			else
+				part.BackgroundColor3 = color
+				part.BackgroundTransparency = alpha
+			end
+		end
+	end
+end
+
+Icons = {
+	Styles = iconStyles,
+	StyleIndex = 1,
+	Registry = registry,
+}
+
+for i, style in ipairs(iconStyles) do
+	if style.Key == uiSettings.iconStyle then
+		Icons.StyleIndex = i
+	end
+end
+
+function Icons.bind(obj, name, opts)
+	opts = opts or {}
+	local rec = {
+		Object = obj,
+		Name = name,
+		Mode = opts.Mode or "icon",
+		Align = opts.Align or "left",
+		Px = opts.Px,
+		Text = opts.Text,
+		Color = opts.Color,
+	}
+	bound[obj] = rec
+
+	local ownConnections = {
+		obj:GetPropertyChangedSignal("TextColor3"):Connect(function()
+			restyle(rec)
+		end),
+		obj:GetPropertyChangedSignal("TextTransparency"):Connect(function()
+			restyle(rec)
+		end),
+		obj:GetPropertyChangedSignal("ZIndex"):Connect(function()
+			local holder = obj:FindFirstChild("WorldIconHolder")
+			if holder then
+				holder.ZIndex = obj.ZIndex + 1
+				for _, part in ipairs(holder:GetChildren()) do
+					part.ZIndex = holder.ZIndex
+				end
+			end
+		end),
+	}
+	if rec.Mode ~= "icon" and rec.Align == "center" then
+		table.insert(ownConnections, obj:GetPropertyChangedSignal("TextBounds"):Connect(function()
+			centerHolder(rec)
+		end))
+	end
+	local cleanup
+	cleanup = obj.Destroying:Connect(function()
+		bound[obj] = nil
+		for _, conn in ipairs(ownConnections) do
+			conn:Disconnect()
+		end
+		cleanup:Disconnect()
+	end)
+
+	redraw(rec)
+	return obj
+end
+
+function Icons.setText(obj, text)
+	local rec = bound[obj]
+	if rec then
+		rec.Text = text
+		redraw(rec)
+	end
+end
+
+function Icons.setName(obj, name)
+	local rec = bound[obj]
+	if rec and rec.Name ~= name then
+		rec.Name = name
+		redraw(rec)
+	end
+end
+
+function Icons.getName(obj)
+	local rec = bound[obj]
+	return rec and rec.Name or nil
+end
+
+function Icons.prefix(name)
+	if Icons.StyleIndex == ICON_STYLE_VECTOR then
+		return ""
+	end
+	return Icons.glyph(name) .. " "
+end
+
+function Icons.glyph(name)
+	local def = registry[name]
+	return def and def.Emoji or ""
+end
+
+function Icons.refreshAll()
+	for obj, rec in pairs(bound) do
+		if obj.Parent then
+			redraw(rec)
+		else
+			bound[obj] = nil
+		end
+	end
+end
+end
+
 local saveSettings
+local resetSettings
 do
 local SETTINGS_FILE = "WorldClient_Settings.json"
+local LEGACY_CUSTOM_THEME_INDEX = 13
 
 function saveSettings()
 	pcall(function()
@@ -797,6 +1968,7 @@ function saveSettings()
 		writefile(
 			SETTINGS_FILE,
 			HttpService:JSONEncode({
+				themeName = themes[currentThemeIndex].Name,
 				themeIndex = currentThemeIndex,
 				fontIndex = currentFontIndex,
 				textSizeIndex = currentTextSizeIndex,
@@ -812,6 +1984,13 @@ function saveSettings()
 				consoleWordWrap = uiSettings.consoleWordWrap,
 				editorLineNumbers = uiSettings.editorLineNumbers,
 				consoleLineNumbers = uiSettings.consoleLineNumbers,
+				iconStyle = uiSettings.iconStyle,
+				mobileMode = uiSettings.mobileMode,
+				reduceMotion = uiSettings.reduceMotion,
+				hubImages = uiSettings.hubImages,
+				maxLogs = uiSettings.maxLogs,
+				logTimestamps = uiSettings.logTimestamps,
+				syntaxHighlight = uiSettings.syntaxHighlight,
 				tutorialCompleted = tutorialCompleted,
 				scriptHubAccepted = scriptHub.Accepted,
 				scriptHubProviders = scriptHub.Providers,
@@ -822,6 +2001,16 @@ function saveSettings()
 	end)
 end
 
+function resetSettings()
+	pcall(function()
+		if type(delfile) == "function" and type(isfile) == "function" and isfile(SETTINGS_FILE) then
+			delfile(SETTINGS_FILE)
+		else
+			writefile(SETTINGS_FILE, "{}")
+		end
+	end)
+end
+
 local function loadSettings()
 	local ok, data = pcall(function()
 		return HttpService:JSONDecode(readfile(SETTINGS_FILE))
@@ -829,8 +2018,21 @@ local function loadSettings()
 	if not ok or type(data) ~= "table" then
 		return
 	end
-	if type(data.themeIndex) == "number" and themes[data.themeIndex] then
-		currentThemeIndex = data.themeIndex
+	if type(data.themeName) == "string" then
+		for i, theme in ipairs(themes) do
+			if theme.Name == data.themeName then
+				currentThemeIndex = i
+				break
+			end
+		end
+	elseif type(data.themeIndex) == "number" then
+		local legacyIndex = data.themeIndex
+		if legacyIndex == LEGACY_CUSTOM_THEME_INDEX then
+			legacyIndex = customThemeIndex
+		end
+		if themes[legacyIndex] then
+			currentThemeIndex = legacyIndex
+		end
 	end
 	if type(data.fontIndex) == "number" and fontsList[data.fontIndex] then
 		currentFontIndex = data.fontIndex
@@ -879,6 +2081,27 @@ local function loadSettings()
 	if type(data.consoleLineNumbers) == "boolean" then
 		uiSettings.consoleLineNumbers = data.consoleLineNumbers
 	end
+	if type(data.iconStyle) == "string" then
+		uiSettings.iconStyle = data.iconStyle
+	end
+	if type(data.mobileMode) == "boolean" then
+		uiSettings.mobileMode = data.mobileMode
+	end
+	if type(data.reduceMotion) == "boolean" then
+		uiSettings.reduceMotion = data.reduceMotion
+	end
+	if type(data.hubImages) == "boolean" then
+		uiSettings.hubImages = data.hubImages
+	end
+	if type(data.maxLogs) == "number" then
+		uiSettings.maxLogs = math.clamp(math.floor(data.maxLogs), 25, 500)
+	end
+	if type(data.logTimestamps) == "boolean" then
+		uiSettings.logTimestamps = data.logTimestamps
+	end
+	if type(data.syntaxHighlight) == "boolean" then
+		uiSettings.syntaxHighlight = data.syntaxHighlight
+	end
 	if type(data.tutorialCompleted) == "boolean" then
 		tutorialCompleted = data.tutorialCompleted
 	end
@@ -915,6 +2138,7 @@ loadSettings()
 end
 
 CONFIG.Colors = themes[currentThemeIndex].Colors
+CONFIG.MaxLogs = uiSettings.maxLogs
 CONFIG.Font = fontsList[currentFontIndex].Font
 CONFIG.BoldFont = fontsList[currentFontIndex].Bold
 CONFIG.TextSize = textSizes[currentTextSizeIndex].Size
@@ -923,78 +2147,78 @@ local tutorialPages = {
 	{
 		Title = "Choose your language",
 		Kind = "intro",
-		Icon = "🌍",
+		Icon = "world",
 		Text = "Translate the whole interface into your language, then join our Discord for support, script drops and development news.",
 	},
 	{
 		Title = "Welcome!",
 		DynamicTitle = true,
-		Icon = "👋",
+		Icon = "hand",
 		Text = "Welcome to the World Client - a fast, mobile-friendly Luau executor. This quick tour points out each feature. Tap the arrow (or swipe) to continue, or Skip anytime.",
 	},
 	{
 		Title = "The Console",
-		Icon = "🖥️",
+		Icon = "monitor",
 		Text = "Script output, warnings, and errors all print here in colour - errors in red, warnings in amber. This is your main window into what your scripts are doing.",
 	},
 	{
 		Title = "Search & Filter",
-		Icon = "🔎",
+		Icon = "search",
 		Text = "Search your logs, filter them by type (Output, Info, Warning, Error), and pin auto-scroll - all from this bar.",
 	},
 	{
 		Title = "The Code Editor",
-		Icon = "▶️",
+		Icon = "play",
 		Text = "Type Luau here and press Run (or the Enter key) to execute it. Your code is syntax-highlighted as you type.",
 	},
 	{
 		Title = "Command History",
-		Icon = "⏫",
+		Icon = "chevronsUp",
 		Text = "Press the Up and Down arrow keys while typing here to cycle back through scripts you've already run.",
 	},
 	{
 		Title = "Multiple Tabs",
-		Icon = "🗂️",
+		Icon = "folder",
 		Text = "Keep several scripts open at once - each tab remembers its own code. Use the rename option on a tab to give it a meaningful name.",
 	},
 	{
 		Title = "Full-Screen Editor",
-		Icon = "↗️",
+		Icon = "expand",
 		Text = "Your code is syntax-highlighted as you type. Tap the expand button on the editor row to switch to a full-screen editor with optional line numbers.",
 	},
 	{
 		Title = "Run from Clipboard",
-		Icon = "📥",
+		Icon = "download",
 		Text = "Copied a script from somewhere else? Tap 'Run from Clipboard' to execute it instantly - no pasting required.",
 	},
 	{
 		Title = "Saved Scripts",
-		Icon = "📜",
+		Icon = "script",
 		Text = "Save scripts you use often with the scroll button, then reload them any time. They stay saved between sessions.",
 	},
 	{
 		Title = "Script Hub",
-		Icon = "📚",
+		Icon = "library",
 		Text = "Tap the books button to browse thousands of community scripts from ScriptBlox, Rscripts, RobloxScripts and HaxHell. Search, filter by provider, then copy, load, save or run any script without leaving the client.",
 	},
 	{
 		Title = "Make It Yours",
-		Icon = "⚙️",
-		Text = "Open Settings for 13 themes plus a custom theme editor, 12 fonts, text sizes, visual effects, an FPS Booster, Anti-AFK, and auto-execute on join.",
+		Icon = "settings",
+		Text = "Open Settings for 24 themes plus a custom theme editor, 12 fonts, text sizes, visual effects, an FPS Booster, Anti-AFK, and auto-execute on join.",
 	},
 	{
 		Title = "100+ Languages",
-		Icon = "🌍",
+		Icon = "world",
 		Text = "Also in Settings: translate the entire interface - and even auto-translate your logs - into over 100 languages.",
 	},
 	{
 		Title = "Handy Buttons",
-		Icon = "🧰",
+		Icon = "toolbox",
 		Text = "Copy all logs with the clipboard button, clear them with the bin, or refresh with the arrows. The globe opens our website and the speech bubble opens our Discord.",
 	},
 	{
 		Title = "You're all set!",
-		Icon = "✖️",
+		Icon = "close",
 		Text = "Tap the X to minimise me into a draggable bubble and start scripting. Reopen this tour any time from Settings > Replay Tutorial.",
 	},
 }
@@ -1274,16 +2498,16 @@ local function createClickParticles(parent, color)
 	end)
 end
 
-local function createIconButton(parent, emoji, size, colorType)
+local function createIconButton(parent, iconName, size, colorType)
 	local btn = Instance.new("TextButton", parent)
 	btn.Size = UDim2.new(0, size, 0, size)
 	btn.BackgroundColor3 = CONFIG.Colors[colorType]
 	btn:SetAttribute("ColorType", colorType)
 	btn:SetAttribute("HoverColorType", colorType == "SecondaryAccent" and "PrimaryAccent" or "UtilButtonHover")
 	btn.Font = Enum.Font.SourceSans
-	btn.Text = emoji
 	btn.TextColor3 = Color3.new(1, 1, 1)
 	btn.TextSize = math.floor(size * 0.7)
+	Icons.bind(btn, iconName, { Mode = "icon", Px = math.floor(size * 0.62) })
 	Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
 	addDepthGradient(btn)
 	safeSetCursor(btn, "rbxasset://SystemCursor/Arrow")
@@ -1365,15 +2589,15 @@ rightControlsLayout.VerticalAlignment = Enum.VerticalAlignment.Center
 rightControlsLayout.Padding = UDim.new(0, 8)
 end
 
-local scriptsButton = createIconButton(leftControls, "📜", 28, "UtilButton")
-scriptHub.Button = createIconButton(leftControls, "📚", 28, "UtilButton")
-local siteButton = createIconButton(leftControls, "🌐", 28, "UtilButton")
-local discordButton = createIconButton(leftControls, "💬", 28, "UtilButton")
-local settingsButton = createIconButton(leftControls, "⚙️", 28, "UtilButton")
-local copyButton = createIconButton(leftControls, "📋", 28, "UtilButton")
-local clearButton = createIconButton(leftControls, "🗑️", 28, "UtilButton")
-local refreshButton = createIconButton(leftControls, "🔄", 28, "UtilButton")
-local minimizeButton = createIconButton(rightControls, "✖️", 28, "MinimizeButton")
+local scriptsButton = createIconButton(leftControls, "script", 28, "UtilButton")
+scriptHub.Button = createIconButton(leftControls, "library", 28, "UtilButton")
+local siteButton = createIconButton(leftControls, "globe", 28, "UtilButton")
+local discordButton = createIconButton(leftControls, "message", 28, "UtilButton")
+local settingsButton = createIconButton(leftControls, "settings", 28, "UtilButton")
+local copyButton = createIconButton(leftControls, "clipboard", 28, "UtilButton")
+local clearButton = createIconButton(leftControls, "trash", 28, "UtilButton")
+local refreshButton = createIconButton(leftControls, "refresh", 28, "UtilButton")
+local minimizeButton = createIconButton(rightControls, "close", 28, "MinimizeButton")
 
 local FOOTER_H = 112
 local footer = Instance.new("Frame", mainFrame)
@@ -1423,7 +2647,6 @@ do
 	searchBox.BackgroundColor3 = CONFIG.Colors.UtilButton
 	searchBox.BackgroundTransparency = 0.3
 	searchBox.Font = CONFIG.Font
-	searchBox.PlaceholderText = "🔎 " .. tr("Search...")
 	searchBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
 	searchBox.Text = ""
 	searchBox.TextColor3 = CONFIG.Colors.Text
@@ -1434,10 +2657,11 @@ do
 	Instance.new("UICorner", searchBox).CornerRadius = UDim.new(0, 6)
 	local searchPad = Instance.new("UIPadding", searchBox)
 	searchPad.PaddingLeft = UDim.new(0, 6)
+	Icons.bind(searchBox, "search", { Mode = "placeholder", Text = tr("Search..."), Px = 12 })
 	safeSetCursor(searchBox, "rbxasset://SystemCursor/Arrow")
 	registerLocalizedString("Search...")
 	registerLocalizedRefresher(function()
-		searchBox.PlaceholderText = "🔎 " .. tr("Search...")
+		Icons.setText(searchBox, tr("Search..."))
 	end)
 
 	local activeFilter = "All"
@@ -1479,9 +2703,9 @@ do
 
 	for order, def in ipairs({
 		{ Label = "All", Filter = "All", Width = 40 },
-		{ Label = "ℹ️", Filter = "Info", Width = 26 },
-		{ Label = "⚠️", Filter = "Warning", Width = 26 },
-		{ Label = "⛔", Filter = "Error", Width = 26 },
+		{ Icon = "info", Filter = "Info", Width = 26 },
+		{ Icon = "warning", Filter = "Warning", Width = 26 },
+		{ Icon = "blocked", Filter = "Error", Width = 26 },
 	}) do
 		local chip = Instance.new("TextButton", filterBar)
 		chip.LayoutOrder = 1 + order
@@ -1489,9 +2713,13 @@ do
 		chip.BackgroundColor3 = CONFIG.Colors.UtilButton
 		chip:SetAttribute("ColorType", "UtilButton")
 		chip.Font = Enum.Font.SourceSansBold
-		chip.Text = def.Label
 		chip.TextColor3 = Color3.new(1, 1, 1)
 		chip.TextSize = 14
+		if def.Icon then
+			Icons.bind(chip, def.Icon, { Mode = "icon", Px = 14 })
+		else
+			chip.Text = def.Label
+		end
 		chip.ZIndex = 2
 		Instance.new("UICorner", chip).CornerRadius = UDim.new(0, 6)
 		addDepthGradient(chip)
@@ -1675,7 +2903,7 @@ table.insert(themedUpdaters, function(theme, fontData)
 	clipboardRunButton.Font = fontData.Bold
 end)
 
-local expandInputButton = createIconButton(footer, "↗️", 22, "UtilButton")
+local expandInputButton = createIconButton(footer, "expand", 22, "UtilButton")
 expandInputButton.Position = UDim2.new(1, -143, 1, -6)
 expandInputButton.AnchorPoint = Vector2.new(1, 1)
 expandInputButton.ZIndex = 4
@@ -1704,19 +2932,78 @@ editorLineGutter.TextSize = CONFIG.TextSize
 editorLineGutter.TextColor3 = Color3.fromRGB(120, 120, 120)
 editorLineGutter.TextXAlignment = Enum.TextXAlignment.Right
 editorLineGutter.TextYAlignment = Enum.TextYAlignment.Top
-editorLineGutter.Size = UDim2.new(0, 24, 1, 0)
+editorLineGutter.AutomaticSize = Enum.AutomaticSize.Y
+editorLineGutter.Size = UDim2.new(0, 24, 0, 0)
 editorLineGutter.Position = UDim2.new(0, 0, 0, 5)
-editorLineGutter.Visible = uiSettings.editorLineNumbers == true
+editorLineGutter.Visible = false
 editorLineGutter.Text = "1"
-local function updateEditorLines()
-	if not inputBox then return end
-	local text = inputBox.Text
+
+local inputBox
+local editorGutterPad
+
+local updateEditorLines
+local syncEditorGutter
+do
+local EDITOR_IDLE = 0.5
+local lastLineCount = -1
+local lastGutterWidth = -1
+local typingUntil = 0
+
+local function applyGutterVisibility()
+	editorLineGutter.Visible = uiSettings.editorLineNumbers == true
+		and inputBox ~= nil
+		and inputBox.Text ~= ""
+		and os.clock() >= typingUntil
+end
+
+local function noteTyping()
+	typingUntil = os.clock() + EDITOR_IDLE
+	editorLineGutter.Visible = false
+	task.delay(EDITOR_IDLE, applyGutterVisibility)
+end
+
+function updateEditorLines()
+	if not inputBox then
+		return
+	end
+	noteTyping()
 	local lines = 1
-	for _ in string.gmatch(text, "\n") do lines = lines + 1 end
-	local t = {}
-	for i = 1, lines do table.insert(t, tostring(i)) end
-	editorLineGutter.Text = table.concat(t, "\n")
-	editorLineGutter.Size = UDim2.new(0, 24, 0, lines * (CONFIG.TextSize + 4))
+	for _ in string.gmatch(inputBox.Text, "\n") do
+		lines += 1
+	end
+	local width = math.max(24, 10 + #tostring(lines) * math.ceil(CONFIG.TextSize * 0.6))
+	if lines == lastLineCount and width == lastGutterWidth then
+		return
+	end
+	lastLineCount = lines
+	local numbers = table.create(lines)
+	for i = 1, lines do
+		numbers[i] = tostring(i)
+	end
+	editorLineGutter.Text = table.concat(numbers, "\n")
+	if width ~= lastGutterWidth then
+		lastGutterWidth = width
+		editorLineGutter.Size = UDim2.new(0, width, 0, 0)
+		if editorGutterPad and uiSettings.editorLineNumbers == true then
+			editorGutterPad(width + 8)
+		end
+	end
+end
+
+function syncEditorGutter()
+	if not editorGutterPad then
+		return
+	end
+	if uiSettings.editorLineNumbers == true then
+		lastGutterWidth = -1
+		updateEditorLines()
+		editorGutterPad(editorLineGutter.Size.X.Offset + 8)
+	else
+		editorGutterPad(10)
+	end
+	typingUntil = 0
+	applyGutterVisibility()
+end
 end
 
 local inputFocusStroke = Instance.new("UIStroke", inputContainer)
@@ -1724,7 +3011,7 @@ inputFocusStroke.Color = CONFIG.Colors.PrimaryAccent
 inputFocusStroke.Thickness = 1.5
 inputFocusStroke.Transparency = 1
 
-local inputBox = Instance.new("TextBox", inputContainer)
+inputBox = Instance.new("TextBox", inputContainer)
 inputBox.BackgroundTransparency = 1
 inputBox.ClearTextOnFocus = false
 inputBox.Font = CONFIG.Font
@@ -1864,6 +3151,14 @@ do
 	hlPad.PaddingTop = UDim.new(0, 5)
 	hlPad.PaddingBottom = UDim.new(0, 5)
 
+	editorGutterPad = function(left)
+		local ibp = inputBox:FindFirstChildOfClass("UIPadding")
+		if ibp then
+			ibp.PaddingLeft = UDim.new(0, left)
+		end
+		hlPad.PaddingLeft = UDim.new(0, left)
+	end
+
 	table.insert(
 		connections,
 		inputBox:GetPropertyChangedSignal("Size"):Connect(function()
@@ -1975,7 +3270,7 @@ do
 	end
 
 	function refreshInputHighlight()
-		if inputBox:IsFocused() or inputBox.Text == "" then
+		if uiSettings.syntaxHighlight == false or inputBox:IsFocused() or inputBox.Text == "" then
 			highlightLabel.Visible = false
 			inputBox.TextTransparency = 0
 		else
@@ -2023,9 +3318,22 @@ templateLineNumber.Size = UDim2.new(0, 26, 0, 0)
 templateLineNumber.AutomaticSize = Enum.AutomaticSize.Y
 templateLineNumber.Visible = uiSettings.consoleLineNumbers == true
 templateLineNumber.LayoutOrder = 1
+local templateStamp = Instance.new("TextLabel", templateLog)
+templateStamp.Name = "Timestamp"
+templateStamp.BackgroundTransparency = 1
+templateStamp.Font = CONFIG.Font
+templateStamp.TextSize = CONFIG.TextSize
+templateStamp.TextColor3 = Color3.fromRGB(120, 120, 120)
+templateStamp.TextXAlignment = Enum.TextXAlignment.Right
+templateStamp.TextYAlignment = Enum.TextYAlignment.Top
+templateStamp.Size = UDim2.new(0, 52, 0, 0)
+templateStamp.AutomaticSize = Enum.AutomaticSize.Y
+templateStamp.Visible = uiSettings.logTimestamps == true
+templateStamp.LayoutOrder = 2
+
 local templateEntry = Instance.new("TextLabel", templateLog)
 templateEntry.Name = "LogEntry"
-templateEntry.LayoutOrder = 2
+templateEntry.LayoutOrder = 3
 templateEntry.BackgroundTransparency = 1
 templateEntry.Font = CONFIG.Font
 templateEntry.TextSize = CONFIG.TextSize
@@ -2034,10 +3342,71 @@ templateEntry.TextXAlignment = Enum.TextXAlignment.Left
 templateEntry.Size = UDim2.new(1, uiSettings.consoleLineNumbers == true and -90 or -60, 0, 0)
 templateEntry.AutomaticSize = Enum.AutomaticSize.Y
 templateEntry.RichText = true
+
+local consoleGutterWidth = 26
+local consoleStampWidth = 52
+local syncConsoleGutter
+local refreshConsoleColumns
+do
+local widestDigits = 0
+
+local function entryInset()
+	local inset = 60
+	if uiSettings.consoleLineNumbers == true then
+		inset += consoleGutterWidth + 4
+	end
+	if uiSettings.logTimestamps == true then
+		inset += consoleStampWidth + 4
+	end
+	return -inset
+end
+
+function refreshConsoleColumns()
+	local showLines = uiSettings.consoleLineNumbers == true
+	local showStamps = uiSettings.logTimestamps == true
+	consoleStampWidth = math.ceil(CONFIG.TextSize * 3.7)
+	templateLineNumber.Visible = showLines
+	templateLineNumber.Size = UDim2.new(0, consoleGutterWidth, 0, 0)
+	templateStamp.Visible = showStamps
+	templateStamp.Size = UDim2.new(0, consoleStampWidth, 0, 0)
+	templateEntry.Size = UDim2.new(1, entryInset(), 0, 0)
+	for _, child in ipairs(logContainer:GetChildren()) do
+		if child:IsA("Frame") and child.Name == "LogFrame" then
+			local ln = child:FindFirstChild("LineNumber")
+			local stamp = child:FindFirstChild("Timestamp")
+			local entry = child:FindFirstChild("LogEntry")
+			if ln then
+				ln.Visible = showLines
+				ln.Size = UDim2.new(0, consoleGutterWidth, 0, 0)
+			end
+			if stamp then
+				stamp.Visible = showStamps
+				stamp.Size = UDim2.new(0, consoleStampWidth, 0, 0)
+			end
+			if entry then
+				entry.Size = UDim2.new(1, entryInset(), 0, 0)
+			end
+		end
+	end
+end
+
+function syncConsoleGutter(numberText)
+	local digits = #numberText
+	if digits <= widestDigits then
+		return
+	end
+	widestDigits = digits
+	consoleGutterWidth = math.max(26, 6 + digits * math.ceil(CONFIG.TextSize * 0.6))
+	refreshConsoleColumns()
+end
+end
+
+refreshConsoleColumns()
+
 do
 local templateActions = Instance.new("Frame", templateLog)
 templateActions.Name = "Actions"
-templateActions.LayoutOrder = 3
+templateActions.LayoutOrder = 4
 templateActions.Size = UDim2.new(0, 60, 1, 0)
 templateActions.BackgroundTransparency = 1
 templateActions.Visible = false
@@ -2045,8 +3414,8 @@ local templateActionsLayout = Instance.new("UIListLayout", templateActions)
 templateActionsLayout.FillDirection = Enum.FillDirection.Horizontal
 templateActionsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
 templateActionsLayout.Padding = UDim.new(0, 4)
-createIconButton(templateActions, "📋", 22, "UtilButton").Name = "CopyBtn"
-createIconButton(templateActions, "🗑️", 22, "UtilButton").Name = "DelBtn"
+createIconButton(templateActions, "clipboard", 22, "UtilButton").Name = "CopyBtn"
+createIconButton(templateActions, "trash", 22, "UtilButton").Name = "DelBtn"
 end
 
 local function requestCanvasUpdate()
@@ -2167,9 +3536,9 @@ do
 	addTabButton.AnchorPoint = Vector2.new(1, 0)
 	addTabButton.BackgroundColor3 = CONFIG.Colors.UtilButton
 	addTabButton.Font = CONFIG.BoldFont
-	addTabButton.Text = "＋"
 	addTabButton.TextColor3 = Color3.new(1, 1, 1)
 	addTabButton.TextSize = 20
+	Icons.bind(addTabButton, "plus", { Mode = "icon", Px = 14 })
 	addTabButton.ZIndex = 4
 	Instance.new("UICorner", addTabButton).CornerRadius = UDim.new(0, 6)
 	addDepthGradient(addTabButton)
@@ -2241,7 +3610,8 @@ do
 		end
 		local items = {
 			{
-				Label = tab.pinned and "📌 Unpin" or "📌 Pin",
+				Icon = "pin",
+				Label = tab.pinned and "Unpin" or "Pin",
 				Action = function()
 					tab.pinned = not tab.pinned
 					refreshTabBar()
@@ -2249,19 +3619,22 @@ do
 				end,
 			},
 			{
-				Label = "✏️ Rename",
+				Icon = "pencil",
+				Label = "Rename",
 				Action = function()
 					beginRenameTab(tab)
 				end,
 			},
 			{
-				Label = "🗑️ Close",
+				Icon = "trash",
+				Label = "Close",
 				Action = function()
 					closeTab(tab)
 				end,
 			},
 			{
-				Label = "🧹 Close Others",
+				Icon = "broom",
+				Label = "Close Others",
 				Action = function()
 					for i = #editorTabs, 1, -1 do
 						local t = editorTabs[i]
@@ -2276,7 +3649,8 @@ do
 				end,
 			},
 			{
-				Label = "❌ Close All",
+				Icon = "closeAll",
+				Label = "Close All",
 				Action = function()
 					closeAllTabs()
 				end,
@@ -2288,12 +3662,13 @@ do
 			opt.LayoutOrder = order
 			opt.BackgroundColor3 = CONFIG.Colors.UtilButton
 			opt.Font = CONFIG.Font
-			opt.Text = "  " .. item.Label
 			opt.TextColor3 = CONFIG.Colors.Text
 			opt.TextSize = 14
 			opt.TextXAlignment = Enum.TextXAlignment.Left
 			opt.ZIndex = 61
 			Instance.new("UICorner", opt).CornerRadius = UDim.new(0, 5)
+			Instance.new("UIPadding", opt).PaddingLeft = UDim.new(0, 8)
+			Icons.bind(opt, item.Icon, { Mode = "label", Text = item.Label, Px = 14 })
 			safeSetCursor(opt, "rbxasset://SystemCursor/Arrow")
 			opt.MouseButton1Click:Connect(function()
 				hideTabMenu()
@@ -2502,7 +3877,6 @@ do
 			btn.AutoButtonColor = false
 			btn.BackgroundColor3 = isActive and CONFIG.Colors.SecondaryAccent or CONFIG.Colors.UtilButton
 			btn.Font = isActive and CONFIG.BoldFont or CONFIG.Font
-			btn.Text = (tab.pinned and "📌 " or "") .. tab.name
 			btn.TextColor3 = isActive and Color3.new(1, 1, 1) or CONFIG.Colors.Text
 			btn.TextSize = 13
 			btn.TextTruncate = Enum.TextTruncate.AtEnd
@@ -2514,6 +3888,7 @@ do
 			local btnPad = Instance.new("UIPadding", btn)
 			btnPad.PaddingLeft = UDim.new(0, 8)
 			btnPad.PaddingRight = UDim.new(0, 22)
+			Icons.bind(btn, tab.pinned and "pin" or nil, { Mode = "label", Text = tab.name, Px = 12 })
 
 			local closeX = Instance.new("TextButton", btn)
 			closeX.Size = UDim2.new(0, 18, 0, 18)
@@ -2521,9 +3896,9 @@ do
 			closeX.AnchorPoint = Vector2.new(1, 0.5)
 			closeX.BackgroundTransparency = 1
 			closeX.Font = Enum.Font.SourceSansBold
-			closeX.Text = "✖"
 			closeX.TextColor3 = isActive and Color3.new(1, 1, 1) or CONFIG.Colors.InputEcho
 			closeX.TextSize = 14
+			Icons.bind(closeX, "close", { Mode = "icon", Px = 10 })
 			closeX.ZIndex = 6
 			safeSetCursor(closeX, "rbxasset://SystemCursor/Arrow")
 			closeX.MouseButton1Click:Connect(function()
@@ -2826,7 +4201,7 @@ local function showTutorial()
 	tutIcon.TextColor3 = CONFIG.Colors.Text
 	tutIcon.TextSize = baseSize + 6
 	tutIcon.TextXAlignment = Enum.TextXAlignment.Left
-	tutIcon.Text = ""
+	Icons.bind(tutIcon, nil, { Mode = "icon" })
 	tutIcon.ZIndex = 46
 
 	local skipButton = Instance.new("TextButton", headerRow)
@@ -2899,7 +4274,6 @@ local function showTutorial()
 	langSearch.Font = CONFIG.Font
 	langSearch.TextColor3 = CONFIG.Colors.Text
 	langSearch.PlaceholderColor3 = CONFIG.Colors.InputEcho
-	langSearch.PlaceholderText = "🔎 " .. tr("Search language...")
 	langSearch.Text = ""
 	langSearch.TextSize = baseSize
 	langSearch.ClearTextOnFocus = false
@@ -2908,6 +4282,7 @@ local function showTutorial()
 	local searchPad = Instance.new("UIPadding", langSearch)
 	searchPad.PaddingLeft = UDim.new(0, 8)
 	searchPad.PaddingRight = UDim.new(0, 8)
+	Icons.bind(langSearch, "search", { Mode = "placeholder", Text = tr("Search language..."), Px = 12 })
 
 	local listHeight = math.clamp(math.floor(screenGui.AbsoluteSize.Y * 0.22), 68, 120)
 	local langScroll = Instance.new("ScrollingFrame", introPanel)
@@ -2937,7 +4312,7 @@ local function showTutorial()
 	discordButtonTour.Font = CONFIG.BoldFont
 	discordButtonTour.TextColor3 = Color3.new(1, 1, 1)
 	discordButtonTour.TextSize = baseSize
-	discordButtonTour.Text = "💬  " .. tr("Join our Discord")
+	Icons.bind(discordButtonTour, "message", { Mode = "label", Align = "center", Text = tr("Join our Discord"), Px = 14 })
 	discordButtonTour.ZIndex = 47
 	Instance.new("UICorner", discordButtonTour).CornerRadius = UDim.new(0, 6)
 	addDepthGradient(discordButtonTour)
@@ -3002,11 +4377,13 @@ local function showTutorial()
 
 	track(discordButtonTour.MouseButton1Click:Connect(function()
 		pcall(setclipboard, "https://discord.gg/worldclient")
-		discordButtonTour.Text = "✅  " .. tr("Link copied!")
+		Icons.setName(discordButtonTour, "checkCircle")
+		Icons.setText(discordButtonTour, tr("Link copied!"))
 		log(tr("Discord link copied."), "Output")
 		task.delay(2, function()
 			if discordButtonTour.Parent then
-				discordButtonTour.Text = "💬  " .. tr("Join our Discord")
+				Icons.setName(discordButtonTour, "message")
+				Icons.setText(discordButtonTour, tr("Join our Discord"))
 			end
 		end)
 	end))
@@ -3046,13 +4423,13 @@ local function showTutorial()
 	counter.TextSize = baseSize
 	counter.ZIndex = 46
 
-	local prevButton = createIconButton(footerRow, "⬅️", 34, "UtilButton")
+	local prevButton = createIconButton(footerRow, "arrowLeft", 34, "UtilButton")
 	prevButton.Position = UDim2.new(0, 0, 0.5, 0)
 	prevButton.AnchorPoint = Vector2.new(0, 0.5)
 	prevButton.ZIndex = 46
 	prevButton.Font = CONFIG.BoldFont
 
-	local nextButton = createIconButton(footerRow, "➡️", 34, "SecondaryAccent")
+	local nextButton = createIconButton(footerRow, "arrowRight", 34, "SecondaryAccent")
 	nextButton.Position = UDim2.new(1, 0, 0.5, 0)
 	nextButton.AnchorPoint = Vector2.new(1, 0.5)
 	nextButton.ZIndex = 46
@@ -3096,13 +4473,13 @@ local function showTutorial()
 			tutTitle.Text = tr(pageData.Title)
 		end
 		tutBody.Text = tr(pageData.Text)
-		tutIcon.Text = pageData.Icon or ""
+		Icons.setName(tutIcon, pageData.Icon)
 		skipButton.Text = tr("Skip")
 
 		introPanel.Visible = pageData.Kind == "intro"
 		if introPanel.Visible then
-			langSearch.PlaceholderText = "🔎 " .. tr("Search language...")
-			discordButtonTour.Text = "💬  " .. tr("Join our Discord")
+			Icons.setText(langSearch, tr("Search language..."))
+			Icons.setText(discordButtonTour, tr("Join our Discord"))
 		end
 
 		counter.Text = currentPage .. " / " .. #pages
@@ -3118,7 +4495,7 @@ local function showTutorial()
 
 		prevButton.Visible = currentPage > 1
 		skipButton.Visible = (currentPage ~= #pages)
-		nextButton.Text = (currentPage == #pages) and "✅" or "➡️"
+		Icons.setName(nextButton, (currentPage == #pages) and "checkCircle" or "arrowRight")
 		syncTitleWidth()
 	end
 
@@ -3335,8 +4712,8 @@ end)
 
 local settingsScroll = Instance.new("ScrollingFrame", settingsFrame)
 settingsScroll.Name = "SettingsScroll"
-settingsScroll.Position = UDim2.new(0, 12, 0, 48)
-settingsScroll.Size = UDim2.new(1, -24, 1, -60)
+settingsScroll.Position = UDim2.new(0, 12, 0, 116)
+settingsScroll.Size = UDim2.new(1, -24, 1, -128)
 settingsScroll.BackgroundTransparency = 1
 settingsScroll.BorderSizePixel = 0
 settingsScroll.ScrollBarThickness = 4
@@ -3348,6 +4725,217 @@ do
 local settingsListLayout = Instance.new("UIListLayout", settingsScroll)
 settingsListLayout.Padding = UDim.new(0, 8)
 settingsListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+end
+
+local settingsCategory = "General"
+local settingsFilter
+local settingsToggles = {}
+local settingsSection
+local SETTINGS_RANK = {
+	Theme = 1,
+	Language = 2,
+	Editor = 3,
+	Console = 4,
+	Mobile = 5,
+	Hub = 6,
+	General = 7,
+}
+
+do
+local SETTINGS_CATEGORIES = {
+	{ Key = "all", Label = "All", Icon = "folder" },
+	{ Key = "Theme", Label = "Theme", Icon = "palette" },
+	{ Key = "Language", Label = "Language", Icon = "globe" },
+	{ Key = "Editor", Label = "Editor", Icon = "pencil" },
+	{ Key = "Console", Label = "Console", Icon = "monitor" },
+	{ Key = "Mobile", Label = "Mobile", Icon = "phone" },
+	{ Key = "Hub", Label = "Hub", Icon = "library" },
+	{ Key = "General", Label = "General", Icon = "settings" },
+}
+
+local activeCategory = "all"
+local searchQuery = ""
+local chipButtons = {}
+
+local settingsSearch = Instance.new("TextBox", settingsFrame)
+settingsSearch.Name = "SettingsSearch"
+settingsSearch.Position = UDim2.new(0, 12, 0, 48)
+settingsSearch.Size = UDim2.new(1, -24, 0, 28)
+settingsSearch.BackgroundColor3 = CONFIG.Colors.UtilButton
+settingsSearch.BackgroundTransparency = 0.25
+settingsSearch.Font = CONFIG.Font
+settingsSearch.PlaceholderColor3 = CONFIG.Colors.InputEcho
+settingsSearch.Text = ""
+settingsSearch.TextColor3 = CONFIG.Colors.Text
+settingsSearch.TextSize = 14
+settingsSearch.ClearTextOnFocus = false
+settingsSearch.TextXAlignment = Enum.TextXAlignment.Left
+settingsSearch.ZIndex = 11
+Instance.new("UICorner", settingsSearch).CornerRadius = UDim.new(0, 6)
+do
+local searchPad = Instance.new("UIPadding", settingsSearch)
+searchPad.PaddingLeft = UDim.new(0, 8)
+searchPad.PaddingRight = UDim.new(0, 8)
+end
+safeSetCursor(settingsSearch, "rbxasset://SystemCursor/Arrow")
+Icons.bind(settingsSearch, "search", { Mode = "placeholder", Text = tr("Search settings..."), Px = 12 })
+registerLocalizedString("Search settings...")
+registerLocalizedRefresher(function()
+	Icons.setText(settingsSearch, tr("Search settings..."))
+end)
+
+local chipRow = Instance.new("ScrollingFrame", settingsFrame)
+chipRow.Name = "SettingsCategories"
+chipRow.Position = UDim2.new(0, 12, 0, 82)
+chipRow.Size = UDim2.new(1, -24, 0, 28)
+chipRow.BackgroundTransparency = 1
+chipRow.BorderSizePixel = 0
+chipRow.ScrollBarThickness = 0
+chipRow.CanvasSize = UDim2.new(0, 0, 0, 0)
+chipRow.AutomaticCanvasSize = Enum.AutomaticSize.X
+chipRow.ScrollingDirection = Enum.ScrollingDirection.X
+chipRow.ZIndex = 11
+do
+local chipLayout = Instance.new("UIListLayout", chipRow)
+chipLayout.FillDirection = Enum.FillDirection.Horizontal
+chipLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+chipLayout.SortOrder = Enum.SortOrder.LayoutOrder
+chipLayout.Padding = UDim.new(0, 6)
+end
+
+local sectionHeaders = {}
+
+function settingsSection(category)
+	if sectionHeaders[category] then
+		return
+	end
+	local header = Instance.new("TextLabel", settingsScroll)
+	header.Name = "Section_" .. category
+	header.Size = UDim2.new(1, -6, 0, 20)
+	header.LayoutOrder = (SETTINGS_RANK[category] or 9) * 1000
+	header.BackgroundTransparency = 1
+	header.Font = CONFIG.BoldFont
+	header.Text = tr(category)
+	header.TextColor3 = CONFIG.Colors.SecondaryAccent
+	header.TextSize = 13
+	header.TextXAlignment = Enum.TextXAlignment.Left
+	header.ZIndex = 11
+	header:SetAttribute("Category", category)
+	header:SetAttribute("IsHeader", true)
+	sectionHeaders[category] = header
+	registerLocalizedString(category)
+	registerLocalizedRefresher(function()
+		header.Text = tr(category)
+	end)
+	table.insert(themedUpdaters, function(theme, fontData)
+		tintTween(header, { TextColor3 = theme.SecondaryAccent })
+		header.Font = fontData.Bold
+	end)
+end
+
+local function rowHaystack(row)
+	local parts = row:GetAttribute("SearchKey") or ""
+	if row:IsA("TextButton") or row:IsA("TextLabel") then
+		parts = parts .. " " .. row.Text
+	else
+		local label = row:FindFirstChildWhichIsA("TextLabel")
+		if label then
+			parts = parts .. " " .. label.Text
+		end
+	end
+	return parts:lower()
+end
+
+function settingsFilter()
+	local anyVisible = false
+	for _, row in ipairs(settingsScroll:GetChildren()) do
+		if row:IsA("GuiObject") then
+			local category = row:GetAttribute("Category")
+			if category == nil then
+				row.Visible = true
+			elseif row:GetAttribute("IsHeader") then
+				row.Visible = searchQuery == ""
+					and (activeCategory == "all" or category == activeCategory)
+			else
+				local matchesCategory = (activeCategory == "all") or (category == activeCategory)
+				local matchesSearch = searchQuery == ""
+					or rowHaystack(row):find(searchQuery, 1, true) ~= nil
+				row.Visible = matchesCategory and matchesSearch
+				if row.Visible then
+					anyVisible = true
+				end
+			end
+		end
+	end
+	settingsScroll.CanvasPosition = Vector2.new(0, 0)
+	return anyVisible
+end
+
+local function paintChips()
+	for key, chip in pairs(chipButtons) do
+		local selected = key == activeCategory
+		chip:SetAttribute("ColorType", selected and "SecondaryAccent" or "UtilButton")
+		TweenService:Create(chip, TweenInfo.new(0.15), {
+			BackgroundColor3 = selected and CONFIG.Colors.SecondaryAccent or CONFIG.Colors.UtilButton,
+		}):Play()
+	end
+end
+
+for order, def in ipairs(SETTINGS_CATEGORIES) do
+	local chip = Instance.new("TextButton", chipRow)
+	chip.Name = "Category_" .. def.Key
+	chip.LayoutOrder = order
+	chip.AutomaticSize = Enum.AutomaticSize.X
+	chip.Size = UDim2.new(0, 0, 1, 0)
+	chip.BackgroundColor3 = CONFIG.Colors.UtilButton
+	chip:SetAttribute("ColorType", "UtilButton")
+	chip.Font = CONFIG.Font
+	chip.TextColor3 = Color3.new(1, 1, 1)
+	chip.TextSize = 12
+	chip.ZIndex = 12
+	Instance.new("UICorner", chip).CornerRadius = UDim.new(1, 0)
+	do
+	local chipPad = Instance.new("UIPadding", chip)
+	chipPad.PaddingLeft = UDim.new(0, 10)
+	chipPad.PaddingRight = UDim.new(0, 10)
+	end
+	safeSetCursor(chip, "rbxasset://SystemCursor/Arrow")
+	Icons.bind(chip, def.Icon, { Mode = "label", Text = tr(def.Label), Px = 12 })
+	registerLocalizedString(def.Label)
+	registerLocalizedRefresher(function()
+		Icons.setText(chip, tr(def.Label))
+	end)
+	chipButtons[def.Key] = chip
+	table.insert(
+		connections,
+		chip.MouseButton1Click:Connect(function()
+			activeCategory = def.Key
+			paintChips()
+			settingsFilter()
+		end)
+	)
+end
+paintChips()
+
+table.insert(
+	connections,
+	settingsSearch:GetPropertyChangedSignal("Text"):Connect(function()
+		searchQuery = settingsSearch.Text:lower()
+		settingsFilter()
+	end)
+)
+
+table.insert(themedUpdaters, function(theme, fontData)
+	tintTween(settingsSearch, { BackgroundColor3 = theme.UtilButton, TextColor3 = theme.Text })
+	settingsSearch.PlaceholderColor3 = theme.InputEcho
+	settingsSearch.Font = fontData.Font
+	for key, chip in pairs(chipButtons) do
+		tintTween(chip, {
+			BackgroundColor3 = key == activeCategory and theme.SecondaryAccent or theme.UtilButton,
+		})
+		chip.Font = fontData.Font
+	end
+end)
 end
 
 local pickerFrame = Instance.new("Frame", settingsFrame)
@@ -3383,9 +4971,9 @@ pickerClose.Position = UDim2.new(1, -8, 0, 8)
 pickerClose.AnchorPoint = Vector2.new(1, 0)
 pickerClose.BackgroundColor3 = CONFIG.Colors.UtilButton
 pickerClose.Font = Enum.Font.SourceSans
-pickerClose.Text = "✖️"
 pickerClose.TextColor3 = Color3.new(1, 1, 1)
 pickerClose.TextSize = 14
+Icons.bind(pickerClose, "close", { Mode = "icon", Px = 12 })
 pickerClose.ZIndex = 13
 Instance.new("UICorner", pickerClose).CornerRadius = UDim.new(0, 6)
 addDepthGradient(pickerClose)
@@ -3397,7 +4985,6 @@ pickerSearch.Position = UDim2.new(0, 10, 0, 40)
 pickerSearch.BackgroundColor3 = CONFIG.Colors.UtilButton
 pickerSearch.BackgroundTransparency = 0.25
 pickerSearch.Font = CONFIG.Font
-pickerSearch.PlaceholderText = "🔎 Search..."
 pickerSearch.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
 pickerSearch.Text = ""
 pickerSearch.TextColor3 = CONFIG.Colors.Text
@@ -3411,10 +4998,11 @@ do
 local pickerSearchPad = Instance.new("UIPadding", pickerSearch)
 pickerSearchPad.PaddingLeft = UDim.new(0, 8)
 end
+Icons.bind(pickerSearch, "search", { Mode = "placeholder", Text = tr("Search..."), Px = 12 })
 safeSetCursor(pickerSearch, "rbxasset://SystemCursor/Arrow")
 registerLocalizedString("Search...")
 registerLocalizedRefresher(function()
-	pickerSearch.PlaceholderText = "🔎 " .. tr("Search...")
+	Icons.setText(pickerSearch, tr("Search..."))
 end)
 liftPanelWhileTyping(settingsFrame, pickerSearch)
 
@@ -3497,9 +5085,9 @@ local function openPicker(title, entries, currentIndex, onPick, searchable)
 		local selected = (i == currentIndex)
 		opt.BackgroundColor3 = selected and CONFIG.Colors.SecondaryAccent or CONFIG.Colors.UtilButton
 		opt.Font = entry.Font or CONFIG.Font
-		opt.Text = (selected and "✓  " or "") .. entry.Name
 		opt.TextColor3 = selected and Color3.new(1, 1, 1) or CONFIG.Colors.Text
 		opt.TextSize = 15
+		Icons.bind(opt, selected and "check" or nil, { Mode = "label", Align = "center", Text = entry.Name, Px = 13 })
 		opt.ZIndex = 13
 		Instance.new("UICorner", opt).CornerRadius = UDim.new(0, 6)
 		addDepthGradient(opt)
@@ -3551,6 +5139,10 @@ local function createDropdownRow(labelText, buildEntries, getIndex, onSelect, se
 	local btn = Instance.new("TextButton", settingsScroll)
 	btn.Size = UDim2.new(1, -6, 0, 36)
 	btn.LayoutOrder = nextOrder()
+	btn:SetAttribute("Category", settingsCategory)
+	btn:SetAttribute("SearchKey", labelText:lower())
+	btn.LayoutOrder = (SETTINGS_RANK[settingsCategory] or 9) * 1000 + btn.LayoutOrder
+	settingsSection(settingsCategory)
 	btn.BackgroundColor3 = CONFIG.Colors.UtilButton
 	btn.Font = CONFIG.Font
 	btn.TextColor3 = CONFIG.Colors.Text
@@ -3560,8 +5152,10 @@ local function createDropdownRow(labelText, buildEntries, getIndex, onSelect, se
 	addDepthGradient(btn)
 	safeSetCursor(btn, "rbxasset://SystemCursor/Arrow")
 
+	Icons.bind(btn, "chevronDown", { Mode = "label", Align = "right", Text = "", Px = 12 })
+
 	local function refreshText()
-		btn.Text = tr(labelText) .. ":  " .. buildEntries()[getIndex()].Name .. "  ▼"
+		Icons.setText(btn, tr(labelText) .. ":  " .. buildEntries()[getIndex()].Name)
 	end
 	refreshText()
 	registerLocalizedString(labelText)
@@ -3589,6 +5183,10 @@ local function createToggleRow(labelText, initial, onChanged)
 	row.Size = UDim2.new(1, -6, 0, 36)
 	row.LayoutOrder = nextOrder()
 	row.BackgroundTransparency = 1
+	row:SetAttribute("Category", settingsCategory)
+	row:SetAttribute("SearchKey", labelText:lower())
+	row.LayoutOrder = (SETTINGS_RANK[settingsCategory] or 9) * 1000 + row.LayoutOrder
+	settingsSection(settingsCategory)
 
 	local label = Instance.new("TextLabel", row)
 	label.Size = UDim2.new(1, -60, 1, 0)
@@ -3654,6 +5252,16 @@ local function createToggleRow(labelText, initial, onChanged)
 			onChanged(state)
 		end)
 	)
+
+	settingsToggles[labelText] = function(value)
+		if state == value then
+			return
+		end
+		state = value
+		render(true)
+		onChanged(state)
+	end
+
 	return row
 end
 
@@ -3755,6 +5363,7 @@ do
 	end
 end
 
+settingsCategory = "Theme"
 createDropdownRow("Theme", function()
 	local entries = {}
 	for _, t in ipairs(themes) do
@@ -3773,19 +5382,21 @@ do
 	local editThemeBtn = Instance.new("TextButton", settingsScroll)
 	editThemeBtn.Name = "EditThemeBtn"
 	editThemeBtn.Size = UDim2.new(1, -6, 0, 36)
-	editThemeBtn.LayoutOrder = nextOrder()
+	editThemeBtn.LayoutOrder = SETTINGS_RANK.Theme * 1000 + nextOrder()
+	editThemeBtn:SetAttribute("Category", "Theme")
+	editThemeBtn:SetAttribute("SearchKey", "edit custom theme colors")
 	editThemeBtn.BackgroundColor3 = CONFIG.Colors.UtilButton
 	editThemeBtn.Font = CONFIG.Font
 	editThemeBtn.TextColor3 = CONFIG.Colors.Text
 	editThemeBtn.TextSize = 15
-	editThemeBtn.Text = "🎨  " .. tr("Edit Custom Theme")
+	Icons.bind(editThemeBtn, "palette", { Mode = "label", Align = "center", Text = tr("Edit Custom Theme"), Px = 14 })
 	editThemeBtn.ZIndex = 11
 	Instance.new("UICorner", editThemeBtn).CornerRadius = UDim.new(0, 6)
 	addDepthGradient(editThemeBtn)
 	safeSetCursor(editThemeBtn, "rbxasset://SystemCursor/Arrow")
 	registerLocalizedString("Edit Custom Theme")
 	registerLocalizedRefresher(function()
-		editThemeBtn.Text = "🎨  " .. tr("Edit Custom Theme")
+		Icons.setText(editThemeBtn, tr("Edit Custom Theme"))
 	end)
 
 	local editorFrame = Instance.new("Frame", settingsFrame)
@@ -4061,6 +5672,22 @@ end, function(i)
 	saveSettings()
 end)
 
+createDropdownRow("Icon Style", function()
+	local entries = {}
+	for _, style in ipairs(Icons.Styles) do
+		table.insert(entries, { Name = tr(style.Name) })
+	end
+	return entries
+end, function()
+	return Icons.StyleIndex
+end, function(i)
+	Icons.StyleIndex = i
+	uiSettings.iconStyle = Icons.Styles[i].Key
+	Icons.refreshAll()
+	saveSettings()
+end)
+
+settingsCategory = "Language"
 createDropdownRow("Language", function()
 	return languages
 end, function()
@@ -4076,6 +5703,7 @@ createToggleRow("Auto-Translate Logs", uiSettings.autoTranslate, function(on)
 	saveSettings()
 end)
 
+settingsCategory = "Theme"
 createToggleRow("Click Particles", uiSettings.particles, function(on)
 	uiSettings.particles = on
 	saveSettings()
@@ -4101,6 +5729,7 @@ createToggleRow("Background Blur", uiSettings.blur, function(on)
 end)
 
 
+settingsCategory = "Editor"
 createToggleRow("Editor Word Wrap", uiSettings.editorWordWrap == true, function(on)
 	uiSettings.editorWordWrap = on
 	inputBox.TextWrapped = on
@@ -4110,6 +5739,7 @@ createToggleRow("Editor Word Wrap", uiSettings.editorWordWrap == true, function(
 	saveSettings()
 end)
 
+settingsCategory = "Console"
 createToggleRow("Console Word Wrap", uiSettings.consoleWordWrap == true, function(on)
 	uiSettings.consoleWordWrap = on
 	templateEntry.TextWrapped = on
@@ -4123,36 +5753,27 @@ createToggleRow("Console Word Wrap", uiSettings.consoleWordWrap == true, functio
 	saveSettings()
 end)
 
+settingsCategory = "Editor"
 createToggleRow("Editor Line Numbers", uiSettings.editorLineNumbers == true, function(on)
 	uiSettings.editorLineNumbers = on
-	local eg = inputContainer:FindFirstChild("LineGutter")
-	if eg then eg.Visible = on end
-	local pad = on and 32 or 10
-	local ibp = inputBox:FindFirstChildOfClass("UIPadding")
-	if ibp then ibp.PaddingLeft = UDim.new(0, pad) end
-	local hl = inputContainer:FindFirstChild("HighlightLayer")
-	if hl then
-		local hlp = hl:FindFirstChildOfClass("UIPadding")
-		if hlp then hlp.PaddingLeft = UDim.new(0, pad) end
-	end
+	syncEditorGutter()
 	saveSettings()
 end)
 
+settingsCategory = "Console"
 createToggleRow("Console Line Numbers", uiSettings.consoleLineNumbers == true, function(on)
 	uiSettings.consoleLineNumbers = on
-	templateLineNumber.Visible = on
-	templateEntry.Size = UDim2.new(1, on and -90 or -60, 0, 0)
-	for _, child in ipairs(logContainer:GetChildren()) do
-		if child:IsA("Frame") and child.Name == "LogFrame" then
-			local ln = child:FindFirstChild("LineNumber")
-			local entry = child:FindFirstChild("LogEntry")
-			if ln then ln.Visible = on end
-			if entry then entry.Size = UDim2.new(1, on and -90 or -60, 0, 0) end
-		end
-	end
+	refreshConsoleColumns()
 	saveSettings()
 end)
 
+createToggleRow("Log Timestamps", uiSettings.logTimestamps == true, function(on)
+	uiSettings.logTimestamps = on
+	refreshConsoleColumns()
+	saveSettings()
+end)
+
+settingsCategory = "Console"
 createToggleRow("Auto-Scroll Logs", uiSettings.autoScroll, function(on)
 	if setAutoScroll then
 		setAutoScroll(on)
@@ -4160,12 +5781,107 @@ createToggleRow("Auto-Scroll Logs", uiSettings.autoScroll, function(on)
 	saveSettings()
 end)
 
+settingsCategory = "Mobile"
 createToggleRow("FPS Booster", uiSettings.fpsBooster, function(on)
 	uiSettings.fpsBooster = on
 	applyFpsBooster(on)
 	saveSettings()
 end)
 
+do
+local LOG_LIMITS = { 50, 100, 150, 250, 400 }
+
+local function setToggle(name, value)
+	local apply = settingsToggles[name]
+	if apply then
+		apply(value)
+	end
+end
+
+settingsCategory = "Mobile"
+
+createToggleRow("Mobile Mode", uiSettings.mobileMode == true, function(on)
+	uiSettings.mobileMode = on
+	if on then
+		setToggle("Click Particles", false)
+		setToggle("Border Glow", false)
+		setToggle("Background Blur", false)
+		setToggle("Reduce Animations", true)
+		setToggle("Load Hub Images", false)
+		setToggle("FPS Booster", true)
+	end
+	saveSettings()
+end)
+
+createToggleRow("Reduce Animations", uiSettings.reduceMotion == true, function(on)
+	uiSettings.reduceMotion = on
+	if not on then
+		uiSettings.mobileMode = false
+		setToggle("Mobile Mode", false)
+	end
+	saveSettings()
+end)
+
+createToggleRow("Load Hub Images", uiSettings.hubImages ~= false, function(on)
+	uiSettings.hubImages = on
+	if on then
+		uiSettings.mobileMode = false
+		setToggle("Mobile Mode", false)
+	end
+	saveSettings()
+end)
+
+createDropdownRow("Max Console Logs", function()
+	local entries = {}
+	for _, limit in ipairs(LOG_LIMITS) do
+		table.insert(entries, { Name = tostring(limit) })
+	end
+	return entries
+end, function()
+	for index, limit in ipairs(LOG_LIMITS) do
+		if limit == CONFIG.MaxLogs then
+			return index
+		end
+	end
+	return 3
+end, function(index)
+	CONFIG.MaxLogs = LOG_LIMITS[index]
+	uiSettings.maxLogs = LOG_LIMITS[index]
+	while #activeLogFrames > CONFIG.MaxLogs do
+		local oldest = table.remove(activeLogFrames, 1)
+		if oldest and oldest.Parent then
+			oldest:Destroy()
+		end
+	end
+	saveSettings()
+end)
+end
+
+settingsCategory = "Editor"
+createToggleRow("Syntax Highlighting", uiSettings.syntaxHighlight ~= false, function(on)
+	uiSettings.syntaxHighlight = on
+	refreshInputHighlight()
+	saveSettings()
+end)
+
+settingsCategory = "Hub"
+createDropdownRow("Script Previews Per Row", function()
+	local entries = {}
+	for count = 1, 4 do
+		table.insert(entries, { Name = tostring(count) })
+	end
+	return entries
+end, function()
+	return math.clamp(scriptHub.Columns or 4, 1, 4)
+end, function(index)
+	scriptHub.Columns = index
+	if scriptHub.SetColumns then
+		scriptHub.SetColumns(index)
+	end
+	saveSettings()
+end)
+
+settingsCategory = "General"
 createToggleRow("Anti-AFK", uiSettings.antiAfk, function(on)
 	uiSettings.antiAfk = on
 	applyAntiAfk(on)
@@ -4175,19 +5891,21 @@ end)
 local autoExecBtn = Instance.new("TextButton", settingsScroll)
 autoExecBtn.Name = "AutoExecBtn"
 autoExecBtn.Size = UDim2.new(1, -6, 0, 36)
-autoExecBtn.LayoutOrder = nextOrder()
+autoExecBtn.LayoutOrder = SETTINGS_RANK.General * 1000 + nextOrder()
+autoExecBtn:SetAttribute("Category", "General")
+autoExecBtn:SetAttribute("SearchKey", "auto execute scripts on join")
 autoExecBtn.BackgroundColor3 = CONFIG.Colors.UtilButton
 autoExecBtn.Font = CONFIG.Font
 autoExecBtn.TextColor3 = CONFIG.Colors.Text
 autoExecBtn.TextSize = 15
-autoExecBtn.Text = "⚡  " .. tr("Auto-Execute Scripts")
+Icons.bind(autoExecBtn, "zap", { Mode = "label", Align = "center", Text = tr("Auto-Execute Scripts"), Px = 14 })
 autoExecBtn.ZIndex = 11
 Instance.new("UICorner", autoExecBtn).CornerRadius = UDim.new(0, 6)
 addDepthGradient(autoExecBtn)
 safeSetCursor(autoExecBtn, "rbxasset://SystemCursor/Arrow")
 registerLocalizedString("Auto-Execute Scripts")
 registerLocalizedRefresher(function()
-	autoExecBtn.Text = "⚡  " .. tr("Auto-Execute Scripts")
+	Icons.setText(autoExecBtn, tr("Auto-Execute Scripts"))
 end)
 table.insert(themedUpdaters, function(theme, fontData)
 	tintTween(autoExecBtn, { BackgroundColor3 = theme.UtilButton, TextColor3 = theme.Text })
@@ -4205,19 +5923,21 @@ table.insert(
 local replayTutorialBtn = Instance.new("TextButton", settingsScroll)
 replayTutorialBtn.Name = "ReplayTutorialBtn"
 replayTutorialBtn.Size = UDim2.new(1, -6, 0, 36)
-replayTutorialBtn.LayoutOrder = nextOrder()
+replayTutorialBtn.LayoutOrder = SETTINGS_RANK.General * 1000 + nextOrder()
+replayTutorialBtn:SetAttribute("Category", "General")
+replayTutorialBtn:SetAttribute("SearchKey", "replay tutorial")
 replayTutorialBtn.BackgroundColor3 = CONFIG.Colors.UtilButton
 replayTutorialBtn.Font = CONFIG.Font
 replayTutorialBtn.TextColor3 = CONFIG.Colors.Text
 replayTutorialBtn.TextSize = 15
-replayTutorialBtn.Text = "🎓  " .. tr("Replay Tutorial")
+Icons.bind(replayTutorialBtn, "graduation", { Mode = "label", Align = "center", Text = tr("Replay Tutorial"), Px = 14 })
 replayTutorialBtn.ZIndex = 11
 Instance.new("UICorner", replayTutorialBtn).CornerRadius = UDim.new(0, 6)
 addDepthGradient(replayTutorialBtn)
 safeSetCursor(replayTutorialBtn, "rbxasset://SystemCursor/Arrow")
 registerLocalizedString("Replay Tutorial")
 registerLocalizedRefresher(function()
-	replayTutorialBtn.Text = "🎓  " .. tr("Replay Tutorial")
+	Icons.setText(replayTutorialBtn, tr("Replay Tutorial"))
 end)
 table.insert(themedUpdaters, function(theme, fontData)
 	tintTween(replayTutorialBtn, { BackgroundColor3 = theme.UtilButton, TextColor3 = theme.Text })
@@ -4234,10 +5954,61 @@ table.insert(
 	end)
 )
 
+local resetSettingsBtn = Instance.new("TextButton", settingsScroll)
+resetSettingsBtn.Name = "ResetSettingsBtn"
+resetSettingsBtn.Size = UDim2.new(1, -6, 0, 36)
+resetSettingsBtn.LayoutOrder = SETTINGS_RANK.General * 1000 + nextOrder()
+resetSettingsBtn:SetAttribute("Category", "General")
+resetSettingsBtn:SetAttribute("SearchKey", "reset all settings defaults")
+resetSettingsBtn.BackgroundColor3 = CONFIG.Colors.UtilButton
+resetSettingsBtn.Font = CONFIG.Font
+resetSettingsBtn.TextColor3 = CONFIG.Colors.Error
+resetSettingsBtn.TextSize = 15
+Icons.bind(resetSettingsBtn, "refresh", { Mode = "label", Align = "center", Text = tr("Reset All Settings"), Px = 14 })
+resetSettingsBtn.ZIndex = 11
+Instance.new("UICorner", resetSettingsBtn).CornerRadius = UDim.new(0, 6)
+addDepthGradient(resetSettingsBtn)
+safeSetCursor(resetSettingsBtn, "rbxasset://SystemCursor/Arrow")
+registerLocalizedString("Reset All Settings")
+registerLocalizedString("Settings reset. Re-execute World Client to load the defaults.")
+registerLocalizedRefresher(function()
+	Icons.setText(resetSettingsBtn, tr("Reset All Settings"))
+end)
+table.insert(themedUpdaters, function(theme, fontData)
+	tintTween(resetSettingsBtn, { BackgroundColor3 = theme.UtilButton, TextColor3 = theme.Error })
+	resetSettingsBtn.Font = fontData.Font
+end)
+do
+local armed = false
+table.insert(
+	connections,
+	resetSettingsBtn.MouseButton1Click:Connect(function()
+		if not armed then
+			armed = true
+			Icons.setText(resetSettingsBtn, tr("Tap again to confirm"))
+			task.delay(4, function()
+				if armed and resetSettingsBtn.Parent then
+					armed = false
+					Icons.setText(resetSettingsBtn, tr("Reset All Settings"))
+				end
+			end)
+			return
+		end
+		armed = false
+		Icons.setText(resetSettingsBtn, tr("Reset All Settings"))
+		resetSettings()
+		log(tr("Settings reset. Re-execute World Client to load the defaults."), "Warning")
+	end)
+)
+end
+registerLocalizedString("Tap again to confirm")
+
 consoleBtn = Instance.new("TextButton", settingsScroll)
 consoleBtn.Name = "ConsoleBtn"
 consoleBtn.Size = UDim2.new(1, -6, 0, 36)
-consoleBtn.LayoutOrder = nextOrder()
+consoleBtn.LayoutOrder = SETTINGS_RANK.General * 1000 + nextOrder()
+consoleBtn:SetAttribute("Category", "General")
+consoleBtn:SetAttribute("SearchKey", "open dev console")
 consoleBtn.BackgroundColor3 = CONFIG.Colors.SecondaryAccent
 consoleBtn.Font = CONFIG.BoldFont
 consoleBtn.TextColor3 = Color3.new(1, 1, 1)
@@ -4251,7 +6022,7 @@ safeSetCursor(consoleBtn, "rbxasset://SystemCursor/Arrow")
 local closeSettingsBtn = Instance.new("TextButton", settingsScroll)
 closeSettingsBtn.Name = "CloseBtn"
 closeSettingsBtn.Size = UDim2.new(1, -6, 0, 36)
-closeSettingsBtn.LayoutOrder = nextOrder()
+closeSettingsBtn.LayoutOrder = 999999
 closeSettingsBtn.BackgroundColor3 = CONFIG.Colors.UtilButton
 closeSettingsBtn.Font = CONFIG.BoldFont
 closeSettingsBtn.TextColor3 = CONFIG.Colors.Text
@@ -4285,6 +6056,8 @@ table.insert(themedUpdaters, function(theme, fontData)
 	tintTween(pickerScroll, { ScrollBarImageColor3 = theme.PrimaryAccent })
 	tintTween(inputFocusStroke, { Color = theme.PrimaryAccent })
 end)
+
+settingsFilter()
 
 function applySettings()
 	local theme = themes[currentThemeIndex].Colors
@@ -4349,6 +6122,8 @@ function applySettings()
 		pcall(updater, theme, fontData)
 	end
 
+	Icons.refreshAll()
+
 	strokeGradient.Color = ColorSequence.new({
 		ColorSequenceKeypoint.new(0, theme.PrimaryAccent),
 		ColorSequenceKeypoint.new(0.5, theme.SecondaryAccent),
@@ -4358,6 +6133,14 @@ function applySettings()
 	inputBox.TextSize = CONFIG.TextSize
 	templateEntry.TextSize = CONFIG.TextSize
 	templateEntry.Font = fontData.Font
+	editorLineGutter.Font = fontData.Font
+	editorLineGutter.TextSize = CONFIG.TextSize
+	templateLineNumber.Font = fontData.Font
+	templateLineNumber.TextSize = CONFIG.TextSize
+	templateStamp.Font = fontData.Font
+	templateStamp.TextSize = CONFIG.TextSize
+	refreshConsoleColumns()
+	syncEditorGutter()
 	refreshInputHighlight()
 end
 
@@ -4493,7 +6276,7 @@ do
 	end)
 	liftPanelWhileTyping(scriptsFrame, nameBox)
 
-	local saveScriptBtn = createIconButton(scriptsFrame, "💾", 30, "SecondaryAccent")
+	local saveScriptBtn = createIconButton(scriptsFrame, "save", 30, "SecondaryAccent")
 	saveScriptBtn.Position = UDim2.new(1, -12, 0, 46)
 	saveScriptBtn.AnchorPoint = Vector2.new(1, 0)
 	saveScriptBtn.ZIndex = 11
@@ -4593,8 +6376,8 @@ do
 			runBtn.AnchorPoint = Vector2.new(0, 0)
 			runBtn.BackgroundColor3 = CONFIG.Colors.SecondaryAccent
 			runBtn.Font = Enum.Font.SourceSans
-			runBtn.Text = "▶"
 			runBtn.TextColor3 = Color3.new(1, 1, 1)
+			Icons.bind(runBtn, "play", { Mode = "icon", Px = 12 })
 			runBtn.TextSize = 16
 			runBtn.ZIndex = 11
 			Instance.new("UICorner", runBtn).CornerRadius = UDim.new(0, 6)
@@ -4607,8 +6390,8 @@ do
 			delBtn.AnchorPoint = Vector2.new(1, 0)
 			delBtn.BackgroundColor3 = CONFIG.Colors.UtilButton
 			delBtn.Font = Enum.Font.SourceSans
-			delBtn.Text = "🗑️"
 			delBtn.TextColor3 = Color3.new(1, 1, 1)
+			Icons.bind(delBtn, "trash", { Mode = "icon", Px = 13 })
 			delBtn.TextSize = 14
 			delBtn.ZIndex = 11
 			Instance.new("UICorner", delBtn).CornerRadius = UDim.new(0, 6)
@@ -4817,12 +6600,12 @@ do
 	aeTitle.Font = CONFIG.BoldFont
 	aeTitle.TextColor3 = CONFIG.Colors.Text
 	aeTitle.TextSize = 18
-	aeTitle.Text = "⚡ " .. tr("Auto-Execute")
+	Icons.bind(aeTitle, "zap", { Mode = "label", Text = tr("Auto-Execute"), Px = 16 })
 	aeTitle.TextXAlignment = Enum.TextXAlignment.Left
 	aeTitle.ZIndex = 15
 	registerLocalizedString("Auto-Execute")
 	registerLocalizedRefresher(function()
-		aeTitle.Text = "⚡ " .. tr("Auto-Execute")
+		Icons.setText(aeTitle, tr("Auto-Execute"))
 	end)
 
 	local aeHint = Instance.new("TextLabel", aeFrame)
@@ -4960,8 +6743,8 @@ aeAddBtn.Visible = false
 			editBtn.Position = UDim2.new(1, -68, 0, 0)
 			editBtn.BackgroundColor3 = CONFIG.Colors.UtilButton
 			editBtn.Font = Enum.Font.SourceSans
-			editBtn.Text = "✏️"
 			editBtn.TextColor3 = Color3.new(1, 1, 1)
+			Icons.bind(editBtn, "pencil", { Mode = "icon", Px = 13 })
 			editBtn.TextSize = 14
 			editBtn.ZIndex = 15
 			Instance.new("UICorner", editBtn).CornerRadius = UDim.new(0, 6)
@@ -4974,8 +6757,8 @@ aeAddBtn.Visible = false
 			delBtn.AnchorPoint = Vector2.new(1, 0)
 			delBtn.BackgroundColor3 = CONFIG.Colors.UtilButton
 			delBtn.Font = Enum.Font.SourceSans
-			delBtn.Text = "🗑️"
 			delBtn.TextColor3 = Color3.new(1, 1, 1)
+			Icons.bind(delBtn, "trash", { Mode = "icon", Px = 13 })
 			delBtn.TextSize = 14
 			delBtn.ZIndex = 15
 			Instance.new("UICorner", delBtn).CornerRadius = UDim.new(0, 6)
@@ -5118,7 +6901,7 @@ scriptHub.Build = function()
 	local HUB_REQUEST_TIMEOUT = 20
 	local HUB_ENRICH_TIMEOUT = 8
 
-	local HUB_FALLBACK_GLYPH = "🎮"
+	local HUB_FALLBACK_GLYPH = "gamepad"
 
 	local function hubJson(url)
 		local body = httpGet(url)
@@ -5195,6 +6978,8 @@ scriptHub.Build = function()
 
 	local IMAGE_FOLDER = "WorldClient_Images"
 	local IMAGE_MAX_BYTES = 2 * 1024 * 1024
+	local IMAGE_RETRY_AFTER = 30
+	local IMAGE_LOAD_TIMEOUT = 5
 	local PNG_MAGIC = "\137PNG\13\10\26\10"
 	local JPEG_MAGIC = "\255\216\255"
 
@@ -5253,26 +7038,9 @@ scriptHub.Build = function()
 	end
 
 	local imageAssets = {}
-	local imageLoading = {}
+	local imageFailedAt = {}
 
-	local function resolveImageAsset(url)
-		local cached = imageAssets[url]
-		if cached ~= nil then
-			return cached or nil
-		end
-		if not canLoadWebImages then
-			imageAssets[url] = false
-			return nil
-		end
-		if imageLoading[url] then
-			local deadline = os.clock() + 10
-			while imageLoading[url] and os.clock() < deadline do
-				task.wait(0.05)
-			end
-			return imageAssets[url] or nil
-		end
-
-		imageLoading[url] = true
+	local function downloadImageAsset(url)
 		local body = httpGet(url)
 
 		if type(body) == "string" and #body > 0 and #body <= IMAGE_MAX_BYTES then
@@ -5283,44 +7051,131 @@ scriptHub.Build = function()
 			body = nil
 		end
 
-		local asset
-		if body then
-			pcall(function()
-				if
-					type(isfolder) == "function"
-					and type(makefolder) == "function"
-					and not isfolder(IMAGE_FOLDER)
-				then
-					makefolder(IMAGE_FOLDER)
-				end
-				local path = imagePathFor(url)
-				writefile(path, body)
-				asset = getCustomAsset(path)
-			end)
+		if not body then
+			return nil
 		end
 
-		imageAssets[url] = (type(asset) == "string" and asset ~= "" and asset) or false
-		imageLoading[url] = nil
-		return imageAssets[url] or nil
+		local asset
+		pcall(function()
+			if
+				type(isfolder) == "function"
+				and type(makefolder) == "function"
+				and not isfolder(IMAGE_FOLDER)
+			then
+				makefolder(IMAGE_FOLDER)
+			end
+			local path = imagePathFor(url)
+			writefile(path, body)
+			asset = getCustomAsset(path)
+		end)
+
+		return (type(asset) == "string" and asset ~= "" and asset) or nil
+	end
+
+	local function resolveImageAsset(url)
+		local cached = imageAssets[url]
+		if cached then
+			return cached
+		end
+		if not canLoadWebImages then
+			return nil
+		end
+		local failedAt = imageFailedAt[url]
+		if failedAt and os.clock() - failedAt < IMAGE_RETRY_AFTER then
+			return nil
+		end
+
+		local ok, asset = pcall(downloadImageAsset, url)
+		if ok and asset then
+			imageAssets[url] = asset
+			imageFailedAt[url] = nil
+			return asset
+		end
+
+		imageFailedAt[url] = os.clock()
+		return nil
+	end
+
+	local imageQueue = {}
+	local imageWorkerRunning = false
+
+	local function deliverImageAsset(target, apply, asset)
+		task.spawn(function()
+			if target.Parent then
+				pcall(apply, asset)
+			end
+		end)
+	end
+
+	local function pumpImageQueue()
+		if imageWorkerRunning then
+			return
+		end
+		imageWorkerRunning = true
+		task.spawn(function()
+			while #imageQueue > 0 do
+				local job = table.remove(imageQueue, 1)
+				if job.Target.Parent then
+					local asset = resolveImageAsset(job.Url)
+					if asset then
+						deliverImageAsset(job.Target, job.Apply, asset)
+					end
+				end
+			end
+			imageWorkerRunning = false
+		end)
+	end
+
+	local function queueImageAsset(target, url, apply)
+		if uiSettings.hubImages == false then
+			return
+		end
+		local normalized = normalizeImageUrl(url)
+		if not normalized or not canLoadWebImages then
+			return
+		end
+		local cached = imageAssets[normalized]
+		if cached then
+			deliverImageAsset(target, apply, cached)
+			return
+		end
+		for _, job in ipairs(imageQueue) do
+			if job.Target == target then
+				job.Url = normalized
+				job.Apply = apply
+				return
+			end
+		end
+		table.insert(imageQueue, { Target = target, Url = normalized, Apply = apply })
+		pumpImageQueue()
 	end
 
 	local function faviconUrl(domain)
 		return ("https://www.google.com/s2/favicons?domain=%s&sz=64"):format(domain)
 	end
 
-	local function applyImageAsync(imageLabel, glyphLabel, url)
-		local normalized = normalizeImageUrl(url)
-		if not normalized then
-			return
+	local function revealWhenLoaded(imageLabel, glyphLabel, image)
+		imageLabel.Image = image
+		local deadline = os.clock() + IMAGE_LOAD_TIMEOUT
+		while not imageLabel.IsLoaded and imageLabel.Parent and os.clock() < deadline do
+			task.wait(0.1)
 		end
-		task.spawn(function()
-			local asset = resolveImageAsset(normalized)
-			if asset and imageLabel.Parent then
-				imageLabel.Image = asset
-				if glyphLabel then
-					glyphLabel.Visible = false
-				end
+		if not imageLabel.Parent then
+			return false
+		end
+		if imageLabel.IsLoaded then
+			if glyphLabel then
+				glyphLabel.Visible = false
 			end
+			return true
+		end
+		imageLabel.Image = ""
+		return false
+	end
+
+	local function applyImageAsync(imageLabel, glyphLabel, url)
+		queueImageAsset(imageLabel, url, function(asset)
+			revealWhenLoaded(imageLabel, glyphLabel, asset)
 		end)
 	end
 
@@ -5330,7 +7185,7 @@ scriptHub.Build = function()
 			Name = "ScriptBlox",
 			Icon = "rbxassetid://133394455676372",
 			IconUrl = faviconUrl("scriptblox.com"),
-			Glyph = "📜",
+			Glyph = "script",
 			Url = function(query, page)
 				if query == "" then
 					return ("https://scriptblox.com/api/script/fetch?page=%d"):format(page)
@@ -5431,7 +7286,7 @@ scriptHub.Build = function()
 			Name = "Rscripts",
 			Icon = "rbxassetid://107527701431712",
 			IconUrl = faviconUrl("rscripts.net"),
-			Glyph = "📘",
+			Glyph = "book",
 			Url = function(query, page)
 				if query == "" then
 					return ("https://rscripts.net/api/v2/scripts?page=%d"):format(page)
@@ -5480,7 +7335,7 @@ scriptHub.Build = function()
 			Name = "Roblox Scripts",
 			Icon = "rbxassetid://108219075398216",
 			IconUrl = faviconUrl("robloxscripts.com"),
-			Glyph = "🟡",
+			Glyph = "dot",
 			Url = function(query, page)
 				if query == "" then
 					return ("https://robloxscripts.com/api/v1/scripts?page=%d&limit=%d"):format(page, HUB_PAGE_SIZE)
@@ -5537,7 +7392,7 @@ scriptHub.Build = function()
 			Name = "HaxHell",
 			Icon = "rbxassetid://74042163033078",
 			IconUrl = faviconUrl("haxhell.com"),
-			Glyph = "🔥",
+			Glyph = "flame",
 			Url = function(query, page)
 				if query == "" then
 					return ("https://haxhell.com/api/v1/scripts?page=%d&limit=%d"):format(page, HUB_PAGE_SIZE)
@@ -5604,18 +7459,18 @@ scriptHub.Build = function()
 	local applyFilters
 
 	local FILTER_DEFS = {
-		{ Key = "all", Label = "All", Icon = "🗂️" },
-		{ Key = "favorites", Label = "Favorites", Icon = "⭐" },
-		{ Key = "popular", Label = "Popular", Icon = "🔥" },
-		{ Key = "good", Label = "Good reviews", Icon = "👍" },
-		{ Key = "bad", Label = "Bad reviews", Icon = "👎" },
-		{ Key = "verified", Label = "Verified", Icon = "🛡️" },
-		{ Key = "universal", Label = "Universal", Icon = "🌐" },
-		{ Key = "undefined", Label = "Undefined", Icon = "❔" },
-		{ Key = "patched", Label = "Patched", Icon = "⛔" },
-		{ Key = "mobile", Label = "Mobile", Icon = "📱" },
-		{ Key = "keysystem", Label = "Key system", Icon = "🔑" },
-		{ Key = "hidden", Label = "Hidden", Icon = "🙈" },
+		{ Key = "all", Label = "All", Icon = "folder" },
+		{ Key = "favorites", Label = "Favorites", Icon = "star" },
+		{ Key = "popular", Label = "Popular", Icon = "flame" },
+		{ Key = "good", Label = "Good reviews", Icon = "thumbsUp" },
+		{ Key = "bad", Label = "Bad reviews", Icon = "thumbsDown" },
+		{ Key = "verified", Label = "Verified", Icon = "shield" },
+		{ Key = "universal", Label = "Universal", Icon = "globe" },
+		{ Key = "undefined", Label = "Undefined", Icon = "help" },
+		{ Key = "patched", Label = "Patched", Icon = "blocked" },
+		{ Key = "mobile", Label = "Mobile", Icon = "phone" },
+		{ Key = "keysystem", Label = "Key system", Icon = "key" },
+		{ Key = "hidden", Label = "Hidden", Icon = "eyeOff" },
 	}
 	local activeFilters = { all = true }
 	local rangeFilters = { placeId = "", minViews = "", maxViews = "", minPlayers = "", maxPlayers = "" }
@@ -5693,7 +7548,7 @@ scriptHub.Build = function()
 	disclaimerTitle.TextColor3 = CONFIG.Colors.Warning
 	disclaimerTitle.TextSize = 18
 	disclaimerTitle.TextXAlignment = Enum.TextXAlignment.Left
-	disclaimerTitle.Text = "⚠️ " .. tr("Script Hub: usage warning")
+	Icons.bind(disclaimerTitle, "warning", { Mode = "label", Text = tr("Script Hub: usage warning"), Px = 16 })
 	disclaimerTitle.ZIndex = 24
 	registerLocalizedString("Script Hub: usage warning")
 
@@ -5828,18 +7683,18 @@ scriptHub.Build = function()
 	hubTitle.TextColor3 = CONFIG.Colors.Text
 	hubTitle.TextSize = 18
 	hubTitle.TextXAlignment = Enum.TextXAlignment.Left
-	hubTitle.Text = "📚 " .. tr("Script Hub")
+	Icons.bind(hubTitle, "library", { Mode = "label", Text = tr("Script Hub"), Px = 16 })
 	hubTitle.ZIndex = 18
 	registerLocalizedString("Script Hub")
 	registerLocalizedRefresher(function()
-		hubTitle.Text = "📚 " .. tr("Script Hub")
-		disclaimerTitle.Text = "⚠️ " .. tr("Script Hub: usage warning")
+		Icons.setText(hubTitle, tr("Script Hub"))
+		Icons.setText(disclaimerTitle, tr("Script Hub: usage warning"))
 		disclaimerBody.Text = tr(disclaimerBodyText)
 		declineBtn.Text = tr("Cancel")
 		acceptBtn.Text = tr("I understand")
 	end)
 
-	local hubCloseBtn = createIconButton(hubFrame, "✖️", 26, "UtilButton")
+	local hubCloseBtn = createIconButton(hubFrame, "close", 26, "UtilButton")
 	hubCloseBtn.Position = UDim2.new(1, -12, 0, 10)
 	hubCloseBtn.AnchorPoint = Vector2.new(1, 0)
 	hubCloseBtn.ZIndex = 18
@@ -5867,17 +7722,17 @@ scriptHub.Build = function()
 	end)
 	liftPanelWhileTyping(hubFrame, searchBox)
 
-	local thisGameBtn = createIconButton(hubFrame, "🎮", 30, "UtilButton")
+	local thisGameBtn = createIconButton(hubFrame, "gamepad", 30, "UtilButton")
 	thisGameBtn.Position = UDim2.new(1, -50, 0, 44)
 	thisGameBtn.AnchorPoint = Vector2.new(1, 0)
 	thisGameBtn.ZIndex = 18
 
-	local filtersBtn = createIconButton(hubFrame, "🎛️", 30, "UtilButton")
+	local filtersBtn = createIconButton(hubFrame, "sliders", 30, "UtilButton")
 	filtersBtn.Position = UDim2.new(1, -88, 0, 44)
 	filtersBtn.AnchorPoint = Vector2.new(1, 0)
 	filtersBtn.ZIndex = 18
 
-	local searchBtn = createIconButton(hubFrame, "🔍", 30, "SecondaryAccent")
+	local searchBtn = createIconButton(hubFrame, "searchAlt", 30, "SecondaryAccent")
 	searchBtn.Position = UDim2.new(1, -12, 0, 44)
 	searchBtn.AnchorPoint = Vector2.new(1, 0)
 	searchBtn.ZIndex = 18
@@ -5910,8 +7765,7 @@ scriptHub.Build = function()
 	hubStatus.Text = ""
 	hubStatus.ZIndex = 18
 
-	local COLUMN_GLYPHS = { "1️⃣", "2️⃣", "3️⃣", "4️⃣" }
-	local columnsBtn = createIconButton(hubFrame, COLUMN_GLYPHS[scriptHub.Columns], 26, "UtilButton")
+	local columnsBtn = createIconButton(hubFrame, "columns" .. scriptHub.Columns, 26, "UtilButton")
 	columnsBtn.Position = UDim2.new(1, -44, 0, 10)
 	columnsBtn.AnchorPoint = Vector2.new(1, 0)
 	columnsBtn.ZIndex = 18
@@ -5968,7 +7822,7 @@ scriptHub.Build = function()
 	detailStroke.Color = CONFIG.Colors.PrimaryAccent
 	detailStroke.Thickness = 2
 
-	local detailBackBtn = createIconButton(detailFrame, "⬅️", 26, "UtilButton")
+	local detailBackBtn = createIconButton(detailFrame, "arrowLeft", 26, "UtilButton")
 	detailBackBtn.Position = UDim2.new(0, 12, 0, 10)
 	detailBackBtn.ZIndex = 21
 
@@ -5986,8 +7840,8 @@ scriptHub.Build = function()
 	detailThumbGlyph.Size = UDim2.new(1, 0, 1, 0)
 	detailThumbGlyph.BackgroundTransparency = 1
 	detailThumbGlyph.Font = Enum.Font.SourceSans
-	detailThumbGlyph.Text = HUB_FALLBACK_GLYPH
 	detailThumbGlyph.TextColor3 = Color3.new(1, 1, 1)
+	Icons.bind(detailThumbGlyph, HUB_FALLBACK_GLYPH, { Mode = "icon", Px = 34 })
 	detailThumbGlyph.TextSize = 22
 	detailThumbGlyph.ZIndex = 21
 
@@ -6060,14 +7914,13 @@ scriptHub.Build = function()
 	actionLayout.Padding = UDim.new(0, 6)
 	actionLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
-	local function createActionButton(label, colorType, order)
+	local function createActionButton(iconName, label, colorType, order)
 		local btn = Instance.new("TextButton", actionRow)
 		btn.Size = UDim2.new(0.25, -5, 1, 0)
 		btn.LayoutOrder = order
 		btn.BackgroundColor3 = CONFIG.Colors[colorType]
 		btn:SetAttribute("ColorType", colorType)
 		btn.Font = CONFIG.BoldFont
-		btn.Text = label
 		btn.TextColor3 = Color3.new(1, 1, 1)
 		btn.TextSize = 13
 		btn.TextTruncate = Enum.TextTruncate.AtEnd
@@ -6075,22 +7928,23 @@ scriptHub.Build = function()
 		Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
 		addDepthGradient(btn)
 		safeSetCursor(btn, "rbxasset://SystemCursor/Arrow")
+		Icons.bind(btn, iconName, { Mode = "label", Align = "center", Text = label, Px = 14 })
 		return btn
 	end
 
-	local copyBtn = createActionButton("📋 " .. tr("Copy"), "UtilButton", 1)
-	local editorBtn = createActionButton("📥 " .. tr("Editor"), "UtilButton", 2)
-	local saveBtn = createActionButton("💾 " .. tr("Save"), "UtilButton", 3)
-	local runBtn = createActionButton("▶️ " .. tr("Run"), "SecondaryAccent", 4)
+	local copyBtn = createActionButton("clipboard", tr("Copy"), "UtilButton", 1)
+	local editorBtn = createActionButton("download", tr("Editor"), "UtilButton", 2)
+	local saveBtn = createActionButton("save", tr("Save"), "UtilButton", 3)
+	local runBtn = createActionButton("play", tr("Run"), "SecondaryAccent", 4)
 	registerLocalizedString("Copy")
 	registerLocalizedString("Editor")
 	registerLocalizedString("Save")
 	registerLocalizedString("Run")
 	registerLocalizedRefresher(function()
-		copyBtn.Text = "📋 " .. tr("Copy")
-		editorBtn.Text = "📥 " .. tr("Editor")
-		saveBtn.Text = "💾 " .. tr("Save")
-		runBtn.Text = "▶️ " .. tr("Run")
+		Icons.setText(copyBtn, tr("Copy"))
+		Icons.setText(editorBtn, tr("Editor"))
+		Icons.setText(saveBtn, tr("Save"))
+		Icons.setText(runBtn, tr("Run"))
 	end)
 
 	local function thumbnailFor(entry)
@@ -6102,40 +7956,47 @@ scriptHub.Build = function()
 
 	local function paintThumbnail(imageLabel, glyphLabel, entry)
 		local instant = thumbnailFor(entry)
-		imageLabel.Image = instant
-		glyphLabel.Visible = instant == ""
-		applyImageAsync(imageLabel, glyphLabel, entry.ImageUrl)
+		imageLabel.Image = ""
+		glyphLabel.Visible = true
+		if instant == "" then
+			applyImageAsync(imageLabel, glyphLabel, entry.ImageUrl)
+			return
+		end
+		task.spawn(function()
+			if revealWhenLoaded(imageLabel, glyphLabel, instant) then
+				return
+			end
+			if imageLabel.Parent then
+				applyImageAsync(imageLabel, glyphLabel, entry.ImageUrl)
+			end
+		end)
 	end
 
 	local function createProviderBadge(parent, provider, size, zIndex)
 		local badge = Instance.new("ImageLabel", parent)
 		badge.Size = UDim2.new(0, size, 0, size)
 		badge.BackgroundTransparency = 1
-		badge.Image = provider and provider.Icon or ""
 		badge.ZIndex = zIndex
 
 		local glyph = Instance.new("TextLabel", badge)
 		glyph.Size = UDim2.new(1, 0, 1, 0)
 		glyph.BackgroundTransparency = 1
 		glyph.Font = Enum.Font.SourceSans
-		glyph.Text = provider and provider.Glyph or "❔"
 		glyph.TextColor3 = CONFIG.Colors.Text
 		glyph.TextSize = size
-		glyph.Visible = badge.Image == ""
 		glyph.ZIndex = zIndex
+		Icons.bind(glyph, provider and provider.Glyph or "help", { Mode = "icon", Px = math.floor(size * 0.9) })
 
 		if provider then
-			if badge.Image == "" then
+			local assetId = provider.Icon
+			if type(assetId) ~= "string" or assetId == "" then
 				applyImageAsync(badge, glyph, provider.IconUrl)
 			else
 				task.spawn(function()
-					local deadline = os.clock() + 5
-					while not badge.IsLoaded and os.clock() < deadline do
-						task.wait(0.25)
+					if revealWhenLoaded(badge, glyph, assetId) then
+						return
 					end
-					if not badge.IsLoaded and badge.Parent then
-						badge.Image = ""
-						glyph.Visible = true
+					if badge.Parent then
 						applyImageAsync(badge, glyph, provider.IconUrl)
 					end
 				end)
@@ -6154,30 +8015,30 @@ scriptHub.Build = function()
 	local function tagsFor(entry)
 		local tags = {}
 		if entry.Views > POPULAR_VIEWS then
-			table.insert(tags, { Label = "🔥 Popular" })
+			table.insert(tags, { Icon = "flame", Label = "Popular" })
 		end
 		if entry.Views > GOOD_REVIEW_VIEWS then
-			table.insert(tags, { Label = "👍 Good reviews" })
+			table.insert(tags, { Icon = "thumbsUp", Label = "Good reviews" })
 		else
-			table.insert(tags, { Label = "👎 Bad reviews", Dark = true })
+			table.insert(tags, { Icon = "thumbsDown", Label = "Bad reviews", Dark = true })
 		end
 		if entry.Verified then
-			table.insert(tags, { Label = "🛡️ Verified" })
+			table.insert(tags, { Icon = "shield", Label = "Verified" })
 		end
 		if entry.Universal then
-			table.insert(tags, { Label = "🌐 Universal" })
+			table.insert(tags, { Icon = "globe", Label = "Universal" })
 		end
 		if isUndefinedEntry(entry) then
-			table.insert(tags, { Label = "❔ Undefined" })
+			table.insert(tags, { Icon = "help", Label = "Undefined" })
 		end
 		if entry.KeySystem then
-			table.insert(tags, { Label = "🔑 Key", Dark = true })
+			table.insert(tags, { Icon = "key", Label = "Key", Dark = true })
 		end
 		if entry.Patched then
-			table.insert(tags, { Label = "⛔ Patched", Dark = true })
+			table.insert(tags, { Icon = "blocked", Label = "Patched", Dark = true })
 		end
 		if entry.Mobile then
-			table.insert(tags, { Label = "📱 Mobile" })
+			table.insert(tags, { Icon = "phone", Label = "Mobile" })
 		end
 		return tags
 	end
@@ -6232,11 +8093,11 @@ scriptHub.Build = function()
 		local metaParts = {
 			entry.ProviderName,
 			entry.Game,
-			"👤 " .. entry.Creator,
-			"👁️ " .. formatCount(entry.Views),
+			Icons.prefix("user") .. entry.Creator,
+			Icons.prefix("eye") .. formatCount(entry.Views),
 		}
 		for _, tag in ipairs(tagsFor(entry)) do
-			table.insert(metaParts, tag.Label)
+			table.insert(metaParts, Icons.prefix(tag.Icon) .. tag.Label)
 		end
 		detailMeta.Text = table.concat(metaParts, "  •  ")
 
@@ -6323,13 +8184,13 @@ scriptHub.Build = function()
 			return
 		end
 		busyButtons[button] = true
-		local originalText = button.Text
-		button.Text = "⏳"
+		local originalIcon = Icons.getName(button)
+		Icons.setName(button, "hourglass")
 		createClickParticles(button)
 		task.spawn(function()
 			local source = resolveSource(entry)
 			if button.Parent then
-				button.Text = originalText
+				Icons.setName(button, originalIcon)
 			end
 			busyButtons[button] = nil
 			if not source then
@@ -6355,14 +8216,13 @@ scriptHub.Build = function()
 
 	local CARD_HEIGHT = 140
 
-	local function addTagChip(parent, label, dark)
+	local function addTagChip(parent, iconName, label, dark)
 		local chip = Instance.new("TextLabel", parent)
 		chip.AutomaticSize = Enum.AutomaticSize.X
 		chip.Size = UDim2.new(0, 0, 1, 0)
 		chip.BackgroundColor3 = dark and Color3.new(0, 0, 0) or Color3.new(1, 1, 1)
 		chip.BackgroundTransparency = dark and 0.45 or 0.16
 		chip.Font = CONFIG.BoldFont
-		chip.Text = label
 		chip.TextColor3 = dark and Color3.new(1, 1, 1) or Color3.new(0, 0, 0)
 		chip.TextSize = 10
 		chip.ZIndex = 21
@@ -6370,10 +8230,11 @@ scriptHub.Build = function()
 		local pad = Instance.new("UIPadding", chip)
 		pad.PaddingLeft = UDim.new(0, 6)
 		pad.PaddingRight = UDim.new(0, 6)
+		Icons.bind(chip, iconName, { Mode = "label", Text = label, Px = 10 })
 		return chip
 	end
 
-	local function createCardAction(parent, glyph, order, tooltip)
+	local function createCardAction(parent, iconName, order, tooltip)
 		local btn = Instance.new("TextButton", parent)
 		btn.Size = UDim2.new(0, 26, 0, 26)
 		btn.LayoutOrder = order
@@ -6381,10 +8242,10 @@ scriptHub.Build = function()
 		btn.BackgroundTransparency = 0.35
 		btn.AutoButtonColor = false
 		btn.Font = Enum.Font.SourceSans
-		btn.Text = glyph
 		btn.TextColor3 = Color3.new(1, 1, 1)
 		btn.TextSize = 15
 		btn.Name = tooltip
+		Icons.bind(btn, iconName, { Mode = "icon", Px = 15 })
 		btn.ZIndex = 21
 		Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
 		safeSetCursor(btn, "rbxasset://SystemCursor/Arrow")
@@ -6413,16 +8274,18 @@ scriptHub.Build = function()
 		card.Text = ""
 		card.ClipsDescendants = true
 		card.ZIndex = 18
-		Instance.new("UICorner", card).CornerRadius = UDim.new(0, 8)
+		Instance.new("UICorner", card).CornerRadius = UDim.new(0, 10)
 		safeSetCursor(card, "rbxasset://SystemCursor/Arrow")
 		entry.Card = card
 
 		local stroke = Instance.new("UIStroke", card)
-		stroke.Color = CONFIG.Colors.PrimaryAccent
+		stroke.Color = CONFIG.Colors.SecondaryAccent
 		stroke.Thickness = 1
-		stroke.Transparency = 0.75
+		stroke.Transparency = 0.78
 
 		local art = Instance.new("ImageLabel", card)
+		art.AnchorPoint = Vector2.new(0.5, 0.5)
+		art.Position = UDim2.new(0.5, 0, 0.5, 0)
 		art.Size = UDim2.new(1, 0, 1, 0)
 		art.BackgroundTransparency = 1
 		art.ScaleType = Enum.ScaleType.Crop
@@ -6432,8 +8295,8 @@ scriptHub.Build = function()
 		artGlyph.Size = UDim2.new(1, 0, 1, 0)
 		artGlyph.BackgroundTransparency = 1
 		artGlyph.Font = Enum.Font.SourceSans
-		artGlyph.Text = HUB_FALLBACK_GLYPH
 		artGlyph.TextColor3 = Color3.fromRGB(90, 90, 90)
+		Icons.bind(artGlyph, HUB_FALLBACK_GLYPH, { Mode = "icon", Px = 26 })
 		artGlyph.TextSize = 38
 		artGlyph.ZIndex = 18
 		paintThumbnail(art, artGlyph, entry)
@@ -6446,9 +8309,10 @@ scriptHub.Build = function()
 		local scrimGradient = Instance.new("UIGradient", scrim)
 		scrimGradient.Rotation = 90
 		scrimGradient.Transparency = NumberSequence.new({
-			NumberSequenceKeypoint.new(0, 0.95),
-			NumberSequenceKeypoint.new(0.35, 0.6),
-			NumberSequenceKeypoint.new(1, 0.05),
+			NumberSequenceKeypoint.new(0, 1),
+			NumberSequenceKeypoint.new(0.3, 0.72),
+			NumberSequenceKeypoint.new(0.68, 0.28),
+			NumberSequenceKeypoint.new(1, 0),
 		})
 
 		local badge = createProviderBadge(card, hubProviderByKey[entry.Provider], 18, 21)
@@ -6501,7 +8365,7 @@ scriptHub.Build = function()
 		meta.TextSize = 12
 		meta.TextXAlignment = Enum.TextXAlignment.Left
 		meta.TextTruncate = Enum.TextTruncate.AtEnd
-		meta.Text = "👤 " .. entry.Creator .. "  •  " .. entry.Game
+		Icons.bind(meta, "user", { Mode = "label", Text = entry.Creator .. "  •  " .. entry.Game, Px = 11 })
 		meta.ZIndex = 21
 
 		local tagRow = Instance.new("Frame", content)
@@ -6516,7 +8380,7 @@ scriptHub.Build = function()
 		tagLayout.VerticalAlignment = Enum.VerticalAlignment.Center
 		tagLayout.Padding = UDim.new(0, 4)
 		for _, tag in ipairs(tagsFor(entry)) do
-			addTagChip(tagRow, tag.Label, tag.Dark)
+			addTagChip(tagRow, tag.Icon, tag.Label, tag.Dark)
 		end
 
 		local stats = Instance.new("TextLabel", content)
@@ -6529,19 +8393,20 @@ scriptHub.Build = function()
 		stats.TextXAlignment = Enum.TextXAlignment.Left
 		stats.TextTruncate = Enum.TextTruncate.AtEnd
 		stats.ZIndex = 21
+		Icons.bind(stats, "eye", { Mode = "label", Text = "", Px = 10 })
 
 		local function refreshStats()
-			local parts = { "👁️ " .. formatCount(entry.Views) }
+			local parts = { formatCount(entry.Views) }
 			if entry.PlaceId and entry.PlaceId > 0 then
 				table.insert(parts, "#" .. entry.PlaceId)
 				if entry.ActivePlayers then
-					table.insert(parts, "👥 " .. formatCount(entry.ActivePlayers))
+					table.insert(parts, Icons.prefix("users") .. formatCount(entry.ActivePlayers))
 				end
 				if entry.Visits then
-					table.insert(parts, "📈 " .. formatCount(entry.Visits))
+					table.insert(parts, Icons.prefix("trending") .. formatCount(entry.Visits))
 				end
 			end
-			stats.Text = table.concat(parts, "  •  ")
+			Icons.setText(stats, table.concat(parts, "  •  "))
 		end
 		entry.RefreshStats = refreshStats
 		refreshStats()
@@ -6558,8 +8423,8 @@ scriptHub.Build = function()
 		actionRowLayout.Padding = UDim.new(0, 5)
 
 		local key = entryKey(entry)
-		local favBtn = createCardAction(actionRow, "⭐", 1, "Favorite")
-		local hideBtn = createCardAction(actionRow, hiddenKeys[key] and "👁️" or "🙈", 2, "Hide")
+		local favBtn = createCardAction(actionRow, "star", 1, "Favorite")
+		local hideBtn = createCardAction(actionRow, hiddenKeys[key] and "eye" or "eyeOff", 2, "Hide")
 
 		local function paintFavorite()
 			local on = favoriteKeys[key] == true
@@ -6575,10 +8440,10 @@ scriptHub.Build = function()
 		spacer.LayoutOrder = 3
 		spacer.BackgroundTransparency = 1
 
-		local copyBtn = createCardAction(actionRow, "📋", 4, "Copy")
-		local editorBtn = createCardAction(actionRow, "📥", 5, "Editor")
-		local saveBtn = createCardAction(actionRow, "💾", 6, "Save")
-		local runBtn = createCardAction(actionRow, "▶️", 7, "Run")
+		local copyBtn = createCardAction(actionRow, "clipboard", 4, "Copy")
+		local editorBtn = createCardAction(actionRow, "download", 5, "Editor")
+		local saveBtn = createCardAction(actionRow, "save", 6, "Save")
+		local runBtn = createCardAction(actionRow, "play", 7, "Run")
 
 		table.insert(
 			connections,
@@ -6594,7 +8459,7 @@ scriptHub.Build = function()
 			connections,
 			hideBtn.MouseButton1Click:Connect(function()
 				hiddenKeys[key] = (not hiddenKeys[key]) or nil
-				hideBtn.Text = hiddenKeys[key] and "👁️" or "🙈"
+				Icons.setName(hideBtn, hiddenKeys[key] and "eye" or "eyeOff")
 				saveHubMarks()
 				applyFilters()
 			end)
@@ -6611,13 +8476,19 @@ scriptHub.Build = function()
 		table.insert(
 			connections,
 			card.MouseEnter:Connect(function()
-				TweenService:Create(stroke, TweenInfo.new(0.15), { Transparency = 0.15 }):Play()
+				TweenService:Create(stroke, TweenInfo.new(0.15), { Transparency = 0.05, Thickness = 1.5 }):Play()
+				TweenService:Create(art, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {
+					Size = UDim2.new(1, 18, 1, 18),
+				}):Play()
 			end)
 		)
 		table.insert(
 			connections,
 			card.MouseLeave:Connect(function()
-				TweenService:Create(stroke, TweenInfo.new(0.15), { Transparency = 0.75 }):Play()
+				TweenService:Create(stroke, TweenInfo.new(0.15), { Transparency = 0.78, Thickness = 1 }):Play()
+				TweenService:Create(art, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {
+					Size = UDim2.new(1, 0, 1, 0),
+				}):Play()
 			end)
 		)
 		table.insert(
@@ -6668,7 +8539,7 @@ scriptHub.Build = function()
 	local ROW_GAP, CONTENT_INSET = 3, 40
 
 	local function updateGrid()
-		local columns = math.clamp(scriptHub.Columns or 3, 1, 4)
+		local columns = math.clamp(scriptHub.Columns or 4, 1, 4)
 		local available = resultScroll.AbsoluteSize.X - resultScroll.ScrollBarThickness - 2
 		if available <= 0 then
 			return
@@ -6730,11 +8601,17 @@ scriptHub.Build = function()
 
 	table.insert(connections, resultScroll:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateGrid))
 
+	scriptHub.SetColumns = function(count)
+		scriptHub.Columns = math.clamp(count, 1, 4)
+		Icons.setName(columnsBtn, "columns" .. scriptHub.Columns)
+		updateGrid()
+	end
+
 	table.insert(
 		connections,
 		columnsBtn.MouseButton1Click:Connect(function()
-			scriptHub.Columns = (math.clamp(scriptHub.Columns or 3, 1, 4) % 4) + 1
-			columnsBtn.Text = COLUMN_GLYPHS[scriptHub.Columns]
+			scriptHub.Columns = (math.clamp(scriptHub.Columns or 4, 1, 4) % 4) + 1
+			Icons.setName(columnsBtn, "columns" .. scriptHub.Columns)
 			createClickParticles(columnsBtn)
 			updateGrid()
 			saveSettings()
@@ -7068,11 +8945,11 @@ scriptHub.Build = function()
 	filterTitle.TextColor3 = CONFIG.Colors.Text
 	filterTitle.TextSize = 17
 	filterTitle.TextXAlignment = Enum.TextXAlignment.Left
-	filterTitle.Text = "🎛️ " .. tr("Filters")
+	Icons.bind(filterTitle, "sliders", { Mode = "label", Text = tr("Filters"), Px = 16 })
 	filterTitle.ZIndex = 21
 	registerLocalizedString("Filters")
 
-	local filterCloseBtn = createIconButton(filterFrame, "✖️", 24, "UtilButton")
+	local filterCloseBtn = createIconButton(filterFrame, "close", 24, "UtilButton")
 	filterCloseBtn.Position = UDim2.new(1, -12, 0, 12)
 	filterCloseBtn.AnchorPoint = Vector2.new(1, 0)
 	filterCloseBtn.ZIndex = 21
@@ -7127,9 +9004,9 @@ scriptHub.Build = function()
 		button.BackgroundColor3 = CONFIG.Colors.UtilButton
 		button.AutoButtonColor = false
 		button.Font = CONFIG.Font
-		button.Text = def.Icon .. " " .. tr(def.Label)
 		button.TextColor3 = CONFIG.Colors.Text
 		button.TextSize = 12
+		Icons.bind(button, def.Icon, { Mode = "label", Text = tr(def.Label), Px = 13 })
 		button.TextTruncate = Enum.TextTruncate.AtEnd
 		button.ZIndex = 22
 		Instance.new("UICorner", button).CornerRadius = UDim.new(0, 6)
@@ -7138,7 +9015,7 @@ scriptHub.Build = function()
 		filterToggles[def.Key] = button
 		registerLocalizedString(def.Label)
 		registerLocalizedRefresher(function()
-			button.Text = def.Icon .. " " .. tr(def.Label)
+			Icons.setText(button, tr(def.Label))
 		end)
 
 		table.insert(
@@ -7239,7 +9116,7 @@ scriptHub.Build = function()
 	clearFiltersBtn.Position = UDim2.new(0, 12, 1, -42)
 	clearFiltersBtn.BackgroundColor3 = CONFIG.Colors.UtilButton
 	clearFiltersBtn.Font = CONFIG.BoldFont
-	clearFiltersBtn.Text = "🧹 " .. tr("Clear filters")
+	Icons.bind(clearFiltersBtn, "broom", { Mode = "label", Align = "center", Text = tr("Clear filters"), Px = 14 })
 	clearFiltersBtn.TextColor3 = CONFIG.Colors.Text
 	clearFiltersBtn.TextSize = 13
 	clearFiltersBtn.ZIndex = 21
@@ -7248,8 +9125,8 @@ scriptHub.Build = function()
 	safeSetCursor(clearFiltersBtn, "rbxasset://SystemCursor/Arrow")
 	registerLocalizedString("Clear filters")
 	registerLocalizedRefresher(function()
-		clearFiltersBtn.Text = "🧹 " .. tr("Clear filters")
-		filterTitle.Text = "🎛️ " .. tr("Filters")
+		Icons.setText(clearFiltersBtn, tr("Clear filters"))
+		Icons.setText(filterTitle, tr("Filters"))
 	end)
 
 	local function setFilterPanelVisible(visible)
@@ -7655,7 +9532,7 @@ local function toggleMinimize()
 		titleLabel.Visible = true
 		leftControls.Visible = true
 		rightControls.Visible = true
-		minimizeButton.Text = "✖️"
+		Icons.setName(minimizeButton, "close")
 
 		if not tutorialShown and not tutorialCompleted then
 			showTutorial()
@@ -7681,7 +9558,16 @@ function log(message, messageType, bulkLoad)
 	logFrame.LayoutOrder = logCounter
 	local logEntry = logFrame.LogEntry
 	local logLine = logFrame:FindFirstChild("LineNumber")
-	if logLine then logLine.Text = tostring(logCounter) end
+	if logLine then
+		logLine.Text = tostring(logCounter)
+		syncConsoleGutter(logLine.Text)
+		logLine.Size = UDim2.new(0, consoleGutterWidth, 0, 0)
+	end
+	local logStamp = logFrame:FindFirstChild("Timestamp")
+	if logStamp then
+		logStamp.Text = os.date("%H:%M:%S")
+		logStamp.Size = UDim2.new(0, consoleStampWidth, 0, 0)
+	end
 	local messageStr = tostring(message)
 
 	logEntry:SetAttribute("LogType", messageType)
@@ -7714,9 +9600,9 @@ function log(message, messageType, bulkLoad)
 			if translated and translated ~= messageStr and logFrame.Parent then
 				local safe = escapeRichText(translated)
 				if messageType == "Error" or messageType == "Warning" then
-					translatedLogText = "<b>🌐 " .. safe .. "</b>"
+					translatedLogText = "<b>" .. Icons.prefix("globe") .. safe .. "</b>"
 				else
-					translatedLogText = "🌐 " .. safe
+					translatedLogText = Icons.prefix("globe") .. safe
 				end
 				showingTranslation = true
 				logEntry.Text = translatedLogText
@@ -7974,13 +9860,13 @@ local function toggleScriptView()
 			{ Size = UDim2.new(1, 0, 1, 0), Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5) }
 		):Play()
 
-		local newCollapseButton = createIconButton(footer, "↙️", 26, "UtilButton")
+		local newCollapseButton = createIconButton(footer, "collapse", 26, "UtilButton")
 		newCollapseButton.Name = "CollapseButton"
 		newCollapseButton.AnchorPoint = Vector2.new(0, 0)
 		newCollapseButton.Position = UDim2.new(0, 5, 0, 38)
 		newCollapseButton.ZIndex = 4
 
-		local newClearButton = createIconButton(footer, "🧹", 26, "UtilButton")
+		local newClearButton = createIconButton(footer, "broom", 26, "UtilButton")
 		newClearButton.Name = "ClearInputButton"
 		newClearButton.AnchorPoint = Vector2.new(0, 0)
 		newClearButton.Position = UDim2.new(0, 37, 0, 38)
