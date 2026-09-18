@@ -3547,6 +3547,7 @@ local consoleGutterWidth = 26
 local consoleStampWidth = 52
 local syncConsoleGutter
 local refreshConsoleColumns
+local resetConsoleGutter
 do
 local widestDigits = 0
 
@@ -3597,6 +3598,12 @@ function syncConsoleGutter(numberText)
 	end
 	widestDigits = digits
 	consoleGutterWidth = math.max(26, 6 + digits * math.ceil(CONFIG.TextSize * 0.6))
+	refreshConsoleColumns()
+end
+
+function resetConsoleGutter()
+	widestDigits = 0
+	consoleGutterWidth = 26
 	refreshConsoleColumns()
 end
 end
@@ -9854,6 +9861,8 @@ local function clearLogs()
 		end
 	end
 	table.clear(activeLogFrames)
+	logCounter = 0
+	resetConsoleGutter()
 	requestCanvasUpdate()
 end
 
@@ -9902,7 +9911,7 @@ function log(message, messageType, bulkLoad)
 	local translatedLogText = nil
 	local showingTranslation = false
 
-	if uiSettings.autoTranslate and not bulkLoad and messageType ~= "Input" and #messageStr > 1 then
+	if uiSettings.autoTranslate and messageType ~= "Input" and #messageStr > 1 then
 		queueTranslation(messageStr, languages[currentLanguageIndex].Code, function(translated)
 			if translated and translated ~= messageStr and logFrame.Parent then
 				local safe = escapeRichText(translated)
